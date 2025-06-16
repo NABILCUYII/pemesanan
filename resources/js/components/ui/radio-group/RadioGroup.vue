@@ -1,46 +1,21 @@
 <script setup lang="ts">
-import { useVModel } from '@vueuse/core';
-import { provide } from 'vue';
+import { RadioGroup, type RadioGroupProps } from 'reka-ui';
+import { cn } from '@/lib/utils';
+import { computed, type HTMLAttributes } from 'vue';
 
-interface RadioGroupRootProps {
-  modelValue?: string;
-  defaultValue?: string;
-  name?: string;
-  dir?: 'ltr' | 'rtl';
-  orientation?: 'horizontal' | 'vertical';
-  loop?: boolean;
-  disabled?: boolean;
-  required?: boolean;
-}
+const props = defineProps<RadioGroupProps & { class?: HTMLAttributes['class'] }>();
 
-const props = defineProps<RadioGroupRootProps>();
-
-const emits = defineEmits<{
-  (e: 'update:modelValue', payload: string): void;
-}>();
-
-const modelValue = useVModel(props, 'modelValue', emits, {
-  passive: true,
-  defaultValue: props.defaultValue,
-});
-
-provide('RadioGroupContext', {
-  modelValue,
-  name: props.name,
-  dir: props.dir,
-  orientation: props.orientation,
-  loop: props.loop,
-  disabled: props.disabled,
-  required: props.required,
+const delegatedProps = computed(() => {
+  const { class: _, ...delegated } = props;
+  return delegated;
 });
 </script>
 
 <template>
-  <div
-    role="radiogroup"
-    :aria-orientation="orientation"
-    :data-orientation="orientation"
+  <RadioGroup
+    v-bind="delegatedProps"
+    :class="cn('grid gap-2', props.class)"
   >
     <slot />
-  </div>
+  </RadioGroup>
 </template> 

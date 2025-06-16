@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core';
-import { provide } from 'vue';
+import { provide, type Ref } from 'vue';
+import { SelectRoot, type SelectRootProps } from 'reka-ui';
 
-interface SelectRootProps {
-  modelValue?: string;
-  defaultValue?: string;
+interface SelectContextType {
+  modelValue: Ref<string | undefined>;
   name?: string;
   dir?: 'ltr' | 'rtl';
   autocomplete?: string;
   disabled?: boolean;
   required?: boolean;
+  orientation?: 'horizontal' | 'vertical';
 }
 
 const props = defineProps<SelectRootProps>();
@@ -34,5 +35,7 @@ provide('SelectContext', {
 </script>
 
 <template>
-  <slot />
+  <SelectRoot v-bind="props">
+    <slot />
+  </SelectRoot>
 </template> 

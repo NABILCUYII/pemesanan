@@ -30,7 +30,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Barang',
-        href: '#',
+        href: route('barang.index'),
         icon: Package,
     },
     {

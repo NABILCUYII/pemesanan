@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('barang', function (Blueprint $table) {
             $table->id();
+            $table->string('kode_barang')->unique();
+            $table->string('nama_barang');
+            $table->text('deskripsi')->nullable();
+            $table->enum('kategori', ['peminjaman', 'permintaan']);
+            $table->integer('stok')->default(0);
             $table->timestamps();
         });
     }

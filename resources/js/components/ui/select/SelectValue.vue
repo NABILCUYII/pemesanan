@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { SelectValue, type SelectValueProps } from 'reka-ui';
-import { cn } from '@/lib/utils';
 
-const props = defineProps<SelectValueProps & { class?: string }>();
+const props = defineProps<SelectValueProps>();
 </script>
 
 <template>
-  <SelectValue v-bind="props" :class="cn('placeholder:text-muted-foreground', props.class)">
+  <SelectValue v-bind="props">
     <slot />
   </SelectValue>
 </template> 
