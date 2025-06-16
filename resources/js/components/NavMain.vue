@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
-defineProps<{
+interface Props {
     items: NavItem[];
-}>();
+}
 
-const page = usePage();
+defineProps<Props>();
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
-        <SidebarMenu>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
-                <SidebarMenuButton as-child :is-active="item.href === page.url" :tooltip="item.title">
-                    <Link :href="item.href">
-                        <component :is="item.icon" />
-                        <span>{{ item.title }}</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
-    </SidebarGroup>
+    <SidebarMenu>
+        <SidebarMenuItem v-for="item in items" :key="item.href">
+            <SidebarMenuButton :href="item.href" :active="route().current(item.href)" as-child>
+                <Link 
+                    :href="item.href" 
+                    class="flex items-center gap-2 text-[#1E293B] hover:text-[#2563EB] hover:bg-[#F1F5F9] transition-colors"
+                >
+                    <component :is="item.icon" class="h-5 w-5" />
+                    <span>{{ item.title }}</span>
+                </Link>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+    </SidebarMenu>
 </template>
