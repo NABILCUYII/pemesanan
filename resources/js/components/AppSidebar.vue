@@ -5,38 +5,72 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { 
+    LayoutGrid, 
+    Package, 
+    ShoppingCart, 
+    ClipboardList, 
+    Users, 
+    Settings, 
+    HelpCircle,
+    BarChart
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: '/dashboard',
+        href: route('dashboard'),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Pemesanan',
+        href: '#',
+        icon: ShoppingCart,
+    },
+    {
+        title: 'Barang',
+        href: route('barang.index'),
+        icon: Package,
+    },
+    {
+        title: 'Riwayat',
+        href: '#',
+        icon: ClipboardList,
+    },
+    {
+        title: 'Pengguna',
+        href: route('users.index'),
+        icon: Users,
+    },
+    {
+        title: 'Laporan',
+        href: '#',
+        icon: BarChart,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Github Repo',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
+        title: 'Bantuan',
+        href: '#',
+        icon: HelpCircle,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'Pengaturan',
+        href: '#',
+        icon: Settings,
     },
 ];
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
+    <Sidebar collapsible="icon" variant="inset" class="bg-white border-r border-[#E2E8F0]">
+        <SidebarHeader class="border-b border-[#E2E8F0]">
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="route('dashboard')">
+                        <Link :href="route('dashboard')" class="text-[#2563EB]">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -48,7 +82,7 @@ const footerNavItems: NavItem[] = [
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 
-        <SidebarFooter>
+        <SidebarFooter class="border-t border-[#E2E8F0]">
             <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
