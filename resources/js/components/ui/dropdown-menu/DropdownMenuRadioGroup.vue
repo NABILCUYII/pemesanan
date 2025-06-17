@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   DropdownMenuRadioGroup,
   type DropdownMenuRadioGroupEmits,
@@ -20,3 +20,4 @@ const forwarded = useForwardPropsEmits(props, emits)
     <slot />
   </DropdownMenuRadioGroup>
 </template>
+

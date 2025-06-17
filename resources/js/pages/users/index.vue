@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
@@ -143,3 +143,4 @@ const destroy = (id: number) => {
     </div>
   </AppLayout>
 </template>
+

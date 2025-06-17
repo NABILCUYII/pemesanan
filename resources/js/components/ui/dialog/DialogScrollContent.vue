@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import { X } from 'lucide-vue-next'
 import {
@@ -57,3 +57,4 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     </DialogOverlay>
   </DialogPortal>
 </template>
+

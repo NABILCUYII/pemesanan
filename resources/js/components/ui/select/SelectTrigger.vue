@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { SelectTrigger, type SelectTriggerProps } from 'reka-ui';
 import { ChevronsUpDown } from 'lucide-vue-next';

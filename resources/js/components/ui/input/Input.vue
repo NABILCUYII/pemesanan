@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import { useVModel } from '@vueuse/core'
@@ -31,3 +31,4 @@ const modelValue = useVModel(props, 'modelValue', emits, {
     )"
   >
 </template>
+

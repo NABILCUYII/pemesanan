@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { CheckboxRootEmits, CheckboxRootProps } from 'reka-ui'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-vue-next'
@@ -35,3 +35,4 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     </CheckboxIndicator>
   </CheckboxRoot>
 </template>
+

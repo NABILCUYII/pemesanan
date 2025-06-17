@@ -1,10 +1,11 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { DropdownMenuRoot, type DropdownMenuRootEmits, type DropdownMenuRootProps, useForwardPropsEmits } from 'reka-ui'
+import { reactive } from 'vue'
 
 const props = defineProps<DropdownMenuRootProps>()
 const emits = defineEmits<DropdownMenuRootEmits>()
 
-const forwarded = useForwardPropsEmits(props, emits)
+const forwarded = useForwardPropsEmits(reactive(props), emits)
 </script>
 
 <template>
@@ -15,3 +16,4 @@ const forwarded = useForwardPropsEmits(props, emits)
     <slot />
   </DropdownMenuRoot>
 </template>
+

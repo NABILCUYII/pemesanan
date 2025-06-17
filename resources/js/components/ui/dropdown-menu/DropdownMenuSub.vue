@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import {
   DropdownMenuSub,
   type DropdownMenuSubEmits,
@@ -17,3 +17,4 @@ const forwarded = useForwardPropsEmits(props, emits)
     <slot />
   </DropdownMenuSub>
 </template>
+

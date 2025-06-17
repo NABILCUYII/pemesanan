@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useVModel } from '@vueuse/core';
 import { provide, type Ref } from 'vue';
 import { SelectRoot, type SelectRootProps } from 'reka-ui';

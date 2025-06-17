@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import {
   NavigationMenuContent,
@@ -33,3 +33,4 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     <slot />
   </NavigationMenuContent>
 </template>
+

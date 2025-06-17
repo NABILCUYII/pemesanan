@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import { Primitive, type PrimitiveProps } from 'reka-ui'
@@ -32,3 +32,4 @@ const props = withDefaults(defineProps<SidebarMenuButtonProps>(), {
     <slot />
   </Primitive>
 </template>
+

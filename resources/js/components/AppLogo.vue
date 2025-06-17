@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 </script>
 
@@ -10,3 +10,4 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
         <span class="mb-0.5 truncate leading-tight font-semibold">Laravel Starter Kit</span>
     </div>
 </template>
+

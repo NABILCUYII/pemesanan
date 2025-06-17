@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { SidebarInset } from '@/components/ui/sidebar';
 import { computed } from 'vue';
 
@@ -19,3 +19,4 @@ const className = computed(() => props.class);
         <slot />
     </main>
 </template>
+

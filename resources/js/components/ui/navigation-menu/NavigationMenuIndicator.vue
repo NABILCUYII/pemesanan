@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import { NavigationMenuIndicator, type NavigationMenuIndicatorProps, useForwardProps } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
@@ -23,3 +23,4 @@ const forwardedProps = useForwardProps(delegatedProps)
     <div class="bg-border relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm shadow-md" />
   </NavigationMenuIndicator>
 </template>
+

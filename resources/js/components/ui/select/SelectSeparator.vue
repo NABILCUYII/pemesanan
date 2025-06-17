@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { SelectSeparator, type SelectSeparatorProps } from 'reka-ui';
 import { cn } from '@/lib/utils';
