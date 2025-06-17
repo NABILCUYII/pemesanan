@@ -9,7 +9,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 const props = defineProps<{
     barang: {
         id: number;
-        kode_barang: string;
+        kode_barang: string; 
         nama_barang: string;
         kategori: string;
         stok: number;
