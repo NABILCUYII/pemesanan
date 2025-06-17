@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+﻿<script lang="ts" setup>
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-vue-next'
@@ -20,3 +20,4 @@ const props = defineProps<{
     </slot>
   </li>
 </template>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AppLayout from '@/layouts/AppLayout.vue';
 
 const form = useForm({
+    kode_barang: '',
     nama_barang: '',
     kategori: '',
     stok: '',
@@ -29,6 +30,19 @@ const submit = () => {
 
             <div class="bg-white rounded-lg border p-6">
                 <form @submit.prevent="submit" class="space-y-6">
+                    <div class="space-y-2">
+                        <Label for="kode_barang">Kode Barang</Label>
+                        <Input 
+                            id="kode_barang"
+                            v-model="form.kode_barang"
+                            type="text"
+                            required
+                        />
+                        <p v-if="form.errors.kode_barang" class="text-sm text-red-500">
+                            {{ form.errors.kode_barang }}
+                        </p>
+                    </div>
+
                     <div class="space-y-2">
                         <Label for="nama_barang">Nama Barang</Label>
                         <Input 
@@ -106,3 +120,4 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+

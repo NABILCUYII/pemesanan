@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
@@ -25,3 +25,4 @@ defineProps<Props>();
         </SidebarMenuItem>
     </SidebarMenu>
 </template>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { SelectItem, type SelectItemProps, SelectItemIndicator, SelectItemText, useForwardPropsEmits } from 'reka-ui';
 import { Check } from 'lucide-vue-next';

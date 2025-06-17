@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import {
   NavigationMenuViewport,
@@ -32,3 +32,4 @@ const forwardedProps = useForwardProps(delegatedProps)
     />
   </div>
 </template>
+

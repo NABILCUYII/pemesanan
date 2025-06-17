@@ -20,22 +20,18 @@ class BarangController extends Controller
     {
         return Inertia::render('Barang/create');
     }
-
     public function store(Request $request)
     {
         $request->validate([
+            'kode_barang' => 'required|string|max:255|unique:barang',
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|in:peminjaman,permintaan',
             'stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string'
         ]);
 
-        $last = Barang::orderBy('id', 'desc')->first();
-        $lastId = $last ? $last->id + 1 : 1;
-        $kodeBarang = 'BRG' . str_pad($lastId, 3, '0', STR_PAD_LEFT);
-
         Barang::create([
-            'kode_barang' => $kodeBarang,
+            'kode_barang' => $request->kode_barang,
             'nama_barang' => $request->nama_barang,
             'deskripsi' => $request->deskripsi,
             'kategori' => $request->kategori,
@@ -56,6 +52,7 @@ class BarangController extends Controller
     public function update(Request $request, Barang $barang)
     {
         $request->validate([
+            'kode_barang' => 'required|string|max:255|unique:barang,kode_barang,' . $barang->id,
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|in:peminjaman,permintaan',
             'stok' => 'required|integer|min:0',
@@ -79,4 +76,33 @@ class BarangController extends Controller
         return redirect()->route('barang.index')
             ->with('message', 'Barang berhasil dihapus');
     }
+
+    public function stok()
+    {
+        $barang = Barang::latest()->get();
+        return Inertia::render('Barang/stok', [
+            'barang' => $barang
+        ]);
+    }
+
+    public function addStok(Request $request, Barang $barang)
+    {
+        $request->validate([
+            'stok_tambah' => 'required|integer|min:1',
+            'keterangan' => 'nullable|string|max:500'
+        ]);
+
+        $barang->update([
+            'stok' => $barang->stok + $request->stok_tambah
+        ]);
+
+        // Here you could also log the stock addition to a separate table
+        // for audit purposes if needed
+
+        return redirect()->back()
+            ->with('message', "Stok berhasil ditambahkan. Stok baru: {$barang->stok}");
+    }
+
+
+    
 }

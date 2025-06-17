@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -52,3 +52,4 @@ const currentPath = page.props.ziggy?.location ? new URL(page.props.ziggy.locati
         </div>
     </div>
 </template>
+

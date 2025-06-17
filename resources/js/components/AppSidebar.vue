@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -13,7 +13,8 @@ import {
     Users, 
     Settings, 
     HelpCircle,
-    BarChart
+    BarChart,
+    Check
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -24,13 +25,23 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Pemesanan',
-        href: '#',
+        title: 'Permintaan',
+        href: route('permintaan.index'),
         icon: ShoppingCart,
+    },
+    {
+        title: 'Approval',
+        href: route('permintaan.approval'),
+        icon: Check,
     },
     {
         title: 'Barang',
         href: route('barang.index'),
+        icon: Package,
+    },
+    {
+        title: 'Stok Barang',
+        href: route('barang.stok'),
         icon: Package,
     },
     {
@@ -58,7 +69,7 @@ const footerNavItems: NavItem[] = [
     },
     {
         title: 'Pengaturan',
-        href: '#',
+        href: route('profile.edit'),
         icon: Settings,
     },
 ];
@@ -89,3 +100,4 @@ const footerNavItems: NavItem[] = [
     </Sidebar>
     <slot />
 </template>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import UserInfo from '@/components/UserInfo.vue';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { User } from '@/types';
@@ -30,3 +30,4 @@ defineProps<Props>();
         </Link>
     </DropdownMenuItem>
 </template>
+

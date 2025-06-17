@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import UserInfo from '@/components/UserInfo.vue';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
@@ -34,3 +34,4 @@ const { isMobile, state } = useSidebar();
         </SidebarMenuItem>
     </SidebarMenu>
 </template>
+

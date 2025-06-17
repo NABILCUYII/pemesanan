@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 interface Props {
     title: string;
     description?: string;
@@ -15,3 +15,4 @@ defineProps<Props>();
         </p>
     </header>
 </template>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import { AvatarFallback, type AvatarFallbackProps } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
@@ -21,3 +21,4 @@ const delegatedProps = computed(() => {
     <slot />
   </AvatarFallback>
 </template>
+

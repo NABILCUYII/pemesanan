@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import { reactiveOmit } from '@vueuse/core'
@@ -28,3 +28,4 @@ const forwardedProps = useForwardProps(delegatedProps)
     <ChevronRight class="ml-auto size-4" />
   </DropdownMenuSubTrigger>
 </template>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -83,3 +83,4 @@ const closeModal = () => {
         </div>
     </div>
 </template>
+

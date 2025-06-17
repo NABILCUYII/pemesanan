@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-vue-next'
 import {
@@ -39,3 +39,4 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     <slot />
   </DropdownMenuCheckboxItem>
 </template>
+

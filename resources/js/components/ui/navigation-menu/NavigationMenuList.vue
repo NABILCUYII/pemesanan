@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import { NavigationMenuList, type NavigationMenuListProps, useForwardProps } from 'reka-ui'
 import { computed, type HTMLAttributes } from 'vue'
@@ -28,3 +28,4 @@ const forwardedProps = useForwardProps(delegatedProps)
     <slot />
   </NavigationMenuList>
 </template>
+

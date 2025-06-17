@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 const props = defineProps<{
     barang: {
         id: number;
-        kode_barang: string;
+        kode_barang: string; 
         nama_barang: string;
         kategori: string;
         stok: number;
@@ -117,3 +117,4 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+

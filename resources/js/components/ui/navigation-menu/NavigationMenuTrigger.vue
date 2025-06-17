@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { cn } from '@/lib/utils'
 import { ChevronDown } from 'lucide-vue-next'
 import {
@@ -33,3 +33,4 @@ const forwardedProps = useForwardProps(delegatedProps)
     />
   </NavigationMenuTrigger>
 </template>
+

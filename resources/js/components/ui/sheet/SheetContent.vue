@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import { reactiveOmit } from '@vueuse/core'
@@ -61,3 +61,4 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     </DialogContent>
   </DialogPortal>
 </template>
+
