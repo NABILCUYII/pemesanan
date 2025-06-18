@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\PermintaanController;
+use App\Http\Controllers\SelamatDatangController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -13,6 +14,11 @@ Route::get('/', function () {
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Rute SelamatDatang
+Route::middleware(['auth'])->group(function () {
+    Route::get('selamat-datang', [SelamatDatangController::class, 'index'])->name('SelamatDatang');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
