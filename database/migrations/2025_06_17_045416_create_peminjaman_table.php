@@ -11,13 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('permintaan', function (Blueprint $table) {
+        Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('barang_id')->constrained('barang')->onDelete('cascade');
             $table->integer('jumlah');
             $table->text('keterangan')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected', 'completed'])->default('pending');
+            $table->date('tanggal_peminjaman');
+            $table->date('tanggal_pengembalian')->nullable(); // Tanggal pengembalian
+            $table->date('due_date'); // Tanggal jatuh tempo
+            $table->enum('status', ['pending', 'approved', 'returned', 'rejected', 'overdue'])->default('pending');
             $table->timestamps();
         });
     }
@@ -27,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('permintaan');
+        Schema::dropIfExists('peminjaman');
     }
 };

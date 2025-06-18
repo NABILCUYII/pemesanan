@@ -5,7 +5,6 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Heading from '@/components/Heading.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -68,16 +67,28 @@ const submit = () => {
 
         <div class="space-y-2">
           <Label>Role</Label>
-          <RadioGroup v-model="form.role" class="space-y-2">
+          <div class="grid gap-2">
             <div class="flex items-center space-x-2">
-              <RadioGroupItem value="admin" id="admin" />
+              <input
+                type="radio"
+                id="admin"
+                value="admin"
+                v-model="form.role"
+                class="h-4 w-4 border-primary text-primary focus:ring-primary"
+              />
               <Label for="admin">Admin</Label>
             </div>
             <div class="flex items-center space-x-2">
-              <RadioGroupItem value="user" id="user" />
+              <input
+                type="radio"
+                id="user"
+                value="user"
+                v-model="form.role"
+                class="h-4 w-4 border-primary text-primary focus:ring-primary"
+              />
               <Label for="user">User</Label>
             </div>
-          </RadioGroup>
+          </div>
           <p v-if="form.errors.role" class="text-sm text-destructive">{{ form.errors.role }}</p>
         </div>
 

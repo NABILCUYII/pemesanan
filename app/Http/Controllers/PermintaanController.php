@@ -4,16 +4,48 @@ namespace App\Http\Controllers;
 
 use App\Models\Permintaan;
 use App\Models\Barang;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class PermintaanController extends Controller
 {
     public function index()
     {
-        $permintaan = Permintaan::with(['user', 'barang'])->latest()->get();
+        $user = auth()->user();
+        
+        // If user is admin, show all requests
+        // If user is regular user, show only their requests
+        $permintaan = Permintaan::with(['user', 'barang'])
+            ->when(!$user->isAdmin(), function ($query) use ($user) {
+                return $query->where('user_id', $user->id);
+            })
+            ->latest()
+            ->get();
+        
+        $grouped = $permintaan->groupBy('user.name');
+        
+        $result = $grouped->map(function ($items, $userName) {
+            return [
+                'user' => $userName,
+                'items' => $items->map(function ($item) {
+                    return [
+                        'nama_barang' => $item->barang->nama_barang,
+                        'kode_barang' => $item->barang->kode_barang,
+                        'jumlah' => $item->jumlah,
+                        'status' => $item->status,
+                        'id' => $item->id,
+                        'created_at' => $item->created_at,
+                        'keterangan' => $item->keterangan,
+                    ];
+                })->values()
+            ];
+        })->values();
+        
         return Inertia::render('permintaan/index', [
-            'permintaan' => $permintaan
+            'permintaan' => $result,
+            'isAdmin' => $user->isAdmin()
         ]);
     }
 
@@ -30,15 +62,14 @@ class PermintaanController extends Controller
         $request->validate([
             'barang_id' => 'required|exists:barang,id',
             'jumlah' => 'required|integer|min:1',
-            'keterangan' => 'nullable|string|max:500',
-            'status' => 'required|in:pending,approved,rejected,completed'
+            'keterangan' => 'nullable|string|max:500'
         ]);
 
         Permintaan::create([
             'barang_id' => $request->barang_id,
             'jumlah' => $request->jumlah,
             'keterangan' => $request->keterangan,
-            'status' => $request->status,
+            'status' => 'pending',
             'user_id' => auth()->id()
         ]);
 
@@ -52,8 +83,7 @@ class PermintaanController extends Controller
             'requests' => 'required|array|min:1',
             'requests.*.barang_id' => 'required|exists:barang,id',
             'requests.*.jumlah' => 'required|integer|min:1',
-            'requests.*.keterangan' => 'nullable|string|max:500',
-            'requests.*.status' => 'required|in:pending,approved,rejected,completed'
+            'requests.*.keterangan' => 'nullable|string|max:500'
         ]);
 
         $requests = collect($request->requests)->map(function ($item) {
@@ -61,7 +91,7 @@ class PermintaanController extends Controller
                 'barang_id' => $item['barang_id'],
                 'jumlah' => $item['jumlah'],
                 'keterangan' => $item['keterangan'] ?? '',
-                'status' => $item['status'],
+                'status' => 'pending',
                 'user_id' => auth()->id(),
                 'created_at' => now(),
                 'updated_at' => now()
@@ -89,15 +119,13 @@ class PermintaanController extends Controller
         $request->validate([
             'barang_id' => 'required|exists:barang,id',
             'jumlah' => 'required|integer|min:1',
-            'keterangan' => 'nullable|string|max:500',
-            'status' => 'required|in:pending,approved,rejected,completed'
+            'keterangan' => 'nullable|string|max:500'
         ]);
 
         $permintaan->update([
             'barang_id' => $request->barang_id,
             'jumlah' => $request->jumlah,
-            'keterangan' => $request->keterangan,
-            'status' => $request->status
+            'keterangan' => $request->keterangan
         ]);
 
         return redirect()->route('permintaan.index')
@@ -113,12 +141,22 @@ class PermintaanController extends Controller
 
     public function approval()
     {
-        $permintaan = Permintaan::with(['user', 'barang', 'approvedBy'])->latest()->get();
+        $permintaan = Permintaan::with(['user', 'barang', 'approvedBy'])
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+
+        $peminjaman = Peminjaman::with(['user', 'barang'])
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+    
         return Inertia::render('permintaan/approval', [
-            'permintaan' => $permintaan
+            'permintaan' => $permintaan,
+            'peminjaman' => $peminjaman
         ]);
     }
-
+    
     public function approve(Request $request)
     {
         $request->validate([
@@ -128,42 +166,48 @@ class PermintaanController extends Controller
             'catatan' => 'nullable|string|max:500'
         ]);
 
-        $permintaan = Permintaan::findOrFail($request->permintaan_id);
-        
-        if ($request->action === 'approve') {
-            $permintaan->update([
-                'status' => 'approved',
-                'alasan_approval' => $request->alasan,
-                'catatan_approval' => $request->catatan,
-                'approved_by' => auth()->id(),
-                'approved_at' => now()
-            ]);
+        DB::beginTransaction();
+        try {
+            $permintaan = Permintaan::findOrFail($request->permintaan_id);
             
-            // Update stok barang jika disetujui
-            $barang = $permintaan->barang;
-            if ($barang->stok >= $permintaan->jumlah) {
+            if ($request->action === 'approve') {
+                $barang = $permintaan->barang;
+                
+                if ($barang->stok < $permintaan->jumlah) {
+                    throw new \Exception('Stok tidak mencukupi');
+                }
+                
+                $permintaan->update([
+                    'status' => 'approved',
+                    'alasan_approval' => $request->alasan,
+                    'catatan_approval' => $request->catatan,
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now()
+                ]);
+                
                 $barang->update([
                     'stok' => $barang->stok - $permintaan->jumlah
                 ]);
+                
+                $message = 'Permintaan berhasil disetujui';
+            } else {
+                $permintaan->update([
+                    'status' => 'rejected',
+                    'alasan_approval' => $request->alasan,
+                    'catatan_approval' => $request->catatan,
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now()
+                ]);
+                
+                $message = 'Permintaan berhasil ditolak';
             }
             
-            $message = 'Permintaan berhasil disetujui';
-        } else {
-            $permintaan->update([
-                'status' => 'rejected',
-                'alasan_approval' => $request->alasan,
-                'catatan_approval' => $request->catatan,
-                'approved_by' => auth()->id(),
-                'approved_at' => now()
-            ]);
+            DB::commit();
+            return redirect()->back()->with('message', $message);
             
-            $message = 'Permintaan berhasil ditolak';
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        // Here you could also log the approval action to a separate table
-        // for audit purposes if needed
-
-        return redirect()->back()
-            ->with('message', $message);
     }
 }
