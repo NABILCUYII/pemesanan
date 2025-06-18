@@ -18,6 +18,7 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
+    kode_barang: props.barang.kode_barang,
     nama_barang: props.barang.nama_barang,
     kategori: props.barang.kategori,
     stok: props.barang.stok.toString(),
@@ -40,48 +41,65 @@ const submit = () => {
 
             <div class="bg-white rounded-lg border p-6">
                 <form @submit.prevent="submit" class="space-y-6">
-                    <div class="space-y-2">
-                        <Label for="nama_barang">Nama Barang</Label>
-                        <Input 
-                            id="nama_barang"
-                            v-model="form.nama_barang"
-                            type="text"
-                            required
-                        />
-                        <p v-if="form.errors.nama_barang" class="text-sm text-red-500">
-                            {{ form.errors.nama_barang }}
-                        </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <Label for="kode_barang">Kode Barang</Label>
+                            <Input 
+                                id="kode_barang"
+                                v-model="form.kode_barang"
+                                type="text"
+                                required
+                            />
+                            <p v-if="form.errors.kode_barang" class="text-sm text-red-500">
+                                {{ form.errors.kode_barang }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="nama_barang">Nama Barang</Label>
+                            <Input 
+                                id="nama_barang"
+                                v-model="form.nama_barang"
+                                type="text"
+                                required
+                            />
+                            <p v-if="form.errors.nama_barang" class="text-sm text-red-500">
+                                {{ form.errors.nama_barang }}
+                            </p>
+                        </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <Label for="kategori">Kategori</Label>
-                        <select
-                            id="kategori"
-                            v-model="form.kategori"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            required
-                        >
-                            <option value="">Pilih kategori</option>
-                            <option value="peminjaman">Peminjaman</option>
-                            <option value="permintaan">Permintaan</option>
-                        </select>
-                        <p v-if="form.errors.kategori" class="text-sm text-red-500">
-                            {{ form.errors.kategori }}
-                        </p>
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <Label for="kategori">Kategori</Label>
+                            <select
+                                id="kategori"
+                                v-model="form.kategori"
+                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                required
+                            >
+                                <option value="">Pilih kategori</option>
+                                <option value="peminjaman">Peminjaman</option>
+                                <option value="permintaan">Permintaan</option>
+                            </select>
+                            <p v-if="form.errors.kategori" class="text-sm text-red-500">
+                                {{ form.errors.kategori }}
+                            </p>
+                        </div>
 
-                    <div class="space-y-2">
-                        <Label for="stok">Stok</Label>
-                        <Input 
-                            id="stok"
-                            v-model="form.stok"
-                            type="number"
-                            min="0"
-                            required
-                        />
-                        <p v-if="form.errors.stok" class="text-sm text-red-500">
-                            {{ form.errors.stok }}
-                        </p>
+                        <div class="space-y-2">
+                            <Label for="stok">Stok</Label>
+                            <Input 
+                                id="stok"
+                                v-model="form.stok"
+                                type="number"
+                                min="0"
+                                required
+                            />
+                            <p v-if="form.errors.stok" class="text-sm text-red-500">
+                                {{ form.errors.stok }}
+                            </p>
+                        </div>
                     </div>
 
                     <div class="space-y-2">
