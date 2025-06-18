@@ -8,6 +8,7 @@ use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::get('/', function () {
@@ -45,6 +46,7 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     // Laporan routes
     Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::get('/laporan/export-to-sheets', [LaporanController::class, 'exportToGoogleSheets'])->name('laporan.export-to-sheets');
 });
 
 // Regular user routes
@@ -69,6 +71,22 @@ Route::middleware(['auth'])->group(function () {
     // Riwayat routes
     Route::get('riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
     Route::post('riwayat/cancel', [RiwayatController::class, 'cancel'])->name('riwayat.cancel');
+
+    // Laporan routes
+    Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::get('laporan/export-to-sheets', [LaporanController::class, 'exportToGoogleSheets'])->name('laporan.export-to-sheets');
+    Route::get('laporan/download', [LaporanController::class, 'download'])->name('laporan.download');
+
+    // Dashboard routes
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
+
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_middleware'),
+    'verified'
+])->group(function () {
+    // Remove duplicate dashboard route
 });
 
 require __DIR__.'/settings.php';

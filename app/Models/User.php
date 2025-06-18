@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -51,5 +52,15 @@ class User extends Authenticatable
     public function isAdmin()
     {
         return $this->role && $this->role->role === 'admin';
+    }
+
+    public function permintaan(): HasMany
+    {
+        return $this->hasMany(Permintaan::class);
+    }
+
+    public function peminjaman(): HasMany
+    {
+        return $this->hasMany(Peminjaman::class);
     }
 }

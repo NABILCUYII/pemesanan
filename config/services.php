@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'google' => [
+        'sheet_url' => env('GOOGLE_SHEET_URL', 'https://docs.google.com/spreadsheets/d/your-sheet-id-here'),
+    ],
+
 ];
