@@ -65,7 +65,7 @@ provideSidebarContext({
 </script>
 
 <template>
-  <TooltipProvider :delay-duration="0">
+  <TooltipProvider :delay-duration="0" v-if="true">
     <div
       data-slot="sidebar-wrapper"
       :style="{
@@ -78,5 +78,8 @@ provideSidebarContext({
       <slot />
     </div>
   </TooltipProvider>
+  <div v-else>
+    <slot />
+  </div>
 </template>
 

@@ -70,47 +70,36 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Permintaan Barang Keren" />
+    <Head title="Permintaan Barang" />
 
     <AppLayout>
         <div class="min-h-screen bg-gradient-to-br from-indigo-300 via-blue-200 to-purple-200 py-12 px-2 sm:px-0 relative overflow-x-hidden">
-            <!-- Animated Sparkles & Floating Shapes -->
-            <Sparkles class="absolute left-10 top-10 text-indigo-300 opacity-60 animate-pulse z-0" :size="56" />
-            <Sparkles class="absolute right-10 bottom-10 text-purple-300 opacity-50 animate-pulse z-0" :size="48" />
-            <div class="absolute left-1/2 -translate-x-1/2 top-0 w-96 h-96 bg-gradient-to-br from-indigo-400 via-blue-200 to-purple-300 rounded-full opacity-20 blur-3xl pointer-events-none"></div>
             <div class="max-w-3xl mx-auto relative z-10">
                 <!-- Header -->
                 <div class="flex items-center gap-4 mb-10">
                     <Link :href="route('permintaan.index')" class="text-indigo-500 hover:text-indigo-700 transition">
-                        <ArrowLeft class="h-8 w-8 drop-shadow" />
+                        <ArrowLeft class="h-8 w-8" />
                     </Link>
-                    <h1 class="text-4xl font-extrabold flex items-center gap-3 text-gray-800 drop-shadow-lg tracking-tight">
+                    <h1 class="text-4xl font-extrabold flex items-center gap-3 text-gray-800 tracking-tight">
                         <span class="bg-gradient-to-tr from-indigo-300 via-blue-200 to-purple-200 rounded-full p-3 shadow-lg border-4 border-white/70">
                             <Package class="h-10 w-10 text-indigo-600" />
                         </span>
                         <span class="flex items-center gap-2">
-                            Permintaan Barang <Sparkles class="text-yellow-400 animate-bounce" :size="32" />
+                            Permintaan Barang
                         </span>
-                        <BadgeCheck v-if="isSuccess" class="w-8 h-8 text-green-400 animate-bounce" />
+                        <BadgeCheck v-if="isSuccess" class="w-8 h-8 text-green-400" />
                     </h1>
                 </div>
                 <div class="mb-12">
-                    <p class="text-xl text-gray-600 font-medium flex items-center gap-2">
-                        <span>Ajukan permintaan barang dengan fitur</span>
-                        <span class="bg-gradient-to-r from-indigo-400 via-blue-400 to-purple-400 bg-clip-text text-transparent font-extrabold animate-gradient-x">super keren</span>
-                        <span>dan interaktif.</span>
+                    <p class="text-xl text-gray-600 font-medium">
+                        Ajukan permintaan barang dengan fitur interaktif.
                     </p>
                 </div>
 
                 <div class="bg-white/95 shadow-2xl rounded-3xl border border-gray-100 p-10 relative overflow-hidden">
-                    <!-- Decorative background shapes -->
-                    <div class="absolute -top-16 -right-16 w-56 h-56 bg-gradient-to-br from-indigo-300 via-blue-200 to-purple-200 rounded-full opacity-30 blur-3xl pointer-events-none"></div>
-                    <div class="absolute -bottom-16 -left-16 w-44 h-44 bg-gradient-to-tr from-purple-200 via-blue-200 to-indigo-200 rounded-full opacity-20 blur-2xl pointer-events-none"></div>
-                    
                     <h2 class="text-2xl font-extrabold mb-10 text-indigo-700 flex items-center gap-3 tracking-tight">
                         <span class="inline-block w-2 h-8 bg-gradient-to-b from-indigo-500 to-purple-400 rounded-r mr-2"></span>
                         Form Permintaan Barang
-                        <Sparkles class="text-indigo-400 animate-pulse" :size="22" />
                     </h2>
                     
                     <form @submit.prevent="submit" class="space-y-8 z-10 relative">
@@ -121,7 +110,7 @@ const submit = () => {
                                     <Layers class="w-5 h-5 text-indigo-500" /> Pilih Barang
                                 </Label>
                                 <Select v-model="form.barang_id" @update:modelValue="handlePreview">
-                                    <SelectTrigger class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all shadow-sm hover:shadow-md" :class="form.errors.barang_id ? 'border-red-500' : ''">
+                                    <SelectTrigger class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all" :class="form.errors.barang_id ? 'border-red-500' : ''">
                                         <SelectValue placeholder="Pilih barang" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -149,18 +138,16 @@ const submit = () => {
                                     min="1"
                                     :max="selectedBarang && selectedBarang.stok ? selectedBarang.stok : undefined"
                                     placeholder="Masukkan jumlah permintaan"
-                                    class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all shadow-sm hover:shadow-md"
+                                    class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all"
                                     required
                                     :class="form.errors.jumlah ? 'border-red-500' : ''"
                                 />
                                 <p v-if="form.errors.jumlah" class="text-sm text-red-500 mt-1">
                                     {{ form.errors.jumlah }}
                                 </p>
-                                <transition name="fade">
-                                    <p v-if="selectedBarang" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                        <Info class="w-4 h-4 text-indigo-400" /> Stok tersedia: <span class="font-semibold">{{ selectedBarang.stok }}</span>
-                                    </p>
-                                </transition>
+                                <p v-if="selectedBarang" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                    <Info class="w-4 h-4 text-indigo-400" /> Stok tersedia: <span class="font-semibold">{{ selectedBarang.stok }}</span>
+                                </p>
                             </div>
                             <!-- Keterangan -->
                             <div class="space-y-2 md:col-span-2">
@@ -172,7 +159,7 @@ const submit = () => {
                                     v-model="form.keterangan"
                                     type="text"
                                     placeholder="Tulis keterangan tambahan (opsional)"
-                                    class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all shadow-sm hover:shadow-md"
+                                    class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all"
                                     :class="form.errors.keterangan ? 'border-red-500' : ''"
                                 />
                                 <p v-if="form.errors.keterangan" class="text-sm text-red-500 mt-1">
@@ -181,8 +168,7 @@ const submit = () => {
                             </div>
                         </div>
                         <!-- Preview Barang -->
-                        <transition name="fade">
-                        <div v-if="isPreview && selectedBarang" class="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 border border-indigo-100 rounded-2xl p-6 mb-6 shadow-lg animate-fade-in">
+                        <div v-if="isPreview && selectedBarang" class="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 border border-indigo-100 rounded-2xl p-6 mb-6">
                             <h3 class="font-bold text-indigo-700 mb-2 flex items-center gap-2">
                                 <Package class="w-5 h-5" /> Detail Barang
                             </h3>

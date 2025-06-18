@@ -33,7 +33,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('SelamatDatang', absolute: false));
+        return redirect()->intended(route('selamat-datang.index', absolute: false));
     }
 
     /**

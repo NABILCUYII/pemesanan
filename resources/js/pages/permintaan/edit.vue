@@ -43,7 +43,7 @@ const form = useForm({
     barang_id: props.permintaan.barang_id.toString(),
     jumlah: props.permintaan.jumlah.toString(),
     keterangan: props.permintaan.keterangan || '',
-    status: props.permintaan.status
+    status: props.permintaan.status,
 });
 
 const isSuccess = ref(false);
