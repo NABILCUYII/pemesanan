@@ -269,4 +269,87 @@ class LaporanController extends Controller
             ], 500);
         }
     }
+
+    public function downloadUser(Request $request)
+    {
+        try {
+            $userId = (int) $request->input('user_id');
+            $month = (int) $request->input('month', Carbon::now()->month);
+            $year = (int) $request->input('year', Carbon::now()->year);
+            
+            // Create a Carbon instance with the specified month and year
+            $date = Carbon::create($year, $month, 1);
+            $monthName = $date->locale('id')->isoFormat('MMMM');
+
+            $user = User::with(['permintaan.barang', 'peminjaman.barang'])
+                ->findOrFail($userId);
+
+            $permintaan = $user->permintaan()
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)
+                ->with('barang')
+                ->get()
+                ->map(function ($item) {
+                    if (!$item->barang) return null;
+                    return [
+                        'id' => $item->id,
+                        'nama_barang' => $item->barang->nama_barang ?? 'Unknown',
+                        'kode_barang' => $item->barang->kode_barang ?? 'Unknown',
+                        'jumlah' => $item->jumlah,
+                        'status' => $item->status,
+                        'keterangan' => $item->keterangan,
+                        'created_at' => $item->created_at,
+                    ];
+                })->filter();
+
+            $peminjaman = $user->peminjaman()
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)
+                ->with('barang')
+                ->get()
+                ->map(function ($item) {
+                    if (!$item->barang) return null;
+                    return [
+                        'id' => $item->id,
+                        'nama_barang' => $item->barang->nama_barang ?? 'Unknown',
+                        'kode_barang' => $item->barang->kode_barang ?? 'Unknown',
+                        'jumlah' => $item->jumlah,
+                        'status' => $item->status,
+                        'keterangan' => $item->keterangan,
+                        'due_date' => $item->due_date,
+                        'created_at' => $item->created_at,
+                    ];
+                })->filter();
+
+            $userData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'total_permintaan' => $permintaan->count(),
+                'total_peminjaman' => $peminjaman->count(),
+                'permintaan' => $permintaan,
+                'peminjaman' => $peminjaman,
+            ];
+
+            $data = [
+                'user' => $userData,
+                'month' => $monthName,
+                'year' => $year,
+                'generatedAt' => Carbon::now()->locale('id')->isoFormat('D MMMM YYYY HH:mm')
+            ];
+
+            $pdf = PDF::loadView('laporan.user-pdf', $data);
+            return $pdf->download("laporan-{$user->name}-{$monthName}-{$year}.pdf");
+        } catch (\Exception $e) {
+            \Log::error('User PDF Generation Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Failed to generate user PDF',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 } 

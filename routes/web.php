@@ -67,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('peminjaman/{peminjaman}/edit', [PeminjamanController::class, 'edit'])->name('peminjaman.edit');
     Route::put('peminjaman/{peminjaman}', [PeminjamanController::class, 'update'])->name('peminjaman.update');
     Route::delete('peminjaman/{peminjaman}', [PeminjamanController::class, 'destroy'])->name('peminjaman.destroy');
+    Route::get('peminjaman/returned', [PeminjamanController::class, 'returned'])->name('peminjaman.returned');
+    Route::get('peminjaman/not-returned', [PeminjamanController::class, 'notReturned'])->name('peminjaman.not-returned');
+    Route::put('peminjaman/{peminjaman}/mark-returned', [PeminjamanController::class, 'markAsReturned'])->name('peminjaman.mark-returned');
+    Route::put('peminjaman/{peminjaman}/mark-not-returned', [PeminjamanController::class, 'markAsNotReturned'])->name('peminjaman.mark-not-returned');
 
     // Riwayat routes
     Route::get('riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
@@ -76,9 +80,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('laporan/export-to-sheets', [LaporanController::class, 'exportToGoogleSheets'])->name('laporan.export-to-sheets');
     Route::get('laporan/download', [LaporanController::class, 'download'])->name('laporan.download');
+    Route::get('laporan/download-user', [LaporanController::class, 'downloadUser'])->name('laporan.download-user');
 
     // Dashboard routes
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Barang routes
+    Route::get('/barang/stok', [BarangController::class, 'stok'])->name('barang.stok');
+    Route::post('/barang/{barang}/add-stok', [BarangController::class, 'addStok'])->name('barang.add-stok');
+    Route::post('/barang/{barang}/kurangi-stok', [BarangController::class, 'kurangiStok'])->name('barang.kurangi-stok');
+    Route::get('/barang/{barang}/riwayat-stok', [BarangController::class, 'getRiwayatStok'])->name('barang.riwayat-stok');
 });
 
 Route::middleware([

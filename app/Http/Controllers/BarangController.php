@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\RiwayatStok;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -79,9 +80,15 @@ class BarangController extends Controller
 
     public function stok()
     {
-        $barang = Barang::latest()->get();
+        $barang = Barang::with(['riwayatStok' => function ($query) {
+            $query->orderBy('created_at', 'desc');
+        }])->get();
+
         return Inertia::render('Barang/stok', [
-            'barang' => $barang
+            'barang' => $barang,
+            'riwayat_stok' => RiwayatStok::with('barang')
+                ->orderBy('created_at', 'desc')
+                ->get()
         ]);
     }
 
@@ -89,20 +96,50 @@ class BarangController extends Controller
     {
         $request->validate([
             'stok_tambah' => 'required|integer|min:1',
-            'keterangan' => 'nullable|string|max:500'
+            'keterangan' => 'nullable|string|max:255'
         ]);
 
-        $barang->update([
-            'stok' => $barang->stok + $request->stok_tambah
+        $barang->stok += $request->stok_tambah;
+        $barang->save();
+
+        // Create riwayat stok record
+        RiwayatStok::create([
+            'barang_id' => $barang->id,
+            'jumlah' => $request->stok_tambah,
+            'tipe' => 'tambah',
+            'keterangan' => $request->keterangan
         ]);
 
-        // Here you could also log the stock addition to a separate table
-        // for audit purposes if needed
-
-        return redirect()->back()
-            ->with('message', "Stok berhasil ditambahkan. Stok baru: {$barang->stok}");
+        return redirect()->back()->with('success', 'Stok berhasil ditambahkan');
     }
 
+    public function kurangiStok(Request $request, Barang $barang)
+    {
+        $request->validate([
+            'stok_kurang' => 'required|integer|min:1|max:' . $barang->stok,
+            'keterangan' => 'nullable|string|max:255'
+        ]);
 
-    
+        $barang->stok -= $request->stok_kurang;
+        $barang->save();
+
+        // Create riwayat stok record
+        RiwayatStok::create([
+            'barang_id' => $barang->id,
+            'jumlah' => $request->stok_kurang,
+            'tipe' => 'kurang',
+            'keterangan' => $request->keterangan
+        ]);
+
+        return redirect()->back()->with('success', 'Stok berhasil dikurangi');
+    }
+
+    public function getRiwayatStok(Barang $barang)
+    {
+        $riwayat = RiwayatStok::where('barang_id', $barang->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($riwayat);
+    }
 }

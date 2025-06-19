@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Package, AlertTriangle, Plus, Minus } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { Package, AlertTriangle, Plus, Minus, Search, History } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
 
 interface Barang {
     id: number;
@@ -19,17 +19,45 @@ interface Barang {
     stok: number;
 }
 
+interface RiwayatStok {
+    id: number;
+    barang_id: number;
+    jumlah: number;
+    keterangan: string;
+    created_at: string;
+    tipe: 'tambah' | 'kurang';
+}
+
 interface Props {
     barang: Barang[];
+    riwayat_stok?: RiwayatStok[];
 }
 
 const props = defineProps<Props>();
 const isDialogOpen = ref(false);
+const isHistoryDialogOpen = ref(false);
 const selectedBarang = ref<Barang | null>(null);
+const searchQuery = ref('');
+const historyFilter = ref<'all' | 'tambah' | 'kurang'>('all');
 
 const form = useForm({
     stok_tambah: '',
     keterangan: ''
+});
+
+const formKurangi = useForm({
+    stok_kurang: '',
+    keterangan: ''
+});
+
+const filteredBarang = computed(() => {
+    if (!searchQuery.value) return props.barang;
+    
+    const query = searchQuery.value.toLowerCase();
+    return props.barang.filter(item => 
+        item.nama_barang.toLowerCase().includes(query) || 
+        item.kode_barang.toLowerCase().includes(query)
+    );
 });
 
 const getStokStatus = (stok: number) => {
@@ -61,10 +89,53 @@ const submitAddStock = () => {
     });
 };
 
+const openKurangiStockDialog = (barang: Barang) => {
+    selectedBarang.value = barang;
+    formKurangi.reset();
+    formKurangi.stok_kurang = '';
+    formKurangi.keterangan = '';
+    isDialogOpen.value = true;
+};
+
+const submitKurangiStock = () => {
+    if (!selectedBarang.value) return;
+    
+    formKurangi.post(route('barang.kurangi-stok', selectedBarang.value.id), {
+        onSuccess: () => {
+            isDialogOpen.value = false;
+            selectedBarang.value = null;
+        }
+    });
+};
+
 const getStokColor = (stok: number) => {
     if (stok === 0) return 'text-red-600';
     if (stok <= 5) return 'text-yellow-600';
     return 'text-green-600';
+};
+
+const openHistoryDialog = (barang: Barang) => {
+    selectedBarang.value = barang;
+    isHistoryDialogOpen.value = true;
+};
+
+const filteredRiwayat = computed(() => {
+    if (!selectedBarang.value || !props.riwayat_stok) return [];
+    let filtered = props.riwayat_stok.filter(riwayat => riwayat.barang_id === selectedBarang.value?.id);
+    
+    if (historyFilter.value !== 'all') {
+        filtered = filtered.filter(riwayat => riwayat.tipe === historyFilter.value);
+    }
+    
+    return filtered;
+});
+
+const getFilteredCount = (type: 'tambah' | 'kurang') => {
+    if (!selectedBarang.value || !props.riwayat_stok) return 0;
+    return props.riwayat_stok.filter(riwayat => 
+        riwayat.barang_id === selectedBarang.value?.id && 
+        riwayat.tipe === type
+    ).length;
 };
 </script>
 
@@ -85,9 +156,19 @@ const getStokColor = (stok: number) => {
                 <div class="p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-medium">Daftar Stok Barang</h2>
-                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                            <AlertTriangle class="h-4 w-4" />
-                            <span>Total: {{ barang.length }} barang</span>
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    v-model="searchQuery"
+                                    placeholder="Cari nama atau kode barang..."
+                                    class="pl-8 w-[300px]"
+                                />
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                <AlertTriangle class="h-4 w-4" />
+                                <span>Total: {{ filteredBarang.length }} barang</span>
+                            </div>
                         </div>
                     </div>
 
@@ -104,7 +185,7 @@ const getStokColor = (stok: number) => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="item in barang" :key="item.id">
+                            <TableRow v-for="item in filteredBarang" :key="item.id">
                                 <TableCell class="font-medium">
                                     {{ item.kode_barang }}
                                 </TableCell>
@@ -128,83 +209,255 @@ const getStokColor = (stok: number) => {
                                     {{ item.deskripsi || '-' }}
                                 </TableCell>
                                 <TableCell class="text-center">
-                                    <Dialog :open="isDialogOpen && selectedBarang?.id === item.id" @update:open="isDialogOpen = $event">
-                                        <DialogTrigger as-child>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm"
-                                                @click="openAddStockDialog(item)"
-                                            >
-                                                <Plus class="h-4 w-4 mr-1" />
-                                                Tambah Stok
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent class="sm:max-w-md">
-                                            <DialogHeader>
-                                                <DialogTitle>Tambah Stok Barang</DialogTitle>
-                                            </DialogHeader>
-                                            <div class="space-y-4">
-                                                <div class="bg-gray-50 p-3 rounded-lg">
-                                                    <p class="text-sm font-medium">Barang: {{ selectedBarang?.nama_barang }}</p>
-                                                    <p class="text-sm text-gray-600">Kode: {{ selectedBarang?.kode_barang }}</p>
-                                                    <p class="text-sm text-gray-600">Stok Saat Ini: {{ selectedBarang?.stok }}</p>
-                                                </div>
-                                                
-                                                <div class="space-y-2">
-                                                    <Label for="stok_tambah">Jumlah Stok yang Ditambahkan</Label>
-                                                    <Input 
-                                                        id="stok_tambah"
-                                                        v-model="form.stok_tambah"
-                                                        type="number"
-                                                        min="1"
-                                                        placeholder="Masukkan jumlah stok"
-                                                        required
-                                                    />
-                                                    <p v-if="form.errors.stok_tambah" class="text-sm text-red-500">
-                                                        {{ form.errors.stok_tambah }}
-                                                    </p>
-                                                </div>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <Dialog :open="isDialogOpen && selectedBarang?.id === item.id" @update:open="isDialogOpen = $event">
+                                            <DialogTrigger as-child>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    @click="openAddStockDialog(item)"
+                                                >
+                                                    <Plus class="h-4 w-4 mr-1" />
+                                                    Tambah Stok
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent class="sm:max-w-md">
+                                                <DialogHeader>
+                                                    <DialogTitle>Tambah Stok Barang</DialogTitle>
+                                                </DialogHeader>
+                                                <div class="space-y-4">
+                                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                                        <p class="text-sm font-medium">Barang: {{ selectedBarang?.nama_barang }}</p>
+                                                        <p class="text-sm text-gray-600">Kode: {{ selectedBarang?.kode_barang }}</p>
+                                                        <p class="text-sm text-gray-600">Stok Saat Ini: {{ selectedBarang?.stok }}</p>
+                                                    </div>
+                                                    
+                                                    <div class="space-y-2">
+                                                        <Label for="stok_tambah">Jumlah Stok yang Ditambahkan</Label>
+                                                        <Input 
+                                                            id="stok_tambah"
+                                                            v-model="form.stok_tambah"
+                                                            type="number"
+                                                            min="1"
+                                                            placeholder="Masukkan jumlah stok"
+                                                            required
+                                                        />
+                                                        <p v-if="form.errors.stok_tambah" class="text-sm text-red-500">
+                                                            {{ form.errors.stok_tambah }}
+                                                        </p>
+                                                    </div>
 
-                                                <div class="space-y-2">
-                                                    <Label for="keterangan">Keterangan (Opsional)</Label>
-                                                    <textarea 
-                                                        id="keterangan"
-                                                        v-model="form.keterangan"
-                                                        rows="3"
-                                                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                        placeholder="Contoh: Pembelian dari supplier, retur barang, dll."
-                                                    />
-                                                    <p v-if="form.errors.keterangan" class="text-sm text-red-500">
-                                                        {{ form.errors.keterangan }}
-                                                    </p>
-                                                </div>
+                                                    <div class="space-y-2">
+                                                        <Label for="keterangan">Keterangan (Opsional)</Label>
+                                                        <textarea 
+                                                            id="keterangan"
+                                                            v-model="form.keterangan"
+                                                            rows="3"
+                                                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                            placeholder="Contoh: Pembelian dari supplier, retur barang, dll."
+                                                        />
+                                                        <p v-if="form.errors.keterangan" class="text-sm text-red-500">
+                                                            {{ form.errors.keterangan }}
+                                                        </p>
+                                                    </div>
 
-                                                <div class="flex justify-end gap-3 pt-4">
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="outline"
-                                                        @click="isDialogOpen = false"
-                                                    >
-                                                        Batal
-                                                    </Button>
-                                                    <Button 
-                                                        type="button"
-                                                        @click="submitAddStock"
-                                                        :disabled="form.processing || !form.stok_tambah"
-                                                    >
-                                                        <Plus class="h-4 w-4 mr-1" />
-                                                        Tambah Stok
-                                                    </Button>
+                                                    <div class="flex justify-end gap-3 pt-4">
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="outline"
+                                                            @click="isDialogOpen = false"
+                                                        >
+                                                            Batal
+                                                        </Button>
+                                                        <Button 
+                                                            type="button"
+                                                            @click="submitAddStock"
+                                                            :disabled="form.processing || !form.stok_tambah"
+                                                        >
+                                                            <Plus class="h-4 w-4 mr-1" />
+                                                            Tambah Stok
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
+                                            </DialogContent>
+                                        </Dialog>
+
+                                        <Dialog :open="isDialogOpen && selectedBarang?.id === item.id" @update:open="isDialogOpen = $event">
+                                            <DialogTrigger as-child>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    @click="openKurangiStockDialog(item)"
+                                                    :disabled="item.stok === 0"
+                                                >
+                                                    <Minus class="h-4 w-4 mr-1" />
+                                                    Kurangi Stok
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent class="sm:max-w-md">
+                                                <DialogHeader>
+                                                    <DialogTitle>Kurangi Stok Barang</DialogTitle>
+                                                </DialogHeader>
+                                                <div class="space-y-4">
+                                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                                        <p class="text-sm font-medium">Barang: {{ selectedBarang?.nama_barang }}</p>
+                                                        <p class="text-sm text-gray-600">Kode: {{ selectedBarang?.kode_barang }}</p>
+                                                        <p class="text-sm text-gray-600">Stok Saat Ini: {{ selectedBarang?.stok }}</p>
+                                                    </div>
+                                                    
+                                                    <div class="space-y-2">
+                                                        <Label for="stok_kurang">Jumlah Stok yang Dikurangi</Label>
+                                                        <Input 
+                                                            id="stok_kurang"
+                                                            v-model="formKurangi.stok_kurang"
+                                                            type="number"
+                                                            :max="selectedBarang?.stok"
+                                                            min="1"
+                                                            placeholder="Masukkan jumlah stok"
+                                                            required
+                                                        />
+                                                        <p v-if="formKurangi.errors.stok_kurang" class="text-sm text-red-500">
+                                                            {{ formKurangi.errors.stok_kurang }}
+                                                        </p>
+                                                    </div>
+
+                                                    <div class="space-y-2">
+                                                        <Label for="keterangan_kurang">Keterangan (Opsional)</Label>
+                                                        <textarea 
+                                                            id="keterangan_kurang"
+                                                            v-model="formKurangi.keterangan"
+                                                            rows="3"
+                                                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                            placeholder="Contoh: Barang rusak, pengembalian, dll."
+                                                        />
+                                                        <p v-if="formKurangi.errors.keterangan" class="text-sm text-red-500">
+                                                            {{ formKurangi.errors.keterangan }}
+                                                        </p>
+                                                    </div>
+
+                                                    <div class="flex justify-end gap-3 pt-4">
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="outline"
+                                                            @click="isDialogOpen = false"
+                                                        >
+                                                            Batal
+                                                        </Button>
+                                                        <Button 
+                                                            type="button"
+                                                            variant="destructive"
+                                                            @click="submitKurangiStock"
+                                                            :disabled="formKurangi.processing || !formKurangi.stok_kurang"
+                                                        >
+                                                            <Minus class="h-4 w-4 mr-1" />
+                                                            Kurangi Stok
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+
+                                        <Dialog :open="isHistoryDialogOpen && selectedBarang?.id === item.id" @update:open="isHistoryDialogOpen = $event">
+                                            <DialogTrigger as-child>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    @click="openHistoryDialog(item)"
+                                                >
+                                                    <History class="h-4 w-4 mr-1" />
+                                                    Riwayat
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent class="sm:max-w-2xl">
+                                                <DialogHeader>
+                                                    <DialogTitle>Riwayat Stok Barang</DialogTitle>
+                                                </DialogHeader>
+                                                <div class="space-y-4">
+                                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                                        <p class="text-sm font-medium">Barang: {{ selectedBarang?.nama_barang }}</p>
+                                                        <p class="text-sm text-gray-600">Kode: {{ selectedBarang?.kode_barang }}</p>
+                                                        <p class="text-sm text-gray-600">Stok Saat Ini: {{ selectedBarang?.stok }}</p>
+                                                    </div>
+
+                                                    <div class="flex items-center gap-4">
+                                                        <div class="flex items-center gap-2">
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                :class="{ 'bg-primary text-primary-foreground': historyFilter === 'all' }"
+                                                                @click="historyFilter = 'all'"
+                                                            >
+                                                                Semua
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                :class="{ 'bg-green-100 text-green-700': historyFilter === 'tambah' }"
+                                                                @click="historyFilter = 'tambah'"
+                                                            >
+                                                                <Plus class="h-4 w-4 mr-1" />
+                                                                Penambahan ({{ getFilteredCount('tambah') }})
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                :class="{ 'bg-red-100 text-red-700': historyFilter === 'kurang' }"
+                                                                @click="historyFilter = 'kurang'"
+                                                            >
+                                                                <Minus class="h-4 w-4 mr-1" />
+                                                                Pengurangan ({{ getFilteredCount('kurang') }})
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Tanggal</TableHead>
+                                                                <TableHead>Jumlah</TableHead>
+                                                                <TableHead>Tipe</TableHead>
+                                                                <TableHead>Keterangan</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            <TableRow v-for="riwayat in filteredRiwayat" :key="riwayat.id">
+                                                                <TableCell>{{ new Date(riwayat.created_at).toLocaleString() }}</TableCell>
+                                                                <TableCell>
+                                                                    <span :class="['font-semibold', riwayat.tipe === 'tambah' ? 'text-green-600' : 'text-red-600']">
+                                                                        {{ riwayat.tipe === 'tambah' ? '+' : '-' }}{{ riwayat.jumlah }}
+                                                                    </span>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge :variant="riwayat.tipe === 'tambah' ? 'default' : 'destructive'">
+                                                                        {{ riwayat.tipe === 'tambah' ? 'Penambahan' : 'Pengurangan' }}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell>{{ riwayat.keterangan || '-' }}</TableCell>
+                                                            </TableRow>
+                                                        </TableBody>
+                                                    </Table>
+
+                                                    <div v-if="filteredRiwayat.length === 0" class="text-center py-4">
+                                                        <History class="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                                        <p class="text-muted-foreground">
+                                                            {{ historyFilter === 'all' 
+                                                                ? 'Belum ada riwayat stok' 
+                                                                : historyFilter === 'tambah' 
+                                                                    ? 'Belum ada riwayat penambahan stok' 
+                                                                    : 'Belum ada riwayat pengurangan stok' 
+                                                            }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
 
-                    <div v-if="barang.length === 0" class="text-center py-8">
+                    <div v-if="filteredBarang.length === 0" class="text-center py-8">
                         <Package class="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <p class="text-muted-foreground">Belum ada data barang</p>
                     </div>

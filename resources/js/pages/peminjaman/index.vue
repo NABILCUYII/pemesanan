@@ -28,7 +28,7 @@ interface PeminjamanItem {
     nama_barang: string;
     kode_barang: string;
     jumlah: number;
-    status: 'pending' | 'approved' | 'rejected' | 'completed';
+    status: 'pending' | 'approved' | 'rejected' | 'completed' | 'returned' | 'not_returned';
     tanggal_peminjaman: string;
     tanggal_pengembalian: string;
     due_date: string;
@@ -84,6 +84,8 @@ const getStatusVariant = (status: string) => {
         case 'approved': return 'default';
         case 'rejected': return 'destructive';
         case 'completed': return 'outline';
+        case 'returned': return 'default';
+        case 'not_returned': return 'secondary';
         default: return 'secondary';
     }
 };
@@ -94,6 +96,8 @@ const getStatusText = (status: string) => {
         case 'approved': return 'Disetujui';
         case 'rejected': return 'Ditolak';
         case 'completed': return 'Selesai';
+        case 'returned': return 'Sudah Dikembalikan';
+        case 'not_returned': return 'Belum Dikembalikan';
         default: return status;
     }
 };
@@ -103,6 +107,42 @@ const deletePeminjaman = (id: number) => {
         router.delete(route('peminjaman.destroy', id));
     }
 };
+
+const markAsReturned = (id: number) => {
+    console.log('markAsReturned called with id:', id);
+    if (confirm('Apakah Anda yakin ingin menandai item ini sebagai sudah dikembalikan?')) {
+        console.log('Sending request to mark as returned...');
+        router.put(route('peminjaman.mark-returned', id), {}, {
+            onSuccess: () => {
+                console.log('Successfully marked as returned');
+                // Refresh the page to show updated status
+                router.reload();
+            },
+            onError: (errors) => {
+                console.error('Error marking as returned:', errors);
+                alert('Gagal menandai item sebagai sudah dikembalikan. Silakan coba lagi.');
+            }
+        });
+    }
+};
+
+const markAsNotReturned = (id: number) => {
+    console.log('markAsNotReturned called with id:', id);
+    if (confirm('Apakah Anda yakin ingin menandai item ini sebagai belum dikembalikan?')) {
+        console.log('Sending request to mark as not returned...');
+        router.put(route('peminjaman.mark-not-returned', id), {}, {
+            onSuccess: () => {
+                console.log('Successfully marked as not returned');
+                // Refresh the page to show updated status
+                router.reload();
+            },
+            onError: (errors) => {
+                console.error('Error marking as not returned:', errors);
+                alert('Gagal menandai item sebagai belum dikembalikan. Silakan coba lagi.');
+            }
+        });
+    }
+};
 </script>
 
 <template>
@@ -110,10 +150,20 @@ const deletePeminjaman = (id: number) => {
     <AppLayout>
         <div class="p-4 md:p-6 space-y-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div>
-                    <h1 class="text-2xl font-semibold text-gray-800">Daftar Peminjaman</h1>
-                    <p v-if="!isAdmin" class="text-sm text-gray-500 mt-1">Menampilkan peminjaman Anda</p>
-                    <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua peminjaman</p>
+                <div class="flex items-center gap-4">
+                    <Link :href="route('peminjaman.index')">
+                        <Button variant="outline" class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                            Kembali
+                        </Button>
+                    </Link>
+                    <div>
+                        <h1 class="text-2xl font-semibold text-gray-800">Daftar Peminjaman</h1>
+                        <p v-if="!isAdmin" class="text-sm text-gray-500 mt-1">Menampilkan peminjaman Anda</p>
+                        <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua peminjaman</p>
+                    </div>
                 </div>
                 <Link :href="route('peminjaman.create')">
                     <Button class="w-full sm:w-auto">
@@ -142,8 +192,15 @@ const deletePeminjaman = (id: number) => {
                     <option value="pending">Menunggu</option>
                     <option value="approved">Disetujui</option>
                     <option value="rejected">Ditolak</option>
-                    <option value="completed">Selesai</option>
+                    <option value="returned">Sudah Dikembalikan</option>
                 </select>
+                <div class="flex gap-2">
+                    <Link :href="route('peminjaman.returned')">
+                        <Button variant="outline" class="w-full md:w-auto">
+                            Sudah Dikembalikan
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <!-- Table (untuk desktop) -->
@@ -195,6 +252,26 @@ const deletePeminjaman = (id: number) => {
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'approved'"
+                                            @click="markAsReturned(item.id)"
+                                            class="text-green-600 hover:text-green-800"
+                                            title="Sudah Dikembalikan"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20 6L9 17l-5-5"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'not_returned'"
+                                            @click="markAsReturned(item.id)"
+                                            class="text-green-600 hover:text-green-800"
+                                            title="Sudah Dikembalikan"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20 6L9 17l-5-5"/>
+                                            </svg>
                                         </button>
                                     </div>
                                 </TableCell>
@@ -252,6 +329,26 @@ const deletePeminjaman = (id: number) => {
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'approved'"
+                                            @click="markAsReturned(item.id)"
+                                            class="text-green-600 hover:text-green-800"
+                                            title="Sudah Dikembalikan"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20 6L9 17l-5-5"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'not_returned'"
+                                            @click="markAsReturned(item.id)"
+                                            class="text-green-600 hover:text-green-800"
+                                            title="Sudah Dikembalikan"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20 6L9 17l-5-5"/>
+                                            </svg>
                                         </button>
                                     </div>
                                 </div>

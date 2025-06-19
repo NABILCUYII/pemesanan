@@ -26,4 +26,12 @@ class Barang extends Model
     {
         return $this->hasMany(Peminjaman::class);
     }
+
+    /**
+     * Get the riwayat stok for the barang.
+     */
+    public function riwayatStok(): HasMany
+    {
+        return $this->hasMany(RiwayatStok::class);
+    }
 }

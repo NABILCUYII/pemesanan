@@ -29,6 +29,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import axios from 'axios';
+import { Badge } from '@/components/ui/badge';
 
 interface User {
     id: number;
@@ -102,7 +103,8 @@ const getStatusVariant = (status: string) => {
         case 'approved': return 'default';
         case 'rejected': return 'destructive';
         case 'completed': return 'outline';
-        case 'returned': return 'success';
+        case 'returned': return 'default';
+        case 'not_returned': return 'secondary';
         default: return 'secondary';
     }
 };
@@ -174,6 +176,37 @@ const downloadPDF = async () => {
         } else {
             alert(`Error: ${errorMessage}\nPlease check the server logs for more details.`);
         }
+    }
+};
+
+const downloadUserReport = async (userId: number, userName: string) => {
+    try {
+        const response = await axios.get('/laporan/download-user', {
+            params: {
+                user_id: userId,
+                month: selectedMonth.value,
+                year: selectedYear.value
+            },
+            responseType: 'blob'
+        });
+
+        // Create a blob from the PDF Stream
+        const file = new Blob([response.data], { type: 'application/pdf' });
+        const fileURL = window.URL.createObjectURL(file);
+        
+        // Create a link element and trigger download
+        const link = document.createElement('a');
+        link.href = fileURL;
+        link.setAttribute('download', `laporan-${userName}-${selectedMonth.value}-${selectedYear.value}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        link.remove();
+        window.URL.revokeObjectURL(fileURL);
+    } catch (error: any) {
+        console.error('Error downloading user PDF:', error);
+        alert('Gagal mengunduh laporan perorang. Silakan coba lagi.');
     }
 };
 
@@ -298,6 +331,86 @@ const isUserExpanded = (userId: number) => {
                                             class="h-4 w-4"
                                         />
                                     </Button>
+                                </TableCell>
+                            </TableRow>
+                            <!-- Expanded content for each user -->
+                            <TableRow v-for="user in filteredUsers" :key="`expanded-${user.id}`" v-show="isUserExpanded(user.id)">
+                                <TableCell colspan="4" class="p-0">
+                                    <div class="bg-muted/50 p-4 space-y-4">
+                                        <!-- Header with download button -->
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold">Detail Laporan: {{ user.name }}</h3>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                @click="downloadUserReport(user.id, user.name)"
+                                            >
+                                                <Download class="w-4 h-4 mr-2" />
+                                                Download Laporan
+                                            </Button>
+                                        </div>
+                                        
+                                        <!-- Permintaan Details -->
+                                        <div v-if="user.permintaan && user.permintaan.length > 0">
+                                            <h4 class="font-semibold mb-2">Detail Permintaan</h4>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Barang</TableHead>
+                                                        <TableHead>Jumlah</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead>Tanggal</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    <TableRow v-for="permintaan in user.permintaan" :key="permintaan.id">
+                                                        <TableCell>{{ permintaan.nama_barang }}</TableCell>
+                                                        <TableCell>{{ permintaan.jumlah }}</TableCell>
+                                                        <TableCell>
+                                                            <Badge :variant="getStatusVariant(permintaan.status)">
+                                                                {{ getStatusText(permintaan.status) }}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>{{ formatDate(permintaan.created_at) }}</TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                        
+                                        <!-- Peminjaman Details -->
+                                        <div v-if="user.peminjaman && user.peminjaman.length > 0">
+                                            <h4 class="font-semibold mb-2">Detail Peminjaman</h4>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Barang</TableHead>
+                                                        <TableHead>Jumlah</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead>Tanggal Pinjam</TableHead>
+                                                        <TableHead>Tanggal Kembali</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    <TableRow v-for="peminjaman in user.peminjaman" :key="peminjaman.id">
+                                                        <TableCell>{{ peminjaman.nama_barang }}</TableCell>
+                                                        <TableCell>{{ peminjaman.jumlah }}</TableCell>
+                                                        <TableCell>
+                                                            <Badge :variant="getStatusVariant(peminjaman.status)">
+                                                                {{ getStatusText(peminjaman.status) }}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>{{ formatDate(peminjaman.tanggal_peminjaman) }}</TableCell>
+                                                        <TableCell>{{ formatDate(peminjaman.tanggal_pengembalian) }}</TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                        
+                                        <!-- No data message -->
+                                        <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0)" class="text-center py-4 text-muted-foreground">
+                                            Tidak ada data permintaan atau peminjaman untuk periode ini.
+                                        </div>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         </TableBody>

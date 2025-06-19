@@ -215,4 +215,145 @@ class PeminjamanController extends Controller
             return redirect()->back()->with('error', 'Gagal menghapus peminjaman: ' . $e->getMessage());
         }
     }
+
+    public function returned()
+    {
+        $user = auth()->user();
+        
+        $peminjaman = Peminjaman::with(['user', 'barang'])
+            ->where('status', 'returned')
+            ->when(!$user->isAdmin(), function ($query) use ($user) {
+                return $query->where('user_id', $user->id);
+            })
+            ->latest()
+            ->get();
+        
+        $grouped = $peminjaman->groupBy('user.name');
+        
+        $result = $grouped->map(function ($items, $userName) {
+            return [
+                'user' => $userName,
+                'items' => $items->map(function ($item) {
+                    return [
+                        'nama_barang' => $item->barang->nama_barang,
+                        'kode_barang' => $item->barang->kode_barang,
+                        'jumlah' => $item->jumlah,
+                        'status' => $item->status,
+                        'id' => $item->id,
+                        'tanggal_peminjaman' => $item->tanggal_peminjaman,
+                        'tanggal_pengembalian' => $item->tanggal_pengembalian,
+                        'due_date' => $item->due_date,
+                        'keterangan' => $item->keterangan,
+                    ];
+                })->values()
+            ];
+        })->values();
+        
+        return Inertia::render('peminjaman/index', [
+            'peminjaman' => $result,
+            'isAdmin' => $user->isAdmin()
+        ]);
+    }
+
+    public function notReturned()
+    {
+        $user = auth()->user();
+        
+        $peminjaman = Peminjaman::with(['user', 'barang'])
+            ->where('status', 'not_returned')
+            ->when(!$user->isAdmin(), function ($query) use ($user) {
+                return $query->where('user_id', $user->id);
+            })
+            ->latest()
+            ->get();
+        
+        $grouped = $peminjaman->groupBy('user.name');
+        
+        $result = $grouped->map(function ($items, $userName) {
+            return [
+                'user' => $userName,
+                'items' => $items->map(function ($item) {
+                    return [
+                        'nama_barang' => $item->barang->nama_barang,
+                        'kode_barang' => $item->barang->kode_barang,
+                        'jumlah' => $item->jumlah,
+                        'status' => $item->status,
+                        'id' => $item->id,
+                        'tanggal_peminjaman' => $item->tanggal_peminjaman,
+                        'tanggal_pengembalian' => $item->tanggal_pengembalian,
+                        'due_date' => $item->due_date,
+                        'keterangan' => $item->keterangan,
+                    ];
+                })->values()
+            ];
+        })->values();
+        
+        return Inertia::render('peminjaman/index', [
+            'peminjaman' => $result,
+            'isAdmin' => $user->isAdmin()
+        ]);
+    }
+
+    public function markAsReturned(Peminjaman $peminjaman)
+    {
+        // Only admin can mark items as returned
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Only approved or not_returned items can be marked as returned
+        if (!in_array($peminjaman->status, ['approved', 'not_returned'])) {
+            return redirect()->back()->with('error', 'Hanya peminjaman yang sudah disetujui atau belum dikembalikan yang dapat ditandai sebagai dikembalikan');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update peminjaman status
+            $peminjaman->update([
+                'status' => 'returned',
+                'tanggal_pengembalian' => now()
+            ]);
+
+            // Return the stock (only if it was previously approved and not returned)
+            if ($peminjaman->status === 'approved') {
+                $barang = $peminjaman->barang;
+                $barang->update([
+                    'stok' => $barang->stok + $peminjaman->jumlah
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->back()->with('message', 'Item berhasil ditandai sebagai sudah dikembalikan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menandai item: ' . $e->getMessage());
+        }
+    }
+
+    public function markAsNotReturned(Peminjaman $peminjaman)
+    {
+        // Only admin can mark items as not returned
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Only approved items can be marked as not returned
+        if ($peminjaman->status !== 'approved') {
+            return redirect()->back()->with('error', 'Hanya peminjaman yang sudah disetujui yang dapat ditandai sebagai belum dikembalikan');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update peminjaman status
+            $peminjaman->update([
+                'status' => 'not_returned'
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('message', 'Item berhasil ditandai sebagai belum dikembalikan');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menandai item: ' . $e->getMessage());
+        }
+    }
 }
