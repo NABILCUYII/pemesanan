@@ -5,7 +5,10 @@ use Inertia\Inertia;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\PermintaanController;
+use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\SelamatDatangController;
+use App\Http\Controllers\RiwayatController;
+use App\Http\Controllers\LaporanController; // Tambahkan controller Laporan jika belum ada
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -20,6 +23,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('selamat-datang', [SelamatDatangController::class, 'index'])->name('SelamatDatang');
 });
 
+// Rute Users
 Route::middleware(['auth'])->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::get('users/create', [UserController::class, 'create'])->name('users.create');
@@ -29,6 +33,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
+// Rute Barang
 Route::middleware(['auth'])->group(function () {
     Route::get('barang', [BarangController::class, 'index'])->name('barang.index');
     Route::get('barang/create', [BarangController::class, 'create'])->name('barang.create');
@@ -40,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('barang/{barang}/add-stok', [BarangController::class, 'addStok'])->name('barang.add-stok');
 });
 
+// Rute Permintaan
 Route::middleware(['auth'])->group(function () {
     Route::get('permintaan', [PermintaanController::class, 'index'])->name('permintaan.index');
     Route::get('permintaan/create', [PermintaanController::class, 'create'])->name('permintaan.create');
@@ -50,6 +56,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('permintaan/{permintaan}/edit', [PermintaanController::class, 'edit'])->name('permintaan.edit');
     Route::put('permintaan/{permintaan}', [PermintaanController::class, 'update'])->name('permintaan.update');
     Route::delete('permintaan/{permintaan}', [PermintaanController::class, 'destroy'])->name('permintaan.destroy');
+});
+
+// Rute Peminjaman
+Route::middleware(['auth'])->group(function () {
+    Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+    Route::get('peminjaman/create', [PeminjamanController::class, 'create'])->name('peminjaman.create');
+    Route::post('peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
+    Route::get('peminjaman/{peminjaman}/edit', [PeminjamanController::class, 'edit'])->name('peminjaman.edit');
+    Route::put('peminjaman/{peminjaman}', [PeminjamanController::class, 'update'])->name('peminjaman.update');
+    Route::delete('peminjaman/{peminjaman}', [PeminjamanController::class, 'destroy'])->name('peminjaman.destroy');
+});
+
+// Rute Riwayat
+Route::middleware(['auth'])->group(function () {
+    Route::get('riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
+});
+
+// Rute Laporan
+Route::middleware(['auth'])->group(function () {
+    Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
 });
 
 require __DIR__.'/settings.php';

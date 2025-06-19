@@ -1,9 +1,10 @@
 ﻿<script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Clock, Users, AlertCircle, Sparkles, ArrowUpRight, Star } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -12,40 +13,51 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const stats = [
+// Ambil data statistik dan aktivitas terbaru dari props (Inertia)
+const page = usePage();
+
+const stats = computed(() => page.props.stats ?? [
   {
     title: 'Total Barang',
-    value: '567',
+    value: '0',
     icon: Package,
-    change: '+8%',
+    change: '0%',
     trend: 'up',
     color: 'from-blue-500 to-blue-600',
   },
   {
     title: 'Barang Dipinjam',
-    value: '123',
+    value: '0',
     icon: Clock,
-    change: '+5%',
+    change: '0%',
     trend: 'up',
     color: 'from-purple-500 to-purple-600',
   },
   {
     title: 'Total Pengguna',
-    value: '89',
+    value: '0',
     icon: Users,
-    change: '+12%',
+    change: '0%',
     trend: 'up',
     color: 'from-green-500 to-green-600',
   },
   {
     title: 'Barang Rusak',
-    value: '5',
+    value: '0',
     icon: AlertCircle,
-    change: '-2%',
+    change: '0%',
     trend: 'down',
     color: 'from-red-500 to-red-600',
   },
-];
+]);
+
+const recentActivities = computed(() => page.props.recentActivities ?? [
+  {
+    title: 'Tidak ada aktivitas',
+    description: 'Belum ada aktivitas terbaru.',
+    time: '',
+  },
+]);
 </script>
 
 <template>
@@ -114,8 +126,8 @@ const stats = [
         <CardContent class="p-6">
           <div class="space-y-6">
             <div
-              v-for="(i, index) in 3"
-              :key="i"
+              v-for="(activity, index) in recentActivities"
+              :key="index"
               class="group flex items-start gap-4 rounded-xl p-4 transition-all duration-300 hover:bg-white/5 animate-fade-in"
               :style="{ animationDelay: `${index * 200}ms` }"
             >
@@ -126,9 +138,9 @@ const stats = [
                 </div>
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-white">Aktivitas {{ i }}</p>
-                <p class="mt-1 text-xs text-white/60">Deskripsi aktivitas {{ i }}</p>
-                <p class="mt-2 text-xs text-white/40">2 jam yang lalu</p>
+                <p class="text-sm font-medium text-white">{{ activity.title }}</p>
+                <p class="mt-1 text-xs text-white/60">{{ activity.description }}</p>
+                <p v-if="activity.time" class="mt-2 text-xs text-white/40">{{ activity.time }}</p>
               </div>
             </div>
           </div>
