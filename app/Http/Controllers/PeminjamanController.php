@@ -39,6 +39,9 @@ class PeminjamanController extends Controller
                         'tanggal_pengembalian' => $item->tanggal_pengembalian,
                         'due_date' => $item->due_date,
                         'keterangan' => $item->keterangan,
+                        'kondisi_barang' => $item->kondisi_barang,
+                        'catatan_pengembalian' => $item->catatan_pengembalian,
+                        'returned_at' => $item->returned_at,
                     ];
                 })->values()
             ];
@@ -121,7 +124,8 @@ class PeminjamanController extends Controller
                     'keluar', 
                     $peminjaman->jumlah, 
                     $keterangan,
-                    "Peminjaman #" . $peminjaman->id
+                    "Peminjaman #" . $peminjaman->id,
+                    $peminjaman->user_id
                 );
                 
                 $message = 'Peminjaman berhasil disetujui';
@@ -222,6 +226,105 @@ class PeminjamanController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghapus peminjaman: ' . $e->getMessage());
+        }
+    }
+
+    public function return(Peminjaman $peminjaman)
+    {
+        // Check if peminjaman is approved and not already returned
+        if ($peminjaman->status !== 'approved') {
+            return redirect()->back()->with('error', 'Hanya peminjaman yang disetujui yang dapat dikembalikan');
+        }
+
+        if ($peminjaman->tanggal_pengembalian) {
+            return redirect()->back()->with('error', 'Peminjaman ini sudah dikembalikan');
+        }
+
+        return Inertia::render('peminjaman/return', [
+            'peminjaman' => $peminjaman->load(['user', 'barang'])
+        ]);
+    }
+
+    public function processReturn(Request $request, Peminjaman $peminjaman)
+    {
+        // Validasi input
+        $request->validate([
+            'tanggal_pengembalian' => 'required|date|after_or_equal:' . $peminjaman->tanggal_peminjaman,
+            'kondisi_barang' => 'required|in:baik,rusak_ringan,rusak_berat',
+            'catatan_pengembalian' => 'nullable|string|max:500'
+        ]);
+
+        // Hitung jumlah yang dikembalikan berdasarkan kondisi
+        $jumlahDikembalikan = match($request->kondisi_barang) {
+            'baik' => $peminjaman->jumlah,
+            'rusak_ringan' => floor($peminjaman->jumlah * 0.5),
+            'rusak_berat' => 0,
+            default => 0
+        };
+
+        // Update peminjaman
+        $peminjaman->update([
+            'status' => 'returned',
+            'tanggal_pengembalian' => $request->tanggal_pengembalian,
+            'kondisi_barang' => $request->kondisi_barang,
+            'catatan_pengembalian' => $request->catatan_pengembalian,
+            'jumlah_dikembalikan' => $jumlahDikembalikan,
+            'returned_at' => now(),
+            'returned_by' => auth()->id()
+        ]);
+
+        // Update stok barang dan buat log
+        $barang = $peminjaman->barang;
+        $keterangan = "Pengembalian peminjaman - Kondisi: " . ucfirst(str_replace('_', ' ', $request->kondisi_barang));
+        if ($request->catatan_pengembalian) {
+            $keterangan .= " - " . $request->catatan_pengembalian;
+        }
+        
+        $barang->addStokLog(
+            'masuk',
+            $jumlahDikembalikan,
+            $keterangan,
+            "Pengembalian Peminjaman #" . $peminjaman->id,
+            $peminjaman->user_id
+        );
+
+        return redirect()->back()->with('success', 'Pengembalian berhasil diproses!');
+    }
+
+    public function returns()
+    {
+        $returns = Peminjaman::with(['barang', 'user'])
+            ->where('status', 'returned')
+            ->orderBy('returned_at', 'desc')
+            ->get()
+            ->map(function ($peminjaman) {
+                return [
+                    'id' => $peminjaman->id,
+                    'nama_barang' => $peminjaman->barang->nama_barang,
+                    'kode_barang' => $peminjaman->barang->kode_barang,
+                    'nama_peminjam' => $peminjaman->user->name,
+                    'jumlah' => $peminjaman->jumlah,
+                    'jumlah_dikembalikan' => $peminjaman->jumlah_dikembalikan,
+                    'kondisi_barang' => $peminjaman->kondisi_barang,
+                    'tanggal_peminjaman' => $peminjaman->tanggal_peminjaman,
+                    'tanggal_pengembalian' => $peminjaman->tanggal_pengembalian,
+                    'catatan_pengembalian' => $peminjaman->catatan_pengembalian,
+                ];
+            });
+
+        return Inertia::render('peminjaman/returns', [
+            'returns' => $returns
+        ]);
+    }
+
+    private function calculateReturnedAmount(Peminjaman $peminjaman)
+    {
+        if ($peminjaman->kondisi_barang === 'rusak_ringan') {
+            return $peminjaman->jumlah * 0.5; // 50% stok kembali
+        } elseif ($peminjaman->kondisi_barang === 'rusak_berat') {
+            return 0; // Tidak ada stok yang dikembalikan
+        } else {
+            return $peminjaman->jumlah; // 100% stok kembali
         }
     }
 }

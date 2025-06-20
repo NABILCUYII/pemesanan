@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,6 +77,13 @@ const filteredUsers = computed(() => {
         user.name.toLowerCase().includes(query)
     );
 });
+
+// Watch for changes in selectedMonth and selectedYear
+watch([selectedMonth, selectedYear], ([newMonth, newYear]) => {
+    if (newMonth && newYear) {
+        updateReport();
+    }
+}, { deep: true });
 
 const updateReport = () => {
     router.get(route('laporan.index'), {
@@ -170,7 +177,7 @@ const isUserExpanded = (userId: number) => {
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div class="space-y-2">
                                 <Label for="month" class="text-sm font-medium">Bulan</Label>
-                                <Select v-model="selectedMonth" @update:modelValue="updateReport">
+                                <Select v-model="selectedMonth">
                                     <SelectTrigger class="h-11">
                                         <SelectValue :placeholder="months[selectedMonth]" />
                                     </SelectTrigger>
@@ -183,7 +190,7 @@ const isUserExpanded = (userId: number) => {
                             </div>
                             <div class="space-y-2">
                                 <Label for="year" class="text-sm font-medium">Tahun</Label>
-                                <Select v-model="selectedYear" @update:modelValue="updateReport">
+                                <Select v-model="selectedYear">
                                     <SelectTrigger class="h-11">
                                         <SelectValue :placeholder="selectedYear" />
                                     </SelectTrigger>
@@ -481,7 +488,7 @@ const isUserExpanded = (userId: number) => {
                         </span>
                         Laporan Pergerakan Stok
                     </CardTitle>
-                    <CardDescription class="text-base">Analisis perubahan stok barang berdasarkan permintaan dan peminjaman dalam periode yang dipilih</CardDescription>
+                    <CardDescription class="text-base">Analisis pergerakan stok barang dengan stok awal (pertama kali masuk) dan stok akhir (total stok saat ini) dalam periode yang dipilih</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <!-- Mobile view - Card layout -->
@@ -495,11 +502,11 @@ const isUserExpanded = (userId: number) => {
                                 
                                 <div class="grid grid-cols-2 gap-3 text-sm">
                                     <div class="bg-muted/30 rounded-md p-3">
-                                        <div class="text-muted-foreground text-xs">Stok Awal</div>
+                                        <div class="text-muted-foreground text-xs">Stok Awal (Pertama Masuk)</div>
                                         <div class="font-semibold">{{ item.stok_awal }}</div>
                                     </div>
                                     <div class="bg-muted/30 rounded-md p-3">
-                                        <div class="text-muted-foreground text-xs">Stok Akhir</div>
+                                        <div class="text-muted-foreground text-xs">Stok Akhir (Total Saat Ini)</div>
                                         <div class="font-semibold">{{ item.stok_akhir }}</div>
                                     </div>
                                     <div class="bg-muted/30 rounded-md p-3">
@@ -526,11 +533,11 @@ const isUserExpanded = (userId: number) => {
                                 <TableHeader>
                                     <TableRow class="bg-muted/50 hover:bg-muted/50">
                                         <TableHead class="font-semibold text-base py-4">Informasi Barang</TableHead>
-                                        <TableHead class="font-semibold text-base py-4 text-center">Stok Awal</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Stok Awal<br><span class="text-xs font-normal text-muted-foreground">(Pertama Masuk)</span></TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Permintaan Keluar</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Peminjaman Keluar</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Peminjaman Kembali</TableHead>
-                                        <TableHead class="font-semibold text-base py-4 text-center">Stok Akhir</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Stok Akhir<br><span class="text-xs font-normal text-muted-foreground">(Total Saat Ini)</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

@@ -64,9 +64,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
     Route::get('peminjaman/create', [PeminjamanController::class, 'create'])->name('peminjaman.create');
     Route::post('peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
+    Route::post('peminjaman/approve', [PeminjamanController::class, 'approve'])->name('peminjaman.approve');
     Route::get('peminjaman/{peminjaman}/edit', [PeminjamanController::class, 'edit'])->name('peminjaman.edit');
     Route::put('peminjaman/{peminjaman}', [PeminjamanController::class, 'update'])->name('peminjaman.update');
     Route::delete('peminjaman/{peminjaman}', [PeminjamanController::class, 'destroy'])->name('peminjaman.destroy');
+    Route::get('peminjaman/{peminjaman}/return', [PeminjamanController::class, 'return'])->name('peminjaman.return');
+    Route::post('peminjaman/{peminjaman}/return', [PeminjamanController::class, 'processReturn'])->name('peminjaman.process-return');
+    Route::get('peminjaman-returns', [PeminjamanController::class, 'returns'])->name('peminjaman.returns');
+    Route::get('/peminjaman/returns', [PeminjamanController::class, 'returns'])->name('peminjaman.returns');
+    Route::post('/peminjaman/{peminjaman}/return', [PeminjamanController::class, 'processReturn'])->name('peminjaman.process-return');
 });
 
 // Rute Riwayat

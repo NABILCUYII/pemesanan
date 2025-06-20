@@ -26,7 +26,7 @@ class Barang extends Model
         return $this->hasMany(StokLog::class);
     }
 
-    public function addStokLog($jenis, $jumlah, $keterangan = null, $referensi = null)
+    public function addStokLog($jenis, $jumlah, $keterangan = null, $referensi = null, $user_id = null)
     {
         $stokSebelum = $this->stok;
         
@@ -36,10 +36,15 @@ class Barang extends Model
             $this->stok -= $jumlah;
         }
         
+        // Ensure stok is not negative
+        if ($this->stok < 0) {
+            $this->stok = 0;
+        }
+        
         $this->save();
 
         return $this->stokLogs()->create([
-            'user_id' => auth()->id(),
+            'user_id' => $user_id ?? auth()->id(),
             'jenis' => $jenis,
             'jumlah' => $jumlah,
             'stok_sebelum' => $stokSebelum,

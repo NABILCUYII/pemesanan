@@ -21,6 +21,22 @@
             margin: 5px 0;
             color: #666;
         }
+        .pendahuluan {
+            margin-bottom: 30px;
+            text-align: justify;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #007bff;
+        }
+        .pendahuluan h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .pendahuluan p {
+            margin: 0 0 8px 0;
+            text-indent: 20px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -65,6 +81,15 @@
         <h1>Laporan Bulanan</h1>
         <p>Periode: {{ $month }} {{ $year }}</p>
         <p>Tanggal Cetak: {{ $generatedAt ?? date('d/m/Y H:i:s') }}</p>
+    </div>
+
+    <div class="pendahuluan">
+        <h2>PENDAHULUAN</h2>
+        <p>Laporan bulanan ini disusun untuk memberikan gambaran komprehensif mengenai aktivitas pemesanan dan peminjaman barang dalam sistem manajemen inventori selama periode {{ $month }} {{ $year }}. Laporan ini mencakup data transaksi perorang dan pergerakan stok barang yang terjadi dalam sistem.</p>
+        
+        <p>Tujuan penyusunan laporan ini adalah untuk memantau efektivitas pengelolaan inventori, menganalisis pola penggunaan barang oleh pengguna, serta memberikan informasi yang akurat untuk pengambilan keputusan terkait pengadaan dan pengelolaan stok barang di masa mendatang.</p>
+        
+        <p>Ruang lingkup laporan meliputi seluruh transaksi permintaan dan peminjaman barang yang telah diproses dalam sistem, termasuk status persetujuan, jumlah barang yang diminta/dipinjam, serta pergerakan stok yang terjadi selama periode pelaporan.</p>
     </div>
 
     <div class="section">
@@ -141,11 +166,11 @@
             <thead>
                 <tr>
                     <th>Barang</th>
-                    <th>Stok Awal</th>
+                    <th>Stok Awal<br><small>(Pertama Masuk)</small></th>
                     <th>Permintaan Keluar</th>
                     <th>Peminjaman Keluar</th>
                     <th>Peminjaman Kembali</th>
-                    <th>Stok Akhir</th>
+                    <th>Stok Akhir<br><small>(Total Saat Ini)</small></th>
                 </tr>
             </thead>
             <tbody>

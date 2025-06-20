@@ -25,6 +25,23 @@
             margin: 5px 0 0 0;
             font-size: 12px;
         }
+        .pendahuluan {
+            margin-bottom: 25px;
+            text-align: justify;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #007bff;
+        }
+        .pendahuluan h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        .pendahuluan p {
+            margin: 0 0 8px 0;
+            text-indent: 20px;
+            font-size: 11px;
+        }
         .user-info {
             background-color: #f9f9f9;
             padding: 10px;
@@ -87,6 +104,12 @@
         <p>{{ $title }}</p>
         <p>Periode: {{ $month }} {{ $year }}</p>
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
+    </div>
+
+    <div class="pendahuluan">
+        <h3>Pendahuluan</h3>
+        <p>Laporan ini dibuat untuk memberikan gambaran tentang aktivitas pengguna dalam menggunakan sistem pemesanan barang. Laporan ini mencakup detail permintaan barang dan peminjaman barang yang telah dilakukan oleh pengguna.</p>
+        <p>Laporan ini dapat digunakan untuk analisis tren permintaan barang, efektivitas peminjaman barang, dan evaluasi kinerja pengguna.</p>
     </div>
 
     <div class="user-info">

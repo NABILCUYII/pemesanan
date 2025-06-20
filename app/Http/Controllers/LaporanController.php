@@ -72,14 +72,25 @@ class LaporanController extends Controller
             });
 
         // Get stock movement data
-        $stokAwal = Barang::sum('stok');
         $stokChanges = DB::table('barang')
             ->select('barang.id', 'barang.nama_barang', 'barang.kode_barang', 'barang.stok')
             ->get()
             ->map(function ($barang) use ($month, $year) {
+                // Get initial stock (first stock entry)
+                $initialStock = DB::table('stok_logs')
+                    ->where('barang_id', $barang->id)
+                    ->where('jenis', 'masuk')
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+                
+                // If no stock logs exist, use current stock as initial stock
+                $stokAwal = $initialStock ? $initialStock->jumlah : $barang->stok;
+                
+                // Get transactions for the selected period
                 $permintaanKeluarQuery = Permintaan::where('barang_id', $barang->id)->where('status', 'approved');
                 $peminjamanKeluarQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'approved');
                 $peminjamanKembaliQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'returned');
+                
                 if ($month) {
                     $permintaanKeluarQuery->whereMonth('created_at', $month);
                     $peminjamanKeluarQuery->whereMonth('created_at', $month);
@@ -90,18 +101,20 @@ class LaporanController extends Controller
                     $peminjamanKeluarQuery->whereYear('created_at', $year);
                     $peminjamanKembaliQuery->whereYear('tanggal_pengembalian', $year);
                 }
+                
                 $permintaanKeluar = $permintaanKeluarQuery->sum('jumlah');
                 $peminjamanKeluar = $peminjamanKeluarQuery->sum('jumlah');
                 $peminjamanKembali = $peminjamanKembaliQuery->sum('jumlah');
+                
                 return [
                     'id' => $barang->id,
                     'nama_barang' => $barang->nama_barang,
                     'kode_barang' => $barang->kode_barang,
-                    'stok_awal' => $barang->stok,
+                    'stok_awal' => $stokAwal,
                     'permintaan_keluar' => $permintaanKeluar,
                     'peminjaman_keluar' => $peminjamanKeluar,
                     'peminjaman_kembali' => $peminjamanKembali,
-                    'stok_akhir' => $barang->stok - $permintaanKeluar - $peminjamanKeluar + $peminjamanKembali,
+                    'stok_akhir' => $barang->stok, // Current total stock
                 ];
             });
 
@@ -189,9 +202,21 @@ class LaporanController extends Controller
                 ->select('barang.id', 'barang.nama_barang', 'barang.kode_barang', 'barang.stok')
                 ->get()
                 ->map(function ($barang) use ($month, $year) {
+                    // Get initial stock (first stock entry)
+                    $initialStock = DB::table('stok_logs')
+                        ->where('barang_id', $barang->id)
+                        ->where('jenis', 'masuk')
+                        ->orderBy('created_at', 'asc')
+                        ->first();
+                    
+                    // If no stock logs exist, use current stock as initial stock
+                    $stokAwal = $initialStock ? $initialStock->jumlah : $barang->stok;
+                    
+                    // Get transactions for the selected period
                     $permintaanKeluarQuery = Permintaan::where('barang_id', $barang->id)->where('status', 'approved');
                     $peminjamanKeluarQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'approved');
                     $peminjamanKembaliQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'returned');
+                    
                     if ($month) {
                         $permintaanKeluarQuery->whereMonth('created_at', $month);
                         $peminjamanKeluarQuery->whereMonth('created_at', $month);
@@ -202,18 +227,20 @@ class LaporanController extends Controller
                         $peminjamanKeluarQuery->whereYear('created_at', $year);
                         $peminjamanKembaliQuery->whereYear('tanggal_pengembalian', $year);
                     }
+                    
                     $permintaanKeluar = $permintaanKeluarQuery->sum('jumlah');
                     $peminjamanKeluar = $peminjamanKeluarQuery->sum('jumlah');
                     $peminjamanKembali = $peminjamanKembaliQuery->sum('jumlah');
+                    
                     return [
                         'id' => $barang->id,
                         'nama_barang' => $barang->nama_barang,
                         'kode_barang' => $barang->kode_barang,
-                        'stok_awal' => $barang->stok,
+                        'stok_awal' => $stokAwal,
                         'permintaan_keluar' => $permintaanKeluar,
                         'peminjaman_keluar' => $peminjamanKeluar,
                         'peminjaman_kembali' => $peminjamanKembali,
-                        'stok_akhir' => $barang->stok - $permintaanKeluar - $peminjamanKeluar + $peminjamanKembali,
+                        'stok_akhir' => $barang->stok, // Current total stock
                     ];
                 });
 

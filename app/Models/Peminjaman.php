@@ -18,6 +18,10 @@ class Peminjaman extends Model
         'tanggal_pengembalian',
         'due_date',
         'status',
+        'kondisi_barang',
+        'catatan_pengembalian',
+        'returned_by',
+        'returned_at',
     ];
 
     /**
@@ -40,9 +44,20 @@ class Peminjaman extends Model
         return $this->belongsTo(Barang::class);
     }
 
+    /**
+     * Get the user who processed the return
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function returnedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'returned_by');
+    }
+
     protected $casts = [
         'tanggal_peminjaman' => 'date',
         'tanggal_pengembalian' => 'date',
         'due_date' => 'date',
+        'returned_at' => 'datetime',
     ];
 }

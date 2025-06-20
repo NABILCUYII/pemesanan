@@ -196,7 +196,8 @@ class PermintaanController extends Controller
                     'keluar', 
                     $permintaan->jumlah, 
                     $keterangan,
-                    "Permintaan #" . $permintaan->id
+                    "Permintaan #" . $permintaan->id,
+                    $permintaan->user_id
                 );
                 
                 $message = 'Permintaan berhasil disetujui';
