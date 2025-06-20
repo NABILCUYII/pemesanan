@@ -20,4 +20,32 @@ class Barang extends Model
     {
         return $this->hasMany(Peminjaman::class);
     }
+
+    public function stokLogs()
+    {
+        return $this->hasMany(StokLog::class);
+    }
+
+    public function addStokLog($jenis, $jumlah, $keterangan = null, $referensi = null)
+    {
+        $stokSebelum = $this->stok;
+        
+        if ($jenis === 'masuk') {
+            $this->stok += $jumlah;
+        } else {
+            $this->stok -= $jumlah;
+        }
+        
+        $this->save();
+
+        return $this->stokLogs()->create([
+            'user_id' => auth()->id(),
+            'jenis' => $jenis,
+            'jumlah' => $jumlah,
+            'stok_sebelum' => $stokSebelum,
+            'stok_sesudah' => $this->stok,
+            'keterangan' => $keterangan,
+            'referensi' => $referensi
+        ]);
+    }
 }

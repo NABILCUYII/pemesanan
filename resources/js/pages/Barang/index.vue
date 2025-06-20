@@ -1,11 +1,19 @@
 ﻿<script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Search } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 
 const props = defineProps<{
     barang: {
@@ -28,6 +36,17 @@ const filteredBarang = computed(() => {
         const matchesKategori = !selectedKategori.value || item.kategori === selectedKategori.value;
         return matchesSearch && matchesKategori;
     });
+});
+
+const groupedBarang = computed(() => {
+    return filteredBarang.value.reduce((acc, item) => {
+        const key = item.kategori;
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(item);
+        return acc;
+    }, {} as Record<string, typeof props.barang>);
 });
 
 const deleteBarang = (id: number) => {
@@ -72,81 +91,75 @@ const deleteBarang = (id: number) => {
                 </select>
             </div>
 
-            <!-- TABEL (untuk md ke atas) -->
-            <div class="bg-white rounded-lg border hidden md:block">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Kode</TableHead>
-                            <TableHead>Nama</TableHead>
-                            <TableHead>Kategori</TableHead>
-                            <TableHead>Stok</TableHead>
-                            <TableHead>Deskripsi</TableHead>
-                            <TableHead class="text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow v-for="item in filteredBarang" :key="item.id">
-                            <TableCell>{{ item.kode_barang }}</TableCell>
-                            <TableCell>{{ item.nama_barang }}</TableCell>
-                            <TableCell>
-                                <span :class="[
-                                    'px-2 py-1 rounded-full text-xs font-semibold',
-                                    item.kategori === 'peminjaman'
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : 'bg-green-100 text-green-700'
-                                ]">
-                                    {{ item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}
-                                </span>
-                            </TableCell>
-                            <TableCell>{{ item.stok }}</TableCell>
-                            <TableCell>{{ item.deskripsi }}</TableCell>
-                            <TableCell class="text-right space-x-2">
-                                <Link :href="route('barang.edit', item.id)">
-                                    <Button variant="outline" size="sm">
-                                        <Pencil class="w-4 h-4" />
-                                    </Button>
-                                </Link>
-                                <Button variant="destructive" size="sm" @click="deleteBarang(item.id)">
-                                    <Trash2 class="w-4 h-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </div>
-
-            <!-- CARD (untuk hp/sm) -->
-            <div class="space-y-4 md:hidden">
-                <div
-                    v-for="item in filteredBarang"
-                    :key="item.id"
-                    class="border rounded-lg p-4 bg-white shadow-sm"
-                >
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="font-semibold text-lg">{{ item.nama_barang }}</h2>
-                        <span :class="[
-                            'px-2 py-1 text-xs rounded-full font-medium',
-                            item.kategori === 'peminjaman'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-green-100 text-green-700'
-                        ]">
-                            {{ item.kategori }}
-                        </span>
+            <!-- Card Grid Layout -->
+            <div class="space-y-8">
+                <template v-if="Object.keys(groupedBarang).length > 0">
+                    <div v-for="(items, kategori) in groupedBarang" :key="kategori" class="space-y-4">
+                        <h2 class="font-semibold text-2xl text-gray-800 capitalize">
+                           {{ kategori === 'peminjaman' ? 'Barang Peminjaman' : 'Barang Habis Pakai (Permintaan)' }}
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            <div
+                                v-for="item in items"
+                                :key="item.id"
+                                class="rounded-lg shadow-lg flex flex-col transition-transform transform hover:-translate-y-1"
+                                :class="[item.kategori === 'peminjaman' ? 'bg-blue-50' : 'bg-green-50']"
+                            >
+                                <div class="p-5 flex-grow">
+                                    <h3 class="font-bold text-lg mb-2 text-gray-800">{{ item.nama_barang }}</h3>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded-full font-medium whitespace-nowrap',
+                                        item.kategori === 'peminjaman'
+                                            ? 'bg-blue-200 text-blue-800'
+                                            : 'bg-green-200 text-green-800'
+                                    ]">
+                                        {{ item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}
+                                    </span>
+                                </div>
+                                <div class="p-5 bg-white rounded-b-lg border-t">
+                                    <Dialog>
+                                        <DialogTrigger as-child>
+                                            <Button class="w-full">
+                                                <Eye class="w-4 h-4 mr-2" />
+                                                Lihat Detail
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent class="sm:max-w-lg">
+                                            <DialogHeader>
+                                                <DialogTitle>{{ item.nama_barang }}</DialogTitle>
+                                                <DialogDescription>
+                                                   Detail lengkap untuk barang. Klik tombol aksi di bawah jika diperlukan.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div class="space-y-3 py-4 text-sm">
+                                               <p><strong>Kode Barang:</strong> {{ item.kode_barang }}</p>
+                                               <p><strong>Kategori:</strong> <span class="capitalize">{{ item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}</span></p>
+                                               <p><strong>Stok Tersedia:</strong> {{ item.stok }}</p>
+                                               <div>
+                                                   <p class="font-semibold"><strong>Deskripsi:</strong></p>
+                                                   <p class="text-gray-600">{{ item.deskripsi || 'Tidak ada deskripsi.' }}</p>
+                                               </div>
+                                            </div>
+                                            <DialogFooter class="flex flex-col sm:flex-row gap-2 mt-4">
+                                                <Link :href="route('barang.edit', item.id)" class="w-full sm:w-auto">
+                                                    <Button variant="outline" class="w-full">
+                                                        <Pencil class="w-4 h-4 mr-2" /> Edit
+                                                    </Button>
+                                                </Link>
+                                                <Button variant="destructive" @click="deleteBarang(item.id)" class="w-full sm:w-auto">
+                                                    <Trash2 class="w-4 h-4 mr-2" /> Hapus
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mb-1"><strong>Kode:</strong> {{ item.kode_barang }}</p>
-                    <p class="text-sm text-gray-500 mb-1"><strong>Stok:</strong> {{ item.stok }}</p>
-                    <p class="text-sm text-gray-500 mb-3"><strong>Deskripsi:</strong> {{ item.deskripsi }}</p>
-                    <div class="flex gap-2 justify-end">
-                        <Link :href="route('barang.edit', item.id)">
-                            <Button variant="outline" size="sm">
-                                <Pencil class="w-4 h-4" />
-                            </Button>
-                        </Link>
-                        <Button variant="destructive" size="sm" @click="deleteBarang(item.id)">
-                            <Trash2 class="w-4 h-4" />
-                        </Button>
-                    </div>
+                </template>
+                 <div v-else class="text-center py-16 text-gray-500 bg-white rounded-lg border">
+                    <p class="text-xl">Tidak ada barang ditemukan.</p>
+                    <p>Coba ubah kata kunci pencarian atau filter kategori Anda.</p>
                 </div>
             </div>
         </div>

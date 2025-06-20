@@ -186,9 +186,18 @@ class PermintaanController extends Controller
                     'approved_at' => now()
                 ]);
                 
-                $barang->update([
-                    'stok' => $barang->stok - $permintaan->jumlah
-                ]);
+                // Menggunakan sistem log stok
+                $keterangan = "Permintaan disetujui oleh " . auth()->user()->name;
+                if ($request->catatan) {
+                    $keterangan .= " - " . $request->catatan;
+                }
+                
+                $barang->addStokLog(
+                    'keluar', 
+                    $permintaan->jumlah, 
+                    $keterangan,
+                    "Permintaan #" . $permintaan->id
+                );
                 
                 $message = 'Permintaan berhasil disetujui';
             } else {

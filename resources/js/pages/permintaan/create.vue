@@ -1,205 +1,326 @@
 ﻿<script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, computed, watch } from 'vue';
-import { BadgeCheck, Package, Layers, FileText, Save, ArrowLeft, Sparkles, Info, Loader2 } from 'lucide-vue-next';
-import { Link } from '@inertiajs/vue3';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useForm } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
+import AppLayout from '@/layouts/AppLayout.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { ArrowLeft, Package, Search, Check, Plus, Trash2 } from 'lucide-vue-next'
+
+interface Barang {
+    id: number
+    kode_barang: string
+    nama_barang: string
+    kategori: 'peminjaman' | 'permintaan'
+    stok: number
+    deskripsi?: string
+}
+
+interface RequestItem {
+    id: string
+    barang_id: string
+    jumlah: string
+    keterangan: string
+    selectedBarang: Barang | null
+}
 
 const props = defineProps<{
-    barang: {
-        id: number;
-        nama_barang: string;
-        stok: number;
-        kategori: string;
-        deskripsi: string;
-    }[];
-}>();
+    barang: Barang[]
+}>()
 
 const form = useForm({
-    barang_id: '',
-    jumlah: '',
-    keterangan: ''
-});
+    requests: [] as RequestItem[]
+})
 
-const isSuccess = ref(false);
-const isError = ref(false);
-const isPreview = ref(false);
-const isLoading = ref(false);
+const showDropdown = ref<string | null>(null)
+const searchQuery = ref('')
 
-const selectedBarang = computed(() => {
-    return props.barang.find(b => b.id.toString() === form.barang_id) || null;
-});
+const filteredBarang = computed(() => {
+    return props.barang.filter(item => 
+        item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        item.kode_barang.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+})
 
-watch(() => form.barang_id, (val) => {
-    if (val && selectedBarang.value) {
-        form.jumlah = '';
-        form.keterangan = '';
-        isPreview.value = true;
-    } else {
-        isPreview.value = false;
+// Initialize with one empty request
+const initializeForm = () => {
+    form.requests = [{
+        id: generateId(),
+        barang_id: '',
+        jumlah: '',
+        keterangan: '',
+        selectedBarang: null
+    }]
+}
+
+const generateId = () => {
+    return Math.random().toString(36).substr(2, 9)
+}
+
+const addRequest = () => {
+    form.requests.push({
+        id: generateId(),
+        barang_id: '',
+        jumlah: '',
+        keterangan: '',
+        selectedBarang: null
+    })
+}
+
+const removeRequest = (index: number) => {
+    if (form.requests.length > 1) {
+        form.requests.splice(index, 1)
     }
-});
+}
 
-const handlePreview = () => {
-    isPreview.value = !!form.barang_id;
-};
+const handleBarangSelect = (requestIndex: number, barang: Barang) => {
+    form.requests[requestIndex].selectedBarang = barang
+    form.requests[requestIndex].barang_id = barang.id.toString()
+    showDropdown.value = null
+    searchQuery.value = ''
+}
 
-const submit = () => {
-    if (!form.barang_id || !form.jumlah) {
-        isError.value = true;
-        setTimeout(() => isError.value = false, 2000);
-        return;
+const toggleDropdown = (requestId: string) => {
+    showDropdown.value = showDropdown.value === requestId ? null : requestId
+    if (showDropdown.value) {
+        searchQuery.value = ''
     }
-    isLoading.value = true;
-    form.post(route('permintaan.store'), {
+}
+
+const submitPermintaan = () => {
+    // Filter out empty requests
+    const validRequests = form.requests.filter(req => req.barang_id && req.jumlah)
+
+    if (validRequests.length === 0) {
+        alert('Minimal harus ada satu permintaan yang valid')
+        return
+    }
+
+    // Assign the transformed valid requests back to the form object
+    form.requests = validRequests.map(req => ({
+        barang_id: req.barang_id,
+        jumlah: req.jumlah,
+        keterangan: req.keterangan,
+        status: 'pending'
+    }))
+
+    // Send multiple requests directly using form.post, without the 'data' option
+    form.post(route('permintaan.store-multiple'), {
         onSuccess: () => {
-            isSuccess.value = true;
-            form.reset();
-            isPreview.value = false;
-            setTimeout(() => isSuccess.value = false, 2000);
+            form.reset()
+            initializeForm()
         },
-        onFinish: () => {
-            isLoading.value = false;
+        onError: (errors) => {
+            // This will display validation errors if any
+            console.error('Form submission errors:', errors);
         }
-    });
+    })
+}
+
+const handleClickOutside = (event: Event) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown-container')) {
+        showDropdown.value = null;
+    }
 };
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+    initializeForm();
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
-    <Head title="Permintaan Barang" />
-
+    <Head title="Buat Permintaan" />
     <AppLayout>
-        <div class="min-h-screen bg-gradient-to-br from-indigo-300 via-blue-200 to-purple-200 py-12 px-2 sm:px-0 relative overflow-x-hidden">
-            <div class="max-w-3xl mx-auto relative z-10">
-                <!-- Header -->
-                <div class="flex items-center gap-4 mb-10">
-                    <Link :href="route('permintaan.index')" class="text-indigo-500 hover:text-indigo-700 transition">
-                        <ArrowLeft class="h-8 w-8" />
-                    </Link>
-                    <h1 class="text-4xl font-extrabold flex items-center gap-3 text-gray-800 tracking-tight">
-                        <span class="bg-gradient-to-tr from-indigo-300 via-blue-200 to-purple-200 rounded-full p-3 shadow-lg border-4 border-white/70">
-                            <Package class="h-10 w-10 text-indigo-600" />
-                        </span>
-                        <span class="flex items-center gap-2">
-                            Permintaan Barang
-                        </span>
-                        <BadgeCheck v-if="isSuccess" class="w-8 h-8 text-green-400" />
-                    </h1>
+        <div class="p-4 md:p-6 space-y-6">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <Link :href="route('permintaan.index')" class="text-muted-foreground hover:text-foreground">
+                            <ArrowLeft class="h-5 w-5" />
+                        </Link>
+                        <h1 class="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+                            <Package class="h-6 w-6" />
+                            Buat Permintaan Barang
+                        </h1>
+                    </div>
+                    <p class="text-muted-foreground">Buat permintaan barang untuk kebutuhan operasional</p>
                 </div>
-                <div class="mb-12">
-                    <p class="text-xl text-gray-600 font-medium">
-                        Ajukan permintaan barang dengan fitur interaktif.
-                    </p>
-                </div>
+            </div>
 
-                <div class="bg-white/95 shadow-2xl rounded-3xl border border-gray-100 p-10 relative overflow-hidden">
-                    <h2 class="text-2xl font-extrabold mb-10 text-indigo-700 flex items-center gap-3 tracking-tight">
-                        <span class="inline-block w-2 h-8 bg-gradient-to-b from-indigo-500 to-purple-400 rounded-r mr-2"></span>
-                        Form Permintaan Barang
-                    </h2>
-                    
-                    <form @submit.prevent="submit" class="space-y-8 z-10 relative">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <!-- Pilih Barang -->
-                            <div class="space-y-2">
-                                <Label for="barang_id" class="font-semibold flex items-center gap-2 text-gray-700">
-                                    <Layers class="w-5 h-5 text-indigo-500" /> Pilih Barang
-                                </Label>
-                                <Select v-model="form.barang_id" @update:modelValue="handlePreview">
-                                    <SelectTrigger class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all" :class="form.errors.barang_id ? 'border-red-500' : ''">
-                                        <SelectValue placeholder="Pilih barang" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="item in props.barang" :key="item.id" :value="item.id.toString()">
-                                            <span class="flex flex-col">
-                                                <span class="font-semibold">{{ item.nama_barang }}</span>
-                                                <span class="text-xs text-gray-500">Stok: {{ item.stok }} | {{ item.kategori }}</span>
-                                            </span>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p v-if="form.errors.barang_id" class="text-sm text-red-500 mt-1">
-                                    {{ form.errors.barang_id }}
-                                </p>
-                            </div>
-                            <!-- Jumlah -->
-                            <div class="space-y-2">
-                                <Label for="jumlah" class="font-semibold flex items-center gap-2 text-gray-700">
-                                    <Layers class="w-5 h-5 text-indigo-500" /> Jumlah
-                                </Label>
-                                <Input 
-                                    id="jumlah"
-                                    v-model="form.jumlah"
-                                    type="number"
-                                    min="1"
-                                    :max="selectedBarang && selectedBarang.stok ? selectedBarang.stok : undefined"
-                                    placeholder="Masukkan jumlah permintaan"
-                                    class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all"
-                                    required
-                                    :class="form.errors.jumlah ? 'border-red-500' : ''"
-                                />
-                                <p v-if="form.errors.jumlah" class="text-sm text-red-500 mt-1">
-                                    {{ form.errors.jumlah }}
-                                </p>
-                                <p v-if="selectedBarang" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                    <Info class="w-4 h-4 text-indigo-400" /> Stok tersedia: <span class="font-semibold">{{ selectedBarang.stok }}</span>
-                                </p>
-                            </div>
-                            <!-- Keterangan -->
-                            <div class="space-y-2 md:col-span-2">
-                                <Label for="keterangan" class="font-semibold flex items-center gap-2 text-gray-700">
-                                    <FileText class="w-5 h-5 text-indigo-500" /> Keterangan (Opsional)
-                                </Label>
-                                <Input 
-                                    id="keterangan"
-                                    v-model="form.keterangan"
-                                    type="text"
-                                    placeholder="Tulis keterangan tambahan (opsional)"
-                                    class="h-12 px-4 rounded-xl border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all"
-                                    :class="form.errors.keterangan ? 'border-red-500' : ''"
-                                />
-                                <p v-if="form.errors.keterangan" class="text-sm text-red-500 mt-1">
-                                    {{ form.errors.keterangan }}
-                                </p>
+            <!-- Form Container -->
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg border p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-medium">Form Permintaan Barang</h2>
+                        <div class="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                @click="addRequest"
+                            >
+                                <Plus class="w-4 h-4 mr-1" />
+                                
+                            </Button>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="submitPermintaan" class="space-y-6">
+                        <!-- Dynamic Requests -->
+                        <div class="space-y-4">
+                            <div
+                                v-for="(request, index) in form.requests"
+                                :key="request.id"
+                                class="border rounded-lg p-4 bg-gray-50"
+                            >
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-medium">Barang #{{ index + 1 }}</h3>
+                                    <Button
+                                        v-if="form.requests.length > 1"
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        @click="removeRequest(index)"
+                                    >
+                                        <Trash2 class="w-4 h-4" />
+                                    </Button>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- PILIH BARANG -->
+                                    <div class="space-y-1 dropdown-container">
+                                        <Label>Pilih Barang *</Label>
+                                        <div class="relative">
+                                            <button
+                                                type="button"
+                                                @click="toggleDropdown(request.id)"
+                                                class="w-full text-left rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                :class="request.selectedBarang ? 'text-foreground' : 'text-muted-foreground'"
+                                            >
+                                                <div v-if="request.selectedBarang" class="flex items-center justify-between">
+                                                    <span>{{ request.selectedBarang.nama_barang }} ({{ request.selectedBarang.kode_barang }})</span>
+                                                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                                        Stok: {{ request.selectedBarang.stok }}
+                                                    </span>
+                                                </div>
+                                                <span v-else>Pilih barang...</span>
+                                            </button>
+
+                                            <!-- Dropdown -->
+                                            <div
+                                                v-if="showDropdown === request.id"
+                                                class="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                            >
+                                                <!-- Search -->
+                                                <div class="p-2 border-b">
+                                                    <div class="relative">
+                                                        <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                        <input
+                                                            v-model="searchQuery"
+                                                            type="text"
+                                                            placeholder="Cari barang..."
+                                                            class="w-full pl-10 pr-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            @click.stop
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <!-- Results -->
+                                                <div class="max-h-48 overflow-y-auto">
+                                                    <button
+                                                        v-for="item in filteredBarang"
+                                                        :key="item.id"
+                                                        type="button"
+                                                        @click="handleBarangSelect(index, item)"
+                                                        class="w-full text-left p-3 hover:bg-gray-50 border-b last:border-b-0"
+                                                    >
+                                                        <div class="flex items-center justify-between">
+                                                            <div>
+                                                                <div class="font-medium">{{ item.nama_barang }}</div>
+                                                                <div class="text-sm text-gray-500">{{ item.kode_barang }}</div>
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="text-xs px-2 py-1 rounded-full"
+                                                                      :class="item.kategori === 'peminjaman' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'">
+                                                                    {{ item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}
+                                                                </span>
+                                                                <Check v-if="request.selectedBarang?.id === item.id" class="w-4 h-4 text-blue-600" />
+                                                            </div>
+                                                        </div>
+                                                    </button>
+
+                                                    <!-- No Results -->
+                                                    <div v-if="filteredBarang.length === 0" class="p-4 text-center text-gray-500">
+                                                        Tidak ada barang ditemukan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p v-if="form.errors.barang_id" class="text-sm text-red-500">
+                                            {{ form.errors.barang_id }}
+                                        </p>
+                                    </div>
+
+                                    <!-- JUMLAH -->
+                                    <div class="space-y-1">
+                                        <Label>Jumlah yang Diminta *</Label>
+                                        <Input
+                                            v-model="request.jumlah"
+                                            type="number"
+                                            min="1"
+                                            :max="request.selectedBarang?.stok || 1"
+                                            placeholder="Masukkan jumlah"
+                                            required
+                                        />
+                                        <p class="text-sm text-muted-foreground">Maksimal: {{ request.selectedBarang?.stok || 0 }} unit</p>
+                                        <p v-if="form.errors.jumlah" class="text-sm text-red-500">
+                                            {{ form.errors.jumlah }}
+                                        </p>
+                                    </div>
+
+                                    <!-- KETERANGAN -->
+                                    <div class="space-y-1 md:col-span-2">
+                                        <Label>Keterangan (Opsional)</Label>
+                                        <textarea
+                                            v-model="request.keterangan"
+                                            rows="4"
+                                            placeholder="Jelaskan alasan atau detail permintaan barang ini"
+                                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                        ></textarea>
+                                        <p v-if="form.errors.keterangan" class="text-sm text-red-500">
+                                            {{ form.errors.keterangan }}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <!-- Preview Barang -->
-                        <div v-if="isPreview && selectedBarang" class="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 border border-indigo-100 rounded-2xl p-6 mb-6">
-                            <h3 class="font-bold text-indigo-700 mb-2 flex items-center gap-2">
-                                <Package class="w-5 h-5" /> Detail Barang
-                            </h3>
-                            <div class="text-gray-700 text-sm grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div><span class="font-semibold">Nama:</span> {{ selectedBarang.nama_barang }}</div>
-                                <div><span class="font-semibold">Kategori:</span> {{ selectedBarang.kategori }}</div>
-                                <div><span class="font-semibold">Stok:</span> {{ selectedBarang.stok }}</div>
-                                <div class="sm:col-span-2"><span class="font-semibold">Deskripsi:</span> {{ selectedBarang.deskripsi }}</div>
-                            </div>
-                        </div>
-                        </transition>
-                        <div class="flex justify-between items-center gap-4">
-                            <Button type="button" variant="outline" class="h-12 px-8 rounded-xl flex items-center gap-2" @click="form.reset(); isPreview = false" :disabled="form.processing || isLoading">
+
+                        <!-- Tombol -->
+                        <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                            <Button
+                                type="submit"
+                                :disabled="form.processing"
+                                class="flex-1"
+                            >
+                                {{ form.processing ? 'Mengirim...' : `Kirim ${form.requests.length} Permintaan` }}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="flex-1"
+                                @click="initializeForm"
+                            >
                                 Reset
                             </Button>
-                            <Button type="submit" class="h-12 px-8 rounded-xl flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg hover:scale-105 transition-transform" :disabled="form.processing || isLoading">
-                                <Loader2 v-if="isLoading" class="w-5 h-5 animate-spin" />
-                                <Save v-else class="w-5 h-5" /> Ajukan Permintaan
-                            </Button>
                         </div>
-                        <transition name="fade">
-                            <div v-if="isSuccess" class="fixed top-6 right-6 bg-green-100 border border-green-300 text-green-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-bounce-in">
-                                <BadgeCheck class="w-6 h-6 text-green-500" />
-                                Permintaan berhasil diajukan!
-                            </div>
-                        </transition>
-                        <transition name="fade">
-                            <div v-if="isError" class="fixed top-6 right-6 bg-red-100 border border-red-300 text-red-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-shake">
-                                Mohon lengkapi semua data yang diperlukan.
-                            </div>
-                        </transition>
                     </form>
                 </div>
             </div>
@@ -208,41 +329,13 @@ const submit = () => {
 </template>
 
 <style scoped>
-@keyframes gradient-x {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-.animate-gradient-x {
-  background-size: 200% 200%;
-  animation: gradient-x 3s ease-in-out infinite;
-}
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.4s;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(16px);}
-  to { opacity: 1; transform: translateY(0);}
-}
-.animate-fade-in {
-  animation: fade-in 0.5s;
-}
-@keyframes bounce-in {
-  0% { transform: scale(0.7); opacity: 0; }
-  60% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); }
-}
-.animate-bounce-in {
-  animation: bounce-in 0.6s;
-}
-@keyframes shake {
-  0%, 100% { transform: translateX(0);}
-  20%, 60% { transform: translateX(-8px);}
-  40%, 80% { transform: translateX(8px);}
-}
-.animate-shake {
-  animation: shake 0.5s;
+/* Close dropdown when clicking outside */
+.dropdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
 }
 </style>

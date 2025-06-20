@@ -28,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface User {
     id: number;
@@ -101,7 +102,8 @@ const getStatusVariant = (status: string) => {
         case 'approved': return 'default';
         case 'rejected': return 'destructive';
         case 'completed': return 'outline';
-        case 'returned': return 'success';
+        case 'returned': return 'default';
+        case 'not_returned': return 'secondary';
         default: return 'secondary';
     }
 };
@@ -115,11 +117,6 @@ const getStatusText = (status: string) => {
         case 'returned': return 'Dikembalikan';
         default: return status;
     }
-};
-
-const downloadReport = () => {
-    // TODO: Implement report download functionality
-    alert('Fitur download laporan akan segera hadir!');
 };
 
 const expandedUsers = ref<number[]>([]);
@@ -141,227 +138,433 @@ const isUserExpanded = (userId: number) => {
 <template>
     <Head title="Laporan" />
     <AppLayout>
-        <div class="p-6 space-y-6">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div class="p-3 sm:p-6 space-y-4 sm:space-y-8">
+            <!-- Header Section -->
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b">
                 <div>
-                    <h1 class="text-2xl font-semibold flex items-center gap-2">
-                        <FileText class="h-6 w-6" />
-                        Laporan
+                    <h1 class="text-xl sm:text-3xl font-bold flex items-center gap-3 text-gray-900">
+                        <FileText class="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                        Laporan Sistem
                     </h1>
-                    <p class="text-muted-foreground">Laporan permintaan, peminjaman, dan stok barang</p>
+                    <p class="text-muted-foreground text-sm sm:text-base mt-2">Laporan komprehensif permintaan, peminjaman, dan pergerakan stok barang</p>
                 </div>
-                <Button @click="downloadReport">
-                    <Download class="w-4 h-4 mr-2" />
-                    Download Laporan
-                </Button>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a :href="route('laporan.download', { month: selectedMonth, year: selectedYear })" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 sm:h-11 px-4 sm:px-6 py-2 w-full sm:w-auto shadow-sm">
+                        <Download class="w-4 h-4 mr-2" />
+                        Download Laporan PDF
+                    </a>
+                </div>
             </div>
 
-            <!-- Filter -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Filter Laporan</CardTitle>
-                    <CardDescription>Pilih periode laporan yang ingin ditampilkan</CardDescription>
+            <!-- Filter Section -->
+            <Card class="border-2 border-gray-100 shadow-sm">
+                <CardHeader class="pb-4">
+                    <CardTitle class="flex items-center gap-2 text-lg">
+                        <Calendar class="h-5 w-5 text-primary" />
+                        Filter Periode Laporan
+                    </CardTitle>
+                    <CardDescription class="text-base">Pilih periode laporan yang ingin ditampilkan dan analisis</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <div class="flex-1">
-                            <Label for="month">Bulan</Label>
-                            <Select v-model="selectedMonth" @update:modelValue="updateReport">
-                                <SelectTrigger>
-                                    <SelectValue :placeholder="months[selectedMonth]" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="(name, value) in months" :key="value" :value="value">
-                                        {{ name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div class="flex-1">
-                            <Label for="year">Tahun</Label>
-                            <Select v-model="selectedYear" @update:modelValue="updateReport">
-                                <SelectTrigger>
-                                    <SelectValue :placeholder="selectedYear" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem v-for="year in years" :key="year" :value="year">
-                                        {{ year }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                    <div class="flex flex-col gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="space-y-2">
+                                <Label for="month" class="text-sm font-medium">Bulan</Label>
+                                <Select v-model="selectedMonth" @update:modelValue="updateReport">
+                                    <SelectTrigger class="h-11">
+                                        <SelectValue :placeholder="months[selectedMonth]" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="(name, value) in months" :key="value" :value="value">
+                                            {{ name }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="space-y-2">
+                                <Label for="year" class="text-sm font-medium">Tahun</Label>
+                                <Select v-model="selectedYear" @update:modelValue="updateReport">
+                                    <SelectTrigger class="h-11">
+                                        <SelectValue :placeholder="selectedYear" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem v-for="year in years" :key="year" :value="year">
+                                            {{ year }}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div class="flex items-end">
+                                <div class="text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md w-full">
+                                    Periode: {{ months[selectedMonth] }} {{ selectedYear }}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <!-- Laporan per User -->
-            <Card>
-                <CardHeader>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <CardTitle>Laporan per User</CardTitle>
-                            <CardDescription>Data permintaan dan peminjaman per user</CardDescription>
-                        </div>
-                        <div class="relative w-full sm:w-64">
-                            <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <!-- Laporan perorang -->
+            <Card class="border-2 border-gray-100 shadow-sm">
+                <CardHeader class="pb-4">
+                    <CardTitle class="flex items-center gap-3 text-xl">
+                        <User class="h-6 w-6 text-primary" />
+                        Laporan Aktivitas Per Pengguna
+                    </CardTitle>
+                    <CardDescription class="text-base">Daftar lengkap aktivitas permintaan dan peminjaman per pengguna dalam periode yang dipilih</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div class="mb-6">
+                        <div class="relative max-w-md">
+                            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 v-model="searchQuery"
-                                placeholder="Cari user..."
-                                class="pl-8"
+                                placeholder="Cari nama pengguna..."
+                                class="pl-10 h-11 border-2 focus:border-primary"
                             />
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div class="space-y-6">
-                        <div v-if="filteredUsers.length === 0" class="text-center py-8 text-muted-foreground">
-                            Tidak ada user yang ditemukan
-                        </div>
-                        <div v-for="user in filteredUsers" :key="user.id" class="border rounded-lg overflow-hidden">
-                            <div 
-                                class="bg-gray-50 p-4 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                                @click="toggleUser(user.id)"
-                            >
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="bg-primary/10 p-2 rounded-full">
-                                            <User class="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 class="font-semibold">{{ user.name }}</h3>
-                                            <div class="flex gap-4 text-sm text-muted-foreground mt-1">
-                                                <span>Total Permintaan: {{ user.total_permintaan }}</span>
-                                                <span>Total Peminjaman: {{ user.total_peminjaman }}</span>
+                    
+                    <!-- Mobile view - Card layout -->
+                    <div class="block md:hidden space-y-4">
+                        <div v-for="user in filteredUsers" :key="user.id" class="border rounded-lg p-4 space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg">{{ user.name }}</h3>
+                                    <div class="flex gap-4 mt-2 text-sm text-muted-foreground">
+                                        <span>Permintaan: {{ user.total_permintaan }}</span>
+                                        <span>Peminjaman: {{ user.total_peminjaman }}</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    @click="toggleUser(user.id)"
+                                    class="flex-shrink-0"
+                                >
+                                    <ChevronRight
+                                        v-if="!isUserExpanded(user.id)"
+                                        class="h-4 w-4"
+                                    />
+                                    <ChevronDown
+                                        v-else
+                                        class="h-4 w-4"
+                                    />
+                                </Button>
+                            </div>
+                            
+                            <!-- Expanded content for mobile -->
+                            <div v-if="isUserExpanded(user.id)" class="space-y-4 pt-3 border-t">
+                                <!-- Header with download button -->
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                    <h4 class="font-semibold text-sm">Detail Laporan: {{ user.name }}</h4>
+                                    <a 
+                                        :href="route('laporan.download-user', { user_id: user.id, month: selectedMonth, year: selectedYear })"
+                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+                                    >
+                                        <Download class="w-3 h-3 mr-1" />
+                                        Download
+                                    </a>
+                                </div>
+                                
+                                <!-- Permintaan Details -->
+                                <div v-if="user.permintaan && user.permintaan.length > 0">
+                                    <h5 class="font-semibold mb-2 text-sm">Detail Permintaan</h5>
+                                    <div class="space-y-2">
+                                        <div v-for="permintaan in user.permintaan" :key="permintaan.id" class="bg-muted/30 rounded-md p-3 space-y-1">
+                                            <div class="flex justify-between items-start">
+                                                <span class="font-medium text-sm">{{ permintaan.nama_barang }}</span>
+                                                <Badge :variant="getStatusVariant(permintaan.status)" class="text-xs">
+                                                    {{ getStatusText(permintaan.status) }}
+                                                </Badge>
+                                            </div>
+                                            <div class="flex justify-between text-xs text-muted-foreground">
+                                                <span>Jumlah: {{ permintaan.jumlah }}</span>
+                                                <span>{{ formatDate(permintaan.created_at) }}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <ChevronDown 
-                                        v-if="isUserExpanded(user.id)"
-                                        class="h-5 w-5 text-muted-foreground transition-transform"
-                                    />
-                                    <ChevronRight 
-                                        v-else
-                                        class="h-5 w-5 text-muted-foreground transition-transform"
-                                    />
+                                </div>
+                                
+                                <!-- Peminjaman Details -->
+                                <div v-if="user.peminjaman && user.peminjaman.length > 0">
+                                    <h5 class="font-semibold mb-2 text-sm">Detail Peminjaman</h5>
+                                    <div class="space-y-2">
+                                        <div v-for="peminjaman in user.peminjaman" :key="peminjaman.id" class="bg-muted/30 rounded-md p-3 space-y-1">
+                                            <div class="flex justify-between items-start">
+                                                <span class="font-medium text-sm">{{ peminjaman.nama_barang }}</span>
+                                                <Badge :variant="getStatusVariant(peminjaman.status)" class="text-xs">
+                                                    {{ getStatusText(peminjaman.status) }}
+                                                </Badge>
+                                            </div>
+                                            <div class="text-xs text-muted-foreground space-y-1">
+                                                <div class="flex justify-between">
+                                                    <span>Jumlah:</span>
+                                                    <span>{{ peminjaman.jumlah }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span>Pinjam:</span>
+                                                    <span>{{ formatDate(peminjaman.tanggal_peminjaman) }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span>Kembali:</span>
+                                                    <span>{{ formatDate(peminjaman.tanggal_pengembalian) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- No data message -->
+                                <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0)" class="text-center py-4 text-muted-foreground text-sm">
+                                    Tidak ada data permintaan atau peminjaman untuk periode ini.
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div v-if="isUserExpanded(user.id)" class="transition-all">
-                                <!-- Permintaan -->
-                                <div v-if="user.permintaan.length > 0" class="p-4">
-                                    <h4 class="font-medium mb-2">Permintaan</h4>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Tanggal</TableHead>
-                                                <TableHead>Barang</TableHead>
-                                                <TableHead>Jumlah</TableHead>
-                                                <TableHead>Status</TableHead>
-                                                <TableHead>Keterangan</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow v-for="item in user.permintaan" :key="item.id">
-                                                <TableCell>{{ formatDate(item.created_at) }}</TableCell>
-                                                <TableCell>
-                                                    <div>
-                                                        <div class="font-medium">{{ item.nama_barang }}</div>
-                                                        <div class="text-sm text-muted-foreground">{{ item.kode_barang }}</div>
+                    <!-- Desktop view - Table layout -->
+                    <div class="hidden md:block">
+                        <div class="rounded-lg border-2 overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow class="bg-muted/50 hover:bg-muted/50">
+                                        <TableHead class="font-semibold text-base py-4">Nama Pengguna</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Total Permintaan</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Total Peminjaman</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Aksi</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="user in filteredUsers" :key="user.id" class="hover:bg-muted/30 transition-colors">
+                                        <TableCell class="font-medium py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                                    <User class="w-4 h-4 text-primary" />
+                                                </div>
+                                                {{ user.name }}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <Badge variant="outline" class="text-sm px-3 py-1">
+                                                {{ user.total_permintaan }}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <Badge variant="outline" class="text-sm px-3 py-1">
+                                                {{ user.total_peminjaman }}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                @click="toggleUser(user.id)"
+                                                class="h-8 w-8 p-0"
+                                            >
+                                                <ChevronRight
+                                                    v-if="!isUserExpanded(user.id)"
+                                                    class="h-4 w-4"
+                                                />
+                                                <ChevronDown
+                                                    v-else
+                                                    class="h-4 w-4"
+                                                />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                    <!-- Expanded content for each user -->
+                                    <TableRow v-for="user in filteredUsers" :key="`expanded-${user.id}`" v-show="isUserExpanded(user.id)" class="bg-muted/20">
+                                        <TableCell colspan="4" class="p-0">
+                                            <div class="p-6 space-y-6">
+                                                <!-- Header with download button -->
+                                                <div class="flex justify-between items-center pb-4 border-b">
+                                                    <h3 class="text-lg font-semibold text-gray-900">Detail Laporan: {{ user.name }}</h3>
+                                                    <a 
+                                                        :href="route('laporan.download-user', { user_id: user.id, month: selectedMonth, year: selectedYear })"
+                                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 shadow-sm"
+                                                    >
+                                                        <Download class="w-4 h-4 mr-2" />
+                                                        Download Laporan
+                                                    </a>
+                                                </div>
+                                                
+                                                <!-- Permintaan Details -->
+                                                <div v-if="user.permintaan && user.permintaan.length > 0">
+                                                    <h4 class="font-semibold mb-4 text-lg flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                                        Detail Permintaan ({{ user.permintaan.length }} item)
+                                                    </h4>
+                                                    <div class="rounded-lg border-2 overflow-hidden">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow class="bg-muted/30">
+                                                                    <TableHead class="font-medium">Barang</TableHead>
+                                                                    <TableHead class="font-medium text-center">Jumlah</TableHead>
+                                                                    <TableHead class="font-medium text-center">Status</TableHead>
+                                                                    <TableHead class="font-medium text-center">Tanggal</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                <TableRow v-for="permintaan in user.permintaan" :key="permintaan.id" class="hover:bg-muted/20">
+                                                                    <TableCell class="font-medium">{{ permintaan.nama_barang }}</TableCell>
+                                                                    <TableCell class="text-center">{{ permintaan.jumlah }}</TableCell>
+                                                                    <TableCell class="text-center">
+                                                                        <Badge :variant="getStatusVariant(permintaan.status)" class="text-xs">
+                                                                            {{ getStatusText(permintaan.status) }}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell class="text-center text-sm text-muted-foreground">{{ formatDate(permintaan.created_at) }}</TableCell>
+                                                                </TableRow>
+                                                            </TableBody>
+                                                        </Table>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>{{ item.jumlah }}</TableCell>
-                                                <TableCell>
-                                                    <span :class="[
-                                                        'px-2 py-1 text-xs rounded-full font-medium',
-                                                        getStatusVariant(item.status)
-                                                    ]">
-                                                        {{ getStatusText(item.status) }}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>{{ item.keterangan || '-' }}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
-                                </div>
-
-                                <!-- Peminjaman -->
-                                <div v-if="user.peminjaman.length > 0" class="p-4 border-t">
-                                    <h4 class="font-medium mb-2">Peminjaman</h4>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Tanggal</TableHead>
-                                                <TableHead>Barang</TableHead>
-                                                <TableHead>Jumlah</TableHead>
-                                                <TableHead>Status</TableHead>
-                                                <TableHead>Tenggat</TableHead>
-                                                <TableHead>Keterangan</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow v-for="item in user.peminjaman" :key="item.id">
-                                                <TableCell>{{ formatDate(item.created_at) }}</TableCell>
-                                                <TableCell>
-                                                    <div>
-                                                        <div class="font-medium">{{ item.nama_barang }}</div>
-                                                        <div class="text-sm text-muted-foreground">{{ item.kode_barang }}</div>
+                                                </div>
+                                                
+                                                <!-- Peminjaman Details -->
+                                                <div v-if="user.peminjaman && user.peminjaman.length > 0">
+                                                    <h4 class="font-semibold mb-4 text-lg flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                        Detail Peminjaman ({{ user.peminjaman.length }} item)
+                                                    </h4>
+                                                    <div class="rounded-lg border-2 overflow-hidden">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow class="bg-muted/30">
+                                                                    <TableHead class="font-medium">Barang</TableHead>
+                                                                    <TableHead class="font-medium text-center">Jumlah</TableHead>
+                                                                    <TableHead class="font-medium text-center">Status</TableHead>
+                                                                    <TableHead class="font-medium text-center">Tanggal Pinjam</TableHead>
+                                                                    <TableHead class="font-medium text-center">Tanggal Kembali</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                <TableRow v-for="peminjaman in user.peminjaman" :key="peminjaman.id" class="hover:bg-muted/20">
+                                                                    <TableCell class="font-medium">{{ peminjaman.nama_barang }}</TableCell>
+                                                                    <TableCell class="text-center">{{ peminjaman.jumlah }}</TableCell>
+                                                                    <TableCell class="text-center">
+                                                                        <Badge :variant="getStatusVariant(peminjaman.status)" class="text-xs">
+                                                                            {{ getStatusText(peminjaman.status) }}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell class="text-center text-sm text-muted-foreground">{{ formatDate(peminjaman.tanggal_peminjaman) }}</TableCell>
+                                                                    <TableCell class="text-center text-sm text-muted-foreground">{{ formatDate(peminjaman.tanggal_pengembalian) }}</TableCell>
+                                                                </TableRow>
+                                                            </TableBody>
+                                                        </Table>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>{{ item.jumlah }}</TableCell>
-                                                <TableCell>
-                                                    <span :class="[
-                                                        'px-2 py-1 text-xs rounded-full font-medium',
-                                                        getStatusVariant(item.status)
-                                                    ]">
-                                                        {{ getStatusText(item.status) }}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>{{ formatDate(item.due_date) }}</TableCell>
-                                                <TableCell>{{ item.keterangan || '-' }}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </div>
+                                                </div>
+                                                
+                                                <!-- No data message -->
+                                                <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0)" class="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
+                                                    <div class="flex flex-col items-center gap-2">
+                                                        <FileText class="w-8 h-8 text-muted-foreground/50" />
+                                                        <p class="text-sm">Tidak ada data permintaan atau peminjaman untuk periode ini.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
             <!-- Laporan Stok -->
-            <Card>
-                <CardHeader>
-                    <CardTitle>Laporan Stok</CardTitle>
-                    <CardDescription>Perubahan stok barang per bulan</CardDescription>
+            <Card class="border-2 border-gray-100 shadow-sm">
+                <CardHeader class="pb-4">
+                    <CardTitle class="flex items-center gap-3 text-xl">
+                        <span class="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                            <span class="w-3 h-3 bg-primary rounded-full"></span>
+                        </span>
+                        Laporan Pergerakan Stok
+                    </CardTitle>
+                    <CardDescription class="text-base">Analisis perubahan stok barang berdasarkan permintaan dan peminjaman dalam periode yang dipilih</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Barang</TableHead>
-                                <TableHead>Stok Awal</TableHead>
-                                <TableHead>Permintaan Keluar</TableHead>
-                                <TableHead>Peminjaman Keluar</TableHead>
-                                <TableHead>Peminjaman Kembali</TableHead>
-                                <TableHead>Stok Akhir</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="item in stokChanges" :key="item.id">
-                                <TableCell>
-                                    <div>
-                                        <div class="font-medium">{{ item.nama_barang }}</div>
-                                        <div class="text-sm text-muted-foreground">{{ item.kode_barang }}</div>
+                    <!-- Mobile view - Card layout -->
+                    <div class="block md:hidden space-y-4">
+                        <div v-for="item in stokChanges" :key="item.id" class="border rounded-lg p-4 space-y-3">
+                            <div class="space-y-2">
+                                <div>
+                                    <h3 class="font-semibold text-lg">{{ item.nama_barang }}</h3>
+                                    <p class="text-sm text-muted-foreground">{{ item.kode_barang }}</p>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3 text-sm">
+                                    <div class="bg-muted/30 rounded-md p-3">
+                                        <div class="text-muted-foreground text-xs">Stok Awal</div>
+                                        <div class="font-semibold">{{ item.stok_awal }}</div>
                                     </div>
-                                </TableCell>
-                                <TableCell>{{ item.stok_awal }}</TableCell>
-                                <TableCell>{{ item.permintaan_keluar }}</TableCell>
-                                <TableCell>{{ item.peminjaman_keluar }}</TableCell>
-                                <TableCell>{{ item.peminjaman_kembali }}</TableCell>
-                                <TableCell>{{ item.stok_akhir }}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
+                                    <div class="bg-muted/30 rounded-md p-3">
+                                        <div class="text-muted-foreground text-xs">Stok Akhir</div>
+                                        <div class="font-semibold">{{ item.stok_akhir }}</div>
+                                    </div>
+                                    <div class="bg-muted/30 rounded-md p-3">
+                                        <div class="text-muted-foreground text-xs">Permintaan Keluar</div>
+                                        <div class="font-semibold">{{ item.permintaan_keluar }}</div>
+                                    </div>
+                                    <div class="bg-muted/30 rounded-md p-3">
+                                        <div class="text-muted-foreground text-xs">Peminjaman Keluar</div>
+                                        <div class="font-semibold">{{ item.peminjaman_keluar }}</div>
+                                    </div>
+                                    <div class="bg-muted/30 rounded-md p-3 col-span-2">
+                                        <div class="text-muted-foreground text-xs">Peminjaman Kembali</div>
+                                        <div class="font-semibold">{{ item.peminjaman_kembali }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desktop view - Table layout -->
+                    <div class="hidden md:block">
+                        <div class="rounded-lg border-2 overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow class="bg-muted/50 hover:bg-muted/50">
+                                        <TableHead class="font-semibold text-base py-4">Informasi Barang</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Stok Awal</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Permintaan Keluar</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Peminjaman Keluar</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Peminjaman Kembali</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Stok Akhir</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="item in stokChanges" :key="item.id" class="hover:bg-muted/30 transition-colors">
+                                        <TableCell class="py-4">
+                                            <div class="space-y-1">
+                                                <div class="font-semibold text-base">{{ item.nama_barang }}</div>
+                                                <div class="text-sm text-muted-foreground font-mono">{{ item.kode_barang }}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <Badge variant="outline" class="text-sm px-3 py-1 font-semibold">
+                                                {{ item.stok_awal }}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <span class="text-red-600 font-medium">{{ item.permintaan_keluar }}</span>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <span class="text-orange-600 font-medium">{{ item.peminjaman_keluar }}</span>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <span class="text-green-600 font-medium">{{ item.peminjaman_kembali }}</span>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <Badge :variant="item.stok_akhir > 0 ? 'default' : 'destructive'" class="text-sm px-3 py-1 font-semibold">
+                                                {{ item.stok_akhir }}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>

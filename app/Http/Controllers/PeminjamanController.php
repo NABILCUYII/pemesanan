@@ -111,9 +111,18 @@ class PeminjamanController extends Controller
                     'approved_at' => now()
                 ]);
                 
-                $barang->update([
-                    'stok' => $barang->stok - $peminjaman->jumlah
-                ]);
+                // Menggunakan sistem log stok
+                $keterangan = "Peminjaman disetujui oleh " . auth()->user()->name;
+                if ($request->catatan) {
+                    $keterangan .= " - " . $request->catatan;
+                }
+                
+                $barang->addStokLog(
+                    'keluar', 
+                    $peminjaman->jumlah, 
+                    $keterangan,
+                    "Peminjaman #" . $peminjaman->id
+                );
                 
                 $message = 'Peminjaman berhasil disetujui';
             } else {

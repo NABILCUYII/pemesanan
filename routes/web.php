@@ -8,7 +8,8 @@ use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\SelamatDatangController;
 use App\Http\Controllers\RiwayatController;
-use App\Http\Controllers\LaporanController; // Tambahkan controller Laporan jika belum ada
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\StokLogController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -20,7 +21,7 @@ Route::get('dashboard', function () {
 
 // Rute SelamatDatang
 Route::middleware(['auth'])->group(function () {
-    Route::get('selamat-datang', [SelamatDatangController::class, 'index'])->name('SelamatDatang');
+    Route::get('selamat-datang', [SelamatDatangController::class, 'index'])->name('selamat-datang.index');
 });
 
 // Rute Users
@@ -76,6 +77,16 @@ Route::middleware(['auth'])->group(function () {
 // Rute Laporan
 Route::middleware(['auth'])->group(function () {
     Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::get('laporan/download', [LaporanController::class, 'download'])->name('laporan.download');
+    Route::get('laporan/download-user', [LaporanController::class, 'downloadUser'])->name('laporan.download-user');
+    Route::get('laporan/test-pdf', [LaporanController::class, 'testPdf'])->name('laporan.test-pdf');
+});
+
+// Rute Stok Log
+Route::middleware(['auth'])->group(function () {
+    Route::get('stok-log', [StokLogController::class, 'index'])->name('stok-log.index');
+    Route::get('stok-log/{id}', [StokLogController::class, 'show'])->name('stok-log.show');
+    Route::get('stok-log/barang/{barangId}', [StokLogController::class, 'barang'])->name('stok-log.barang');
 });
 
 require __DIR__.'/settings.php';

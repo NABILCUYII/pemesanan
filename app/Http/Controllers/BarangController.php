@@ -92,12 +92,8 @@ class BarangController extends Controller
             'keterangan' => 'nullable|string|max:500'
         ]);
 
-        $barang->update([
-            'stok' => $barang->stok + $request->stok_tambah
-        ]);
-
-        // Here you could also log the stock addition to a separate table
-        // for audit purposes if needed
+        // Menggunakan sistem log stok
+        $barang->addStokLog('masuk', $request->stok_tambah, $request->keterangan);
 
         return redirect()->back()
             ->with('message', "Stok berhasil ditambahkan. Stok baru: {$barang->stok}");

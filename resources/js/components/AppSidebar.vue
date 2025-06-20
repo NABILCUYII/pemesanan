@@ -16,7 +16,8 @@ import {
     BarChart,
     Check,
     History,
-    FileText
+    FileText,
+    TrendingUp
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed } from 'vue';
@@ -61,6 +62,12 @@ const mainNavItems: NavItem[] = [
         title: 'Stok Barang',
         href: route('barang.stok'),
         icon: Package,
+        adminOnly: true,
+    },
+    {
+        title: 'Riwayat Stok',
+        href: route('stok-log.index'),
+        icon: TrendingUp,
         adminOnly: true,
     },
     {
