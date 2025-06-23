@@ -77,6 +77,34 @@
     </style>
 </head>
 <body>
+    <!-- COB Report Section - First Page -->
+    <div style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 14pt; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2cm; box-sizing: border-box;">
+        <div style="margin-top: 2cm;">
+            <p style="font-weight: bold; text-transform: uppercase; margin: 5px 0; padding: 0 1in;">Laporan Pendahuluan</p>
+            <p style="font-weight: bold; text-transform: uppercase; margin: 5px 0; padding: 0 1in;">Asuhan Keperawatan Gadar dengan Diagnosa Medis COB (Cidera Otak Berat) di Ruang IGD RS William Booth Surabaya</p>
+        </div>
+
+        <div style="margin-top: 1.5cm; margin-bottom: 1.5cm;">
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWxsPSIjRkZGRkZGIi8+Cjx0ZXh0IHg9Ijc1IiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDAwMDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Mb2dvPC90ZXh0Pgo8L3N2Zz4K" alt="Logo" style="width: 3.5cm; height: auto;">
+        </div>
+
+        <div style="margin-top: 1.5cm; flex-grow: 1;">
+            <p style="margin: 0;">OLEH :</p>
+            <p style="font-weight: bold; text-decoration: underline; margin-top: 1cm; margin-bottom: 0;">Erina Nuryta Kurniawati</p>
+            <p style="font-weight: bold; margin: 0;">NIM : 2022.06.009</p>
+        </div>
+
+        <div style="margin-bottom: 2cm;">
+            <p style="font-weight: bold; text-transform: uppercase; margin: 5px 0;">Program Studi Profesi Ners</p>
+            <p style="font-weight: bold; text-transform: uppercase; margin: 5px 0;">Sekolah Tinggi Ilmu Kesehatan William Booth</p>
+            <p style="font-weight: bold; text-transform: uppercase; margin: 5px 0;">Surabaya</p>
+            <p style="font-weight: bold; text-transform: uppercase; margin: 5px 0;">2022</p>
+        </div>
+    </div>
+
+    <!-- Page Break for General Report -->
+    <div style="page-break-before: always;"></div>
+
     <div class="header">
         <h1>Laporan Bulanan</h1>
         <p>Periode: {{ $month }} {{ $year }}</p>

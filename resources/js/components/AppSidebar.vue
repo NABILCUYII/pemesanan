@@ -47,7 +47,7 @@ const mainNavItems: NavItem[] = [
         icon: History,
     },
     {
-        title: 'Approval',
+        title: 'Persetujuan',
         href: route('permintaan.approval'),
         icon: Check,
         adminOnly: true,

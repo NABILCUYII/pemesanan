@@ -85,99 +85,99 @@
 }
 
 :root {
-    --background: hsl(210, 100%, 98%); /* #F8FAFC */
-    --foreground: hsl(217, 39%, 17%);  /* #1E293B */
+    --background: hsl(180, 100%, 98%); /* Light cyan background */
+    --foreground: hsl(180, 25%, 25%);  /* Dark teal text */
 
     --card: hsl(0, 0%, 100%); /* #FFFFFF */
-    --card-foreground: hsl(217, 39%, 17%); /* #1E293B */
+    --card-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
     --popover: hsl(0, 0%, 100%); /* #FFFFFF */
-    --popover-foreground: hsl(217, 39%, 17%); /* #1E293B */
+    --popover-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
-    --primary: hsl(222, 88%, 47%); /* #2563EB */
+    --primary: hsl(180, 70%, 50%); /* Teal - replacing blue */
     --primary-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
 
-    --secondary: hsl(160, 90%, 30%); /* #059669 */
-    --secondary-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
+    --secondary: hsl(120, 80%, 70%); /* Lime soft */
+    --secondary-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
-    --muted: hsl(216, 12%, 96%); /* #F1F5F9 */
-    --muted-foreground: hsl(215, 14%, 47%); /* #64748B */
+    --muted: hsl(180, 20%, 96%); /* Very light teal */
+    --muted-foreground: hsl(180, 15%, 45%); /* Medium teal gray */
 
-    --accent: hsl(216, 12%, 96%); /* #F1F5F9 */
-    --accent-foreground: hsl(217, 39%, 17%); /* #1E293B */
+    --accent: hsl(180, 20%, 96%); /* Very light teal */
+    --accent-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
     --destructive: hsl(0, 76%, 51%); /* #DC2626 */
     --destructive-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
 
-    --border: hsl(210, 20%, 92%); /* #E2E8F0 */
-    --input: hsl(210, 20%, 92%); /* #E2E8F0 */
-    --ring: hsl(222, 88%, 47%); /* #2563EB */
+    --border: hsl(180, 30%, 90%); /* Light teal border */
+    --input: hsl(180, 30%, 90%); /* Light teal input */
+    --ring: hsl(180, 70%, 50%); /* Teal ring */
 
-    /* Chart colors - can be adjusted to new palette if used */
-    --chart-1: hsl(222, 88%, 47%); /* Primary blue */
-    --chart-2: hsl(160, 90%, 30%); /* Secondary green */
-    --chart-3: hsl(27, 87% 67%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(197 37% 24%);
+    /* Chart colors - updated to new palette */
+    --chart-1: hsl(180, 70%, 50%); /* Teal */
+    --chart-2: hsl(120, 80%, 70%); /* Lime soft */
+    --chart-3: hsl(200, 80%, 70%); /* Light blue */
+    --chart-4: hsl(160, 70%, 60%); /* Light sea green */
+    --chart-5: hsl(180, 40%, 40%); /* Darker teal */
 
     --radius: 0.5rem;
 
     /* Sidebar specific colors based on new theme */
     --sidebar-background: hsl(0, 0%, 100%); /* #FFFFFF */
-    --sidebar-foreground: hsl(217, 39%, 17%); /* #1E293B */
-    --sidebar-primary: hsl(222, 88%, 47%); /* #2563EB (active) */
+    --sidebar-foreground: hsl(180, 25%, 25%); /* Dark teal text */
+    --sidebar-primary: hsl(180, 70%, 50%); /* Teal (active) */
     --sidebar-primary-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
-    --sidebar-accent: hsl(216, 12%, 96%); /* #F1F5F9 (hover) */
-    --sidebar-accent-foreground: hsl(217, 39%, 17%); /* #1E293B */
-    --sidebar-border: hsl(210, 20%, 92%); /* #E2E8F0 */
-    --sidebar-ring: hsl(222, 88%, 47%); /* #2563EB */
+    --sidebar-accent: hsl(180, 20%, 96%); /* Very light teal (hover) */
+    --sidebar-accent-foreground: hsl(180, 25%, 25%); /* Dark teal text */
+    --sidebar-border: hsl(180, 30%, 90%); /* Light teal border */
+    --sidebar-ring: hsl(180, 70%, 50%); /* Teal ring */
     --sidebar: hsl(0, 0%, 100%); /* #FFFFFF */
 }
 
 .dark {
-    --background: hsl(210, 100%, 98%); /* #F8FAFC */
-    --foreground: hsl(217, 39%, 17%);  /* #1E293B */
+    --background: hsl(180, 100%, 98%); /* Light cyan background */
+    --foreground: hsl(180, 25%, 25%);  /* Dark teal text */
 
     --card: hsl(0, 0%, 100%); /* #FFFFFF */
-    --card-foreground: hsl(217, 39%, 17%); /* #1E293B */
+    --card-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
     --popover: hsl(0, 0%, 100%); /* #FFFFFF */
-    --popover-foreground: hsl(217, 39%, 17%); /* #1E293B */
+    --popover-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
-    --primary: hsl(222, 88%, 47%); /* #2563EB */
+    --primary: hsl(180, 70%, 50%); /* Teal - replacing blue */
     --primary-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
 
-    --secondary: hsl(160, 90%, 30%); /* #059669 */
-    --secondary-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
+    --secondary: hsl(120, 80%, 70%); /* Lime soft */
+    --secondary-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
-    --muted: hsl(216, 12%, 96%); /* #F1F5F9 */
-    --muted-foreground: hsl(215, 14%, 47%); /* #64748B */
+    --muted: hsl(180, 20%, 96%); /* Very light teal */
+    --muted-foreground: hsl(180, 15%, 45%); /* Medium teal gray */
 
-    --accent: hsl(216, 12%, 96%); /* #F1F5F9 */
-    --accent-foreground: hsl(217, 39%, 17%); /* #1E293B */
+    --accent: hsl(180, 20%, 96%); /* Very light teal */
+    --accent-foreground: hsl(180, 25%, 25%); /* Dark teal text */
 
     --destructive: hsl(0, 76%, 51%); /* #DC2626 */
     --destructive-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
 
-    --border: hsl(210, 20%, 92%); /* #E2E8F0 */
-    --input: hsl(210, 20%, 92%); /* #E2E8F0 */
-    --ring: hsl(222, 88%, 47%); /* #2563EB */
+    --border: hsl(180, 30%, 90%); /* Light teal border */
+    --input: hsl(180, 30%, 90%); /* Light teal input */
+    --ring: hsl(180, 70%, 50%); /* Teal ring */
 
-    /* Chart colors - can be adjusted to new palette if used */
-    --chart-1: hsl(222, 88%, 47%); /* Primary blue */
-    --chart-2: hsl(160, 90%, 30%); /* Secondary green */
-    --chart-3: hsl(27, 87% 67%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(197 37% 24%);
+    /* Chart colors - updated to new palette */
+    --chart-1: hsl(180, 70%, 50%); /* Teal */
+    --chart-2: hsl(120, 80%, 70%); /* Lime soft */
+    --chart-3: hsl(200, 80%, 70%); /* Light blue */
+    --chart-4: hsl(160, 70%, 60%); /* Light sea green */
+    --chart-5: hsl(180, 40%, 40%); /* Darker teal */
 
-    --sidebar-background: hsl(0, 0%, 100%); /* #FFFFFF (Ini diatur untuk dark mode juga) */
-    --sidebar-foreground: hsl(217, 39%, 17%); /* #1E293B (Teks gelap untuk latar putih) */
-    --sidebar-primary: hsl(222, 88%, 47%);
-    --sidebar-primary-foreground: hsl(0, 0%, 100%);
-    --sidebar-accent: hsl(216, 12%, 96%);
-    --sidebar-accent-foreground: hsl(217, 39%, 17%);
-    --sidebar-border: hsl(210, 20%, 92%);
-    --sidebar-ring: hsl(222, 88%, 47%);
+    --sidebar-background: hsl(0, 0%, 100%); /* #FFFFFF */
+    --sidebar-foreground: hsl(180, 25%, 25%); /* Dark teal text */
+    --sidebar-primary: hsl(180, 70%, 50%); /* Teal */
+    --sidebar-primary-foreground: hsl(0, 0%, 100%); /* #FFFFFF */
+    --sidebar-accent: hsl(180, 20%, 96%); /* Very light teal */
+    --sidebar-accent-foreground: hsl(180, 25%, 25%); /* Dark teal text */
+    --sidebar-border: hsl(180, 30%, 90%); /* Light teal border */
+    --sidebar-ring: hsl(180, 70%, 50%); /* Teal ring */
     --sidebar: hsl(0, 0%, 100%); /* #FFFFFF */
 }
 

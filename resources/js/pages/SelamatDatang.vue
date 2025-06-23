@@ -21,24 +21,24 @@ const goBack = () => {
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
 
-    <div class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center">
-        <div class="text-center space-y-8 p-8 bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20">
-            <h1 class="text-4xl md:text-5xl font-bold text-white">
+    <div class="min-h-screen bg-gradient-to-br from-[#F0F8FF] via-[#87CEEB] to-[#98FB98] flex items-center justify-center">
+        <div class="text-center space-y-8 p-8 bg-white/20 backdrop-blur-lg rounded-2xl border border-white/30">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#2F4F4F]">
                 Selamat Datang di Pemesanan
             </h1>
-            <p class="text-xl text-white/80">
+            <p class="text-xl text-[#2F4F4F]/80">
                 Halo, {{ user.name }}! Anda telah berhasil login.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                     @click="goToDashboard"
-                    class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-full shadow-lg transform hover:scale-105 transition duration-300"
+                    class="bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-white px-8 py-3 rounded-full shadow-lg transform hover:scale-105 transition duration-300"
                 >
                     Masuk ke Dashboard
                 </Button>
                 <Button 
                     @click="goBack"
-                    class="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-8 py-3 rounded-full shadow-lg transform hover:scale-105 transition duration-300"
+                    class="bg-gradient-to-r from-[#708090] to-[#B0C4DE] hover:from-[#5A6B7B] hover:to-[#9FB6CD] text-white px-8 py-3 rounded-full shadow-lg transform hover:scale-105 transition duration-300"
                 >
                     Kembali
                 </Button>

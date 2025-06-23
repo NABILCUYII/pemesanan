@@ -13,6 +13,7 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    role: 'user', // Hidden role field with default value 'user'
 });
 
 const submit = () => {
@@ -44,6 +45,9 @@ const submit = () => {
 
                 <form @submit.prevent="submit" class="space-y-6">
                     <div class="space-y-4">
+                        <!-- Hidden role input -->
+                        <input type="hidden" v-model="form.role" />
+                        
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <User class="h-5 w-5 text-white/60" />

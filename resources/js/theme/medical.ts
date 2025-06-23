@@ -1,69 +1,69 @@
 export const medicalTheme = {
     colors: {
         primary: {
-            DEFAULT: '#3B82F6', // Biru Muda - Warna utama
-            hover: '#2563EB',
-            light: '#93C5FD',
+            DEFAULT: '#20B2AA', // Hijau Toska - Warna utama
+            hover: '#1A9A94',
+            light: '#87CEEB', // Biru Muda
         },
         secondary: {
-            DEFAULT: '#10B981', // Hijau Muda - Aksen
-            hover: '#059669',
-            light: '#6EE7B7',
+            DEFAULT: '#98FB98', // Lime Soft - Aksen
+            hover: '#90EE90',
+            light: '#F0FFF0',
         },
         background: {
             DEFAULT: '#FFFFFF', // Putih Bersih - Background utama
-            secondary: '#F3F4F6', // Abu-abu Terang - Background sekunder
+            secondary: '#F0F8FF', // Putih Transparan - Background sekunder
         },
         text: {
-            DEFAULT: '#6B7280', // Abu-abu Tua - Teks utama
-            light: '#9CA3AF',
-            dark: '#374151',
+            DEFAULT: '#2F4F4F', // Dark Slate Gray - Teks utama
+            light: '#708090',
+            dark: '#1C2A2A',
         },
         error: {
             DEFAULT: '#EF4444', // Merah Lembut - Error
             hover: '#DC2626',
         },
         success: {
-            DEFAULT: '#10B981', // Hijau Muda - Success
-            hover: '#059669',
+            DEFAULT: '#20B2AA', // Hijau Toska - Success
+            hover: '#1A9A94',
         },
         warning: {
             DEFAULT: '#F59E0B', // Kuning - Warning
             hover: '#D97706',
         },
         info: {
-            DEFAULT: '#3B82F6', // Biru Muda - Info
-            hover: '#2563EB',
+            DEFAULT: '#87CEEB', // Biru Muda - Info
+            hover: '#5F9EA0',
         },
     },
     sidebar: {
         background: '#FFFFFF',
-        border: '#F3F4F6',
-        text: '#6B7280',
-        hover: '#F3F4F6',
-        active: '#3B82F6',
+        border: '#F0F8FF',
+        text: '#2F4F4F',
+        hover: '#F0F8FF',
+        active: '#20B2AA',
         activeText: '#FFFFFF',
     },
     header: {
         background: '#FFFFFF',
-        border: '#F3F4F6',
-        text: '#6B7280',
+        border: '#F0F8FF',
+        text: '#2F4F4F',
     },
     card: {
         background: '#FFFFFF',
-        border: '#F3F4F6',
+        border: '#F0F8FF',
         shadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
     },
     button: {
         primary: {
-            background: '#3B82F6',
+            background: '#20B2AA',
             text: '#FFFFFF',
-            hover: '#2563EB',
+            hover: '#1A9A94',
         },
         secondary: {
-            background: '#10B981',
-            text: '#FFFFFF',
-            hover: '#059669',
+            background: '#98FB98',
+            text: '#2F4F4F',
+            hover: '#90EE90',
         },
         danger: {
             background: '#EF4444',
