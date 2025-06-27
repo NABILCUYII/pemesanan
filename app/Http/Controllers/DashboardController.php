@@ -6,8 +6,11 @@ use App\Models\User;
 use App\Models\Barang;
 use App\Models\Permintaan;
 use App\Models\Peminjaman;
+use App\Models\StokLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -81,6 +84,9 @@ class DashboardController extends Controller
             ],
         ];
 
+        // Get chart data from stok_logs
+        $chartData = $this->getChartData();
+
         // Get recent activities
         $recentActivities = collect();
 
@@ -141,7 +147,54 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'stats' => $stats,
-            'recentActivities' => $recentActivities
+            'recentActivities' => $recentActivities,
+            'chartData' => $chartData
         ]);
+    }
+
+    private function getChartData()
+    {
+        // Get barang masuk data per month (last 12 months)
+        $barangMasuk = StokLog::select(
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('YEAR(created_at) as year'),
+                DB::raw('SUM(jumlah) as total')
+            )
+            ->where('jenis', 'masuk')
+            ->where('created_at', '>=', now()->subMonths(12)->startOfMonth())
+            ->groupBy('year', 'month')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        // Get frequently requested items (top 6)
+        $seringDiminta = StokLog::select('barang_id', DB::raw('SUM(jumlah) as total'))
+            ->where('jenis', 'keluar')
+            ->whereHas('barang', function($query) {
+                $query->where('kategori', 'permintaan');
+            })
+            ->groupBy('barang_id')
+            ->orderByDesc('total')
+            ->with('barang')
+            ->limit(6)
+            ->get();
+
+        // Get frequently borrowed items (top 6)
+        $seringDipinjam = StokLog::select('barang_id', DB::raw('SUM(jumlah) as total'))
+            ->where('jenis', 'keluar')
+            ->whereHas('barang', function($query) {
+                $query->where('kategori', 'peminjaman');
+            })
+            ->groupBy('barang_id')
+            ->orderByDesc('total')
+            ->with('barang')
+            ->limit(6)
+            ->get();
+
+        return [
+            'barangMasuk' => $barangMasuk,
+            'seringDiminta' => $seringDiminta,
+            'seringDipinjam' => $seringDipinjam
+        ];
     }
 } 

@@ -35,6 +35,12 @@ class StokLogController extends Controller
 
         $stokLogs = $query->paginate(20);
 
+        // Transform the data to include user photo
+        $stokLogs->getCollection()->transform(function ($stokLog) {
+            $stokLog->user_photo = $stokLog->user->photo;
+            return $stokLog;
+        });
+
         $barang = Barang::orderBy('nama_barang')->get();
 
         return Inertia::render('stok-log/index', [

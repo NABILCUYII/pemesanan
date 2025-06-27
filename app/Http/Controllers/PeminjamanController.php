@@ -26,8 +26,10 @@ class PeminjamanController extends Controller
         $grouped = $peminjaman->groupBy('user.name');
         
         $result = $grouped->map(function ($items, $userName) {
+            $firstItem = $items->first();
             return [
                 'user' => $userName,
+                'user_photo' => $firstItem->user->photo,
                 'items' => $items->map(function ($item) {
                     return [
                         'nama_barang' => $item->barang->nama_barang,

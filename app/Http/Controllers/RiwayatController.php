@@ -30,6 +30,7 @@ class RiwayatController extends Controller
                     'keterangan' => $item->keterangan,
                     'alasan_approval' => $item->alasan_approval,
                     'catatan_approval' => $item->catatan_approval,
+                    'user_photo' => $item->user->photo,
                 ];
             });
 
@@ -52,6 +53,7 @@ class RiwayatController extends Controller
                     'keterangan' => $item->keterangan,
                     'alasan_approval' => $item->alasan_approval,
                     'catatan_approval' => $item->catatan_approval,
+                    'user_photo' => $item->user->photo,
                 ];
             });
 

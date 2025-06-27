@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\BarangRusakController;
 use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\SelamatDatangController;
@@ -45,6 +46,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('barang/{barang}/add-stok', [BarangController::class, 'addStok'])->name('barang.add-stok');
 });
 
+// Rute Barang Rusak
+Route::middleware(['auth'])->group(function () {
+    Route::get('barang-rusak', [BarangRusakController::class, 'index'])->name('barang-rusak.index');
+    Route::get('barang-rusak/create', [BarangRusakController::class, 'create'])->name('barang-rusak.create');
+    Route::post('barang-rusak', [BarangRusakController::class, 'store'])->name('barang-rusak.store');
+    Route::put('barang-rusak/{barang}/status', [BarangRusakController::class, 'updateStatus'])->name('barang-rusak.update-status');
+    
+    // Rute Barang Hilang
+    Route::get('barang-hilang/create', [BarangRusakController::class, 'createHilang'])->name('barang-hilang.create');
+    Route::post('barang-hilang', [BarangRusakController::class, 'storeHilang'])->name('barang-hilang.store');
+});
+
 // Rute Permintaan
 Route::middleware(['auth'])->group(function () {
     Route::get('permintaan', [PermintaanController::class, 'index'])->name('permintaan.index');
@@ -53,6 +66,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('permintaan/multiple', [PermintaanController::class, 'storeMultiple'])->name('permintaan.store-multiple');
     Route::get('permintaan/approval', [PermintaanController::class, 'approval'])->name('permintaan.approval');
     Route::post('permintaan/approve', [PermintaanController::class, 'approve'])->name('permintaan.approve');
+    Route::patch('permintaan/{permintaan}/complete', [PermintaanController::class, 'complete'])->name('permintaan.complete');
     Route::get('permintaan/{permintaan}/edit', [PermintaanController::class, 'edit'])->name('permintaan.edit');
     Route::put('permintaan/{permintaan}', [PermintaanController::class, 'update'])->name('permintaan.update');
     Route::delete('permintaan/{permintaan}', [PermintaanController::class, 'destroy'])->name('permintaan.destroy');
@@ -83,7 +97,13 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('laporan/download', [LaporanController::class, 'download'])->name('laporan.download');
+    Route::get('laporan/download-permintaan', [LaporanController::class, 'downloadPermintaan'])->name('laporan.download-permintaan');
+    Route::get('laporan/download-peminjaman', [LaporanController::class, 'downloadPeminjaman'])->name('laporan.download-peminjaman');
     Route::get('laporan/download-user', [LaporanController::class, 'downloadUser'])->name('laporan.download-user');
+    Route::get('laporan/download-excel', [LaporanController::class, 'downloadExcel'])->name('laporan.download-excel');
+    Route::get('laporan/download-permintaan-excel', [LaporanController::class, 'downloadPermintaanExcel'])->name('laporan.download-permintaan-excel');
+    Route::get('laporan/download-peminjaman-excel', [LaporanController::class, 'downloadPeminjamanExcel'])->name('laporan.download-peminjaman-excel');
+    Route::get('laporan/download-user-excel', [LaporanController::class, 'downloadUserExcel'])->name('laporan.download-user-excel');
     Route::get('laporan/test-pdf', [LaporanController::class, 'testPdf'])->name('laporan.test-pdf');
 });
 

@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { History, Filter, Eye, Calendar, Package, TrendingUp, TrendingDown } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { useInitials } from '@/composables/useInitials';
 
 interface StokLog {
     id: number;
@@ -28,6 +30,7 @@ interface StokLog {
         id: number;
         name: string;
     };
+    user_photo?: string;
 }
 
 interface Barang {
@@ -54,6 +57,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { getInitials } = useInitials();
 
 const filters = ref({
     barang_id: props.filters.barang_id || '',
@@ -103,6 +107,10 @@ const getJenisBadge = (jenis: string) => {
 
 const getJenisLabel = (jenis: string) => {
     return jenis === 'masuk' ? 'Stok Masuk' : 'Stok Keluar';
+};
+
+const getPhotoUrl = (photoPath: string) => {
+    return `/storage/${photoPath}`;
 };
 </script>
 
@@ -281,7 +289,15 @@ const getJenisLabel = (jenis: string) => {
                                     <span class="text-sm">{{ log.keterangan || '-' }}</span>
                                 </TableCell>
                                 <TableCell>
-                                    <span class="text-sm">{{ log.user.name }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <Avatar class="h-8 w-8">
+                                            <AvatarImage v-if="log.user_photo" :src="getPhotoUrl(log.user_photo)" alt="User Photo" />
+                                            <AvatarFallback>
+                                                {{ getInitials(log.user.name) }}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span class="text-sm">{{ log.user.name }}</span>
+                                    </div>
                                 </TableCell>
                                 <TableCell class="text-center">
                                     <Button 

@@ -5,8 +5,10 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Package, Calendar, Edit, X } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
+import { useInitials } from '@/composables/useInitials';
 
 interface RiwayatItem {
     id: number;
@@ -22,11 +24,14 @@ interface RiwayatItem {
     due_date?: string;
     alasan_approval?: string;
     catatan_approval?: string;
+    user_photo?: string;
 }
 
 const props = defineProps<{
     riwayat: RiwayatItem[];
 }>();
+
+const { getInitials } = useInitials();
 
 const searchQuery = ref('');
 const selectedType = ref('');
@@ -84,6 +89,10 @@ const cancelItem = (item: RiwayatItem) => {
             id: item.id
         });
     }
+};
+
+const getPhotoUrl = (photoPath: string) => {
+    return `/storage/${photoPath}`;
 };
 </script>
 

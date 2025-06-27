@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Search, Eye, AlertTriangle } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
@@ -62,12 +62,20 @@ const deleteBarang = (id: number) => {
         <div class="p-4 md:p-6 space-y-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h1 class="text-2xl font-semibold text-gray-800">Daftar Barang</h1>
-                <Link :href="route('barang.create')">
-                    <Button class="w-full sm:w-auto">
-                        <Plus class="w-4 h-4 mr-2" />
-                        Tambah Barang
-                    </Button>
-                </Link>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Link :href="route('barang-rusak.index')">
+                        <Button variant="outline" class="w-full sm:w-auto">
+                            <AlertTriangle class="w-4 h-4 mr-2" />
+                            Barang Rusak
+                        </Button>
+                    </Link>
+                    <Link :href="route('barang.create')">
+                        <Button class="w-full sm:w-auto">
+                            <Plus class="w-4 h-4 mr-2" />
+                            Tambah Barang
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <!-- Filter & Search -->

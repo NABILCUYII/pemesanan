@@ -2,6 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
+import { ref, computed } from 'vue';
 
 interface User {
   id: number;
@@ -22,6 +23,20 @@ const breadcrumbs: BreadcrumbItem[] = [
     href: route('users.index'),
   },
 ];
+
+const searchQuery = ref('');
+
+const filteredUsers = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return props.users;
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim();
+  return props.users.filter(user => 
+    user.name.toLowerCase().includes(query) ||
+    user.email.toLowerCase().includes(query)
+  );
+});
 
 const destroy = (id: number) => {
   if (confirm('Are you sure you want to delete this user?')) {
@@ -45,6 +60,21 @@ const destroy = (id: number) => {
         </Link>
       </div>
 
+      <!-- Search Bar -->
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Cari nama atau email pengguna..."
+          class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        />
+      </div>
+
       <div class="relative flex-1 rounded-xl border border-gray-200 bg-white p-4">
         <!-- Scroll horizontal untuk tabel -->
         <div class="overflow-x-auto">
@@ -59,11 +89,13 @@ const destroy = (id: number) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-if="users.length === 0">
-                <td colspan="4" class="px-4 py-3 text-center text-gray-500">No users found</td>
+              <tr v-if="filteredUsers.length === 0">
+                <td colspan="4" class="px-4 py-3 text-center text-gray-500">
+                  {{ searchQuery ? 'Tidak ada hasil pencarian' : 'No users found' }}
+                </td>
               </tr>
               <tr
-                v-for="user in users"
+                v-for="user in filteredUsers"
                 :key="user.id"
                 class="border-b border-gray-200 hover:bg-gray-50"
               >
@@ -97,13 +129,13 @@ const destroy = (id: number) => {
           </table>
 
           <!-- Card list untuk layar kecil -->
-          <div v-if="users.length === 0" class="md:hidden text-center text-gray-500 py-8">
-            No users found
+          <div v-if="filteredUsers.length === 0" class="md:hidden text-center text-gray-500 py-8">
+            {{ searchQuery ? 'Tidak ada hasil pencarian' : 'No users found' }}
           </div>
 
           <div class="space-y-4 md:hidden">
             <div
-              v-for="user in users"
+              v-for="user in filteredUsers"
               :key="user.id"
               class="border border-gray-200 rounded-lg p-4 shadow-sm bg-white"
             >
@@ -143,4 +175,3 @@ const destroy = (id: number) => {
     </div>
   </AppLayout>
 </template>
-

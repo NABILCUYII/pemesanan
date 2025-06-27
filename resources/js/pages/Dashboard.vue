@@ -3,8 +3,9 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Clock, Users, AlertCircle, Sparkles, ArrowUpRight, Star, Database, FileText, Settings, Activity } from 'lucide-vue-next';
+import { Package, Clock, Users, AlertCircle, Sparkles, ArrowUpRight, Star, Database, FileText, Settings, Activity, TrendingUp, BarChart3, PieChart } from 'lucide-vue-next';
 import { computed } from 'vue';
+import ChartComponent from '@/components/ChartComponent.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -28,6 +29,24 @@ interface ActivityItem {
   time: string;
 }
 
+interface ChartDataItem {
+  month?: number;
+  year?: number;
+  total: number;
+  barang_id?: number;
+  barang?: {
+    id: number;
+    nama_barang: string;
+    kode_barang: string;
+  };
+}
+
+interface ChartData {
+  barangMasuk: ChartDataItem[];
+  seringDiminta: ChartDataItem[];
+  seringDipinjam: ChartDataItem[];
+}
+
 const page = usePage();
 
 const iconMap = {
@@ -42,6 +61,9 @@ const iconMap = {
   FileText,
   Settings,
   Activity,
+  TrendingUp,
+  BarChart3,
+  PieChart,
 };
 
 const stats = computed<StatItem[]>(() => {
@@ -69,6 +91,249 @@ const recentActivities = computed<ActivityItem[]>(() => {
       time: '',
     },
   ];
+});
+
+// Chart data for barang masuk (items in)
+const barangMasukChart = computed(() => {
+  const chartData = (page.props.chartData as ChartData)?.barangMasuk || [];
+  
+  // Create month labels for the last 12 months
+  const monthLabels: string[] = [];
+  const monthData: number[] = [];
+  
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    
+    monthLabels.push(`${month}/${year}`);
+    
+    // Find data for this month
+    const monthDataItem = chartData.find((item: ChartDataItem) => 
+      item.month === month && item.year === year
+    );
+    monthData.push(monthDataItem ? monthDataItem.total : 0);
+  }
+
+  // If no data at all, show message
+  if (monthData.every(value => value === 0)) {
+    return {
+      type: 'line' as const,
+      data: {
+        labels: ['Belum ada data'],
+        datasets: [{
+          label: 'Barang Masuk',
+          lineTension: 0.3,
+          backgroundColor: "rgba(32, 178, 170, 0.1)",
+          borderColor: "rgba(32, 178, 170, 1)",
+          pointRadius: 3,
+          pointBackgroundColor: "rgba(32, 178, 170, 1)",
+          pointBorderColor: "rgba(32, 178, 170, 1)",
+          pointHoverRadius: 3,
+          pointHoverBackgroundColor: "rgba(32, 178, 170, 1)",
+          pointHoverBorderColor: "rgba(32, 178, 170, 1)",
+          pointHitRadius: 10,
+          pointBorderWidth: 2,
+          fill: true,
+          data: [0],
+        }],
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              callback: function(value: any) {
+                return value + ' item';
+              }
+            }
+          }]
+        }
+      }
+    };
+  }
+
+  return {
+    type: 'line' as const,
+    data: {
+      labels: monthLabels,
+      datasets: [{
+        label: 'Barang Masuk',
+        lineTension: 0.3,
+        backgroundColor: "rgba(32, 178, 170, 0.1)",
+        borderColor: "rgba(32, 178, 170, 1)",
+        pointRadius: 3,
+        pointBackgroundColor: "rgba(32, 178, 170, 1)",
+        pointBorderColor: "rgba(32, 178, 170, 1)",
+        pointHoverRadius: 3,
+        pointHoverBackgroundColor: "rgba(32, 178, 170, 1)",
+        pointHoverBorderColor: "rgba(32, 178, 170, 1)",
+        pointHitRadius: 10,
+        pointBorderWidth: 2,
+        fill: true,
+        data: monthData,
+      }],
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            callback: function(value: any) {
+              return value + ' item';
+            }
+          }
+        }]
+      }
+    }
+  };
+});
+
+// Chart data for frequently requested items
+const frequentlyRequestedChart = computed(() => {
+  const chartData = (page.props.chartData as ChartData)?.seringDiminta || [];
+  
+  // If no data, show empty state
+  if (chartData.length === 0) {
+    return {
+      type: 'bar' as const,
+      data: {
+        labels: ['Belum ada data'],
+        datasets: [{
+          label: 'Permintaan',
+          backgroundColor: ['rgba(135, 206, 235, 0.8)'],
+          hoverBackgroundColor: ['rgba(135, 206, 235, 1)'],
+          borderColor: ['rgba(135, 206, 235, 1)'],
+          data: [0],
+        }],
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            ticks: {
+              callback: function(value: any) {
+                return value + ' kali';
+              }
+            }
+          }]
+        }
+      }
+    };
+  }
+  
+  return {
+    type: 'bar' as const,
+    data: {
+      labels: chartData.map((item: ChartDataItem) => item.barang?.nama_barang || 'Barang'),
+      datasets: [{
+        label: 'Permintaan',
+        backgroundColor: [
+          'rgba(135, 206, 235, 0.8)',
+          'rgba(152, 251, 152, 0.8)',
+          'rgba(255, 182, 193, 0.8)',
+          'rgba(255, 218, 185, 0.8)',
+          'rgba(221, 160, 221, 0.8)',
+          'rgba(176, 196, 222, 0.8)'
+        ],
+        hoverBackgroundColor: [
+          'rgba(135, 206, 235, 1)',
+          'rgba(152, 251, 152, 1)',
+          'rgba(255, 182, 193, 1)',
+          'rgba(255, 218, 185, 1)',
+          'rgba(221, 160, 221, 1)',
+          'rgba(176, 196, 222, 1)'
+        ],
+        borderColor: [
+          'rgba(135, 206, 235, 1)',
+          'rgba(152, 251, 152, 1)',
+          'rgba(255, 182, 193, 1)',
+          'rgba(255, 218, 185, 1)',
+          'rgba(221, 160, 221, 1)',
+          'rgba(176, 196, 222, 1)'
+        ],
+        data: chartData.map((item: ChartDataItem) => item.total),
+      }],
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            callback: function(value: any) {
+              return value + ' kali';
+            }
+          }
+        }]
+      }
+    }
+  };
+});
+
+// Chart data for frequently borrowed items
+const frequentlyBorrowedChart = computed(() => {
+  const chartData = (page.props.chartData as ChartData)?.seringDipinjam || [];
+  
+  // If no data, show empty state
+  if (chartData.length === 0) {
+    return {
+      type: 'doughnut' as const,
+      data: {
+        labels: ['Belum ada data'],
+        datasets: [{
+          data: [1],
+          backgroundColor: ['#E5E7EB'],
+          hoverBackgroundColor: ['#D1D5DB'],
+          hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }],
+      },
+      options: {
+        tooltips: {
+          callbacks: {
+            label: function(tooltipItem: any, data: any) {
+              return 'Belum ada data pinjaman';
+            }
+          }
+        }
+      }
+    };
+  }
+  
+  return {
+    type: 'doughnut' as const,
+    data: {
+      labels: chartData.map((item: ChartDataItem) => item.barang?.nama_barang || 'Barang'),
+      datasets: [{
+        data: chartData.map((item: ChartDataItem) => item.total),
+        backgroundColor: [
+          '#20B2AA',
+          '#87CEEB',
+          '#98FB98',
+          '#FFB6C1',
+          '#FFDAB9',
+          '#DDA0DD'
+        ],
+        hoverBackgroundColor: [
+          '#1A9A94',
+          '#6BB6E0',
+          '#7AE87A',
+          '#FF9BB0',
+          '#FFC8A7',
+          '#C890C8'
+        ],
+        hoverBorderColor: "rgba(234, 236, 244, 1)",
+      }],
+    },
+    options: {
+      tooltips: {
+        callbacks: {
+          label: function(tooltipItem: any, data: any) {
+            const dataset = data.datasets[tooltipItem.datasetIndex];
+            const total = dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((dataset.data[tooltipItem.index] / total) * 100).toFixed(1);
+            return data.labels[tooltipItem.index] + ': ' + dataset.data[tooltipItem.index] + ' pinjaman (' + percentage + '%)';
+          }
+        }
+      }
+    }
+  };
 });
 </script>
 
@@ -121,6 +386,57 @@ const recentActivities = computed<ActivityItem[]>(() => {
               </div>
             </div>
           </div>
+        </Card>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="mt-8 grid gap-6 lg:grid-cols-3">
+        <!-- Barang Masuk Chart -->
+        <Card class="overflow-hidden rounded-2xl border border-[#B0C4DE] bg-white/80 shadow-xl backdrop-blur-xl animate-slide-up">
+          <CardHeader class="border-b border-[#B0C4DE] bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] p-6 animate-gradient-x">
+            <CardTitle class="text-xl font-bold text-white flex items-center gap-2">
+              <TrendingUp class="h-5 w-5" />
+              Barang Masuk
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="p-6">
+            <ChartComponent 
+              chartId="barangMasukChart" 
+              :chartData="barangMasukChart" 
+            />
+          </CardContent>
+        </Card>
+
+        <!-- Frequently Requested Items Chart -->
+        <Card class="overflow-hidden rounded-2xl border border-[#B0C4DE] bg-white/80 shadow-xl backdrop-blur-xl animate-slide-up delay-200">
+          <CardHeader class="border-b border-[#B0C4DE] bg-gradient-to-r from-[#87CEEB] to-[#98FB98] p-6 animate-gradient-x">
+            <CardTitle class="text-xl font-bold text-white flex items-center gap-2">
+              <BarChart3 class="h-5 w-5" />
+              Barang Sering Diminta
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="p-6">
+            <ChartComponent 
+              chartId="frequentlyRequestedChart" 
+              :chartData="frequentlyRequestedChart" 
+            />
+          </CardContent>
+        </Card>
+
+        <!-- Frequently Borrowed Items Chart -->
+        <Card class="overflow-hidden rounded-2xl border border-[#B0C4DE] bg-white/80 shadow-xl backdrop-blur-xl animate-slide-up delay-400">
+          <CardHeader class="border-b border-[#B0C4DE] bg-gradient-to-r from-[#98FB98] to-[#20B2AA] p-6 animate-gradient-x">
+            <CardTitle class="text-xl font-bold text-white flex items-center gap-2">
+              <PieChart class="h-5 w-5" />
+              Barang Sering Dipinjam
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="p-6">
+            <ChartComponent 
+              chartId="frequentlyBorrowedChart" 
+              :chartData="frequentlyBorrowedChart" 
+            />
+          </CardContent>
         </Card>
       </div>
 
@@ -182,6 +498,11 @@ const recentActivities = computed<ActivityItem[]>(() => {
   50% { background-position: 100% 50%; }
 }
 
+@keyframes chart-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(32, 178, 170, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(32, 178, 170, 0.5); }
+}
+
 .animate-fade-in {
   animation: fade-in 0.8s ease-in-out;
 }
@@ -203,7 +524,35 @@ const recentActivities = computed<ActivityItem[]>(() => {
   background-size: 200% 200%;
 }
 
+.animate-chart-glow {
+  animation: chart-glow 2s ease-in-out infinite;
+}
+
 .delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
+
+/* Chart container hover effects */
+.chart-container {
+  transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+  transform: scale(1.02);
+}
+
+/* Responsive chart grid */
+@media (max-width: 1024px) {
+  .lg\\:grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .lg\\:grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
 </style>

@@ -25,23 +25,6 @@
             margin: 5px 0 0 0;
             font-size: 12px;
         }
-        .pendahuluan {
-            margin-bottom: 25px;
-            text-align: justify;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #007bff;
-        }
-        .pendahuluan h3 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
-            color: #333;
-        }
-        .pendahuluan p {
-            margin: 0 0 8px 0;
-            text-indent: 20px;
-            font-size: 11px;
-        }
         .user-info {
             background-color: #f9f9f9;
             padding: 10px;
@@ -99,17 +82,33 @@
     </style>
 </head>
 <body>
+    <!-- Cover Page -->
+    <div style="font-family: Arial, Helvetica, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 60px; box-sizing: border-box;">
+        <div style="width: 100%; max-width: 600px; margin: 0 auto;">
+            <div style="margin-bottom: 40px;">
+                <p style="font-size: 12pt; margin: 0 0 8px 0; color: #222;">Laporan Pengguna</p>
+                <p style="font-size: 16pt; font-weight: bold; margin: 0 0 24px 0;">
+                    <span style="text-transform: uppercase;">UPT Puskesmas BONTANG UTARA 1</span>
+                </p>
+            </div>
+            <div style="margin-bottom: 40px;">
+                <p style="font-size: 12pt; color: #888; margin: 0 0 4px 0;">Periode :</p>
+                <p style="font-size: 12pt; color: #888; margin: 0;">
+                    {{ $month }} {{ $year }}
+                </p>
+            </div>
+          
+        </div>
+    </div>
+
+    <!-- Page Break for Report Content -->
+    <div style="page-break-before: always;"></div>
+
     <div class="header">
         <h1>SISTEM PEMESANAN BARANG</h1>
         <p>{{ $title }}</p>
         <p>Periode: {{ $month }} {{ $year }}</p>
         <p>Tanggal Cetak: {{ date('d/m/Y H:i') }}</p>
-    </div>
-
-    <div class="pendahuluan">
-        <h3>Pendahuluan</h3>
-        <p>Laporan ini dibuat untuk memberikan gambaran tentang aktivitas pengguna dalam menggunakan sistem pemesanan barang. Laporan ini mencakup detail permintaan barang dan peminjaman barang yang telah dilakukan oleh pengguna.</p>
-        <p>Laporan ini dapat digunakan untuk analisis tren permintaan barang, efektivitas peminjaman barang, dan evaluasi kinerja pengguna.</p>
     </div>
 
     <div class="user-info">
@@ -199,7 +198,7 @@
                             @endswitch
                         </span>
                     </td>
-                    <td>{{ $item->tanggal_peminjaman ? date('d/m/Y', strtotime($item->tanggal_peminjaman)) : '-' }}</td>
+                    <td>{{ date('d/m/Y', strtotime($item->tanggal_peminjaman)) }}</td>
                     <td>{{ $item->tanggal_pengembalian ? date('d/m/Y', strtotime($item->tanggal_pengembalian)) : '-' }}</td>
                     <td>{{ $item->keterangan ?: '-' }}</td>
                 </tr>
@@ -212,8 +211,8 @@
     </div>
 
     <div class="footer">
-        <p>Dokumen ini dibuat secara otomatis oleh sistem pada {{ date('d/m/Y H:i:s') }}</p>
-        <p>Sistem Pemesanan Barang - {{ date('Y') }}</p>
+        <p>Laporan ini dibuat secara otomatis oleh sistem manajemen inventori UPT Puskesmas Bontang Utara 1</p>
+        <p>Dicetak pada: {{ date('d/m/Y H:i:s') }}</p>
     </div>
 </body>
 </html> 

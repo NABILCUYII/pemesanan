@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Download, Calendar, ChevronDown, ChevronRight, User, Search } from 'lucide-vue-next';
+import { FileText, Download, Calendar, ChevronDown, ChevronRight, User, Search, FileSpreadsheet } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
     Table,
@@ -29,10 +29,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useInitials } from '@/composables/useInitials';
 
 interface User {
     id: number;
     name: string;
+    photo?: string;
     permintaan: any[];
     peminjaman: any[];
     total_permintaan: number;
@@ -63,6 +66,8 @@ const props = withDefaults(defineProps<Props>(), {
     month: () => new Date().getMonth() + 1, // Default to current month (1-12)
     year: () => new Date().getFullYear(), // Default to current year
 });
+
+const { getInitials } = useInitials();
 
 const selectedMonth = ref(props.month?.toString() ?? (new Date().getMonth() + 1).toString());
 const selectedYear = ref(props.year?.toString() ?? new Date().getFullYear().toString());
@@ -140,6 +145,44 @@ const toggleUser = (userId: number) => {
 const isUserExpanded = (userId: number) => {
     return expandedUsers.value.includes(userId);
 };
+
+// Computed property untuk menghitung stok awal berdasarkan rumus
+const calculatedStokChanges = computed(() => {
+    return props.stokChanges.map(item => {
+        const valuesToSum = [
+            item.stok_akhir,
+            item.permintaan_keluar,
+            item.peminjaman_keluar,
+            item.peminjaman_kembali
+        ];
+        
+        const stokAwal = valuesToSum
+            .map(value => Number(value)) // Pastikan semua nilai adalah angka
+            .filter(value => value > 0)    // Abaikan nilai nol atau negatif
+            .reduce((sum, value) => sum + value, 0); // Jumlahkan nilai positif
+
+        return {
+            ...item,
+            stok_awal: stokAwal
+        };
+    });
+});
+
+const showPdfDropdown = ref(false);
+const showExcelDropdown = ref(false);
+
+function togglePdfDropdown() {
+    showPdfDropdown.value = !showPdfDropdown.value;
+    if (showPdfDropdown.value) showExcelDropdown.value = false;
+}
+function toggleExcelDropdown() {
+    showExcelDropdown.value = !showExcelDropdown.value;
+    if (showExcelDropdown.value) showPdfDropdown.value = false;
+}
+
+const getPhotoUrl = (photoPath: string) => {
+    return `/storage/${photoPath}`;
+};
 </script>
 
 <template>
@@ -156,10 +199,46 @@ const isUserExpanded = (userId: number) => {
                     <p class="text-muted-foreground text-sm sm:text-base mt-2">Laporan komprehensif permintaan, peminjaman, dan pergerakan stok barang</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <a :href="route('laporan.download', { month: selectedMonth, year: selectedYear })" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 sm:h-11 px-4 sm:px-6 py-2 w-full sm:w-auto shadow-sm">
-                        <Download class="w-4 h-4 mr-2" />
-                        Download Laporan PDF
-                    </a>
+                    <!-- PDF Dropdown -->
+                    <div class="relative" @click.stop>
+                        <button
+                            type="button"
+                            @click="togglePdfDropdown"
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 sm:h-11 px-4 sm:px-6 py-2 w-full sm:w-auto shadow-sm"
+                        >
+                            <Download class="w-4 h-4 mr-2" />
+                            Download Laporan PDF
+                            <ChevronDown class="w-4 h-4 ml-2" />
+                        </button>
+                        <div
+                            v-if="showPdfDropdown"
+                            class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                        >
+                            <a :href="route('laporan.download', { month: selectedMonth, year: selectedYear })" class="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-900">Download Semua</a>
+                            <a :href="route('laporan.download-permintaan', { month: selectedMonth, year: selectedYear })" class="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-900">Download Laporan Permintaan</a>
+                            <a :href="route('laporan.download-peminjaman', { month: selectedMonth, year: selectedYear })" class="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-900">Download Laporan Peminjaman</a>
+                        </div>
+                    </div>
+                    <!-- Excel Dropdown -->
+                    <div class="relative" @click.stop>
+                        <button
+                            type="button"
+                            @click="toggleExcelDropdown"
+                            class="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-green-600 text-white hover:bg-green-700 h-10 sm:h-11 px-4 sm:px-6 py-2 w-full sm:w-auto shadow-sm"
+                        >
+                            <FileSpreadsheet class="w-4 h-4 mr-2" />
+                            Download Laporan Excel
+                            <ChevronDown class="w-4 h-4 ml-2" />
+                        </button>
+                        <div
+                            v-if="showExcelDropdown"
+                            class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
+                        >
+                            <a :href="route('laporan.download-excel', { month: selectedMonth, year: selectedYear })" class="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-900">Download Semua</a>
+                            <a :href="route('laporan.download-permintaan-excel', { month: selectedMonth, year: selectedYear })" class="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-900">Download Laporan Permintaan</a>
+                            <a :href="route('laporan.download-peminjaman-excel', { month: selectedMonth, year: selectedYear })" class="block px-4 py-2 hover:bg-gray-100 text-sm text-gray-900">Download Laporan Peminjaman</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -237,10 +316,18 @@ const isUserExpanded = (userId: number) => {
                         <div v-for="user in filteredUsers" :key="user.id" class="border rounded-lg p-4 space-y-3">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1">
-                                    <h3 class="font-semibold text-lg">{{ user.name }}</h3>
-                                    <div class="flex gap-4 mt-2 text-sm text-muted-foreground">
-                                        <span>Permintaan: {{ user.total_permintaan }}</span>
-                                        <span>Peminjaman: {{ user.total_peminjaman }}</span>
+                                    <div class="flex items-center gap-3">
+                                        <Avatar class="w-8 h-8">
+                                            <AvatarImage v-if="user.photo" :src="getPhotoUrl(user.photo)" alt="User Photo" />
+                                            <AvatarFallback>{{ getInitials(user.name) }}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h3 class="font-semibold text-lg">{{ user.name }}</h3>
+                                            <div class="flex gap-4 mt-2 text-sm text-muted-foreground">
+                                                <span>Permintaan: {{ user.total_permintaan }}</span>
+                                                <span>Peminjaman: {{ user.total_peminjaman }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <Button
@@ -265,13 +352,22 @@ const isUserExpanded = (userId: number) => {
                                 <!-- Header with download button -->
                                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                     <h4 class="font-semibold text-sm">Detail Laporan: {{ user.name }}</h4>
-                                    <a 
-                                        :href="route('laporan.download-user', { user_id: user.id, month: selectedMonth, year: selectedYear })"
-                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
-                                    >
-                                        <Download class="w-3 h-3 mr-1" />
-                                        Download
-                                    </a>
+                                    <div class="flex gap-2">
+                                        <a 
+                                            :href="route('laporan.download-user', { user_id: user.id, month: selectedMonth, year: selectedYear })"
+                                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
+                                        >
+                                            <Download class="w-3 h-3 mr-1" />
+                                            PDF
+                                        </a>
+                                        <a 
+                                            :href="route('laporan.download-user-excel', { user_id: user.id, month: selectedMonth, year: selectedYear })"
+                                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-xs font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 h-8 px-3"
+                                        >
+                                            <FileSpreadsheet class="w-3 h-3 mr-1" />
+                                            Excel
+                                        </a>
+                                    </div>
                                 </div>
                                 
                                 <!-- Permintaan Details -->
@@ -346,9 +442,10 @@ const isUserExpanded = (userId: number) => {
                                     <TableRow v-for="user in filteredUsers" :key="user.id" class="hover:bg-muted/30 transition-colors">
                                         <TableCell class="font-medium py-4">
                                             <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                                    <User class="w-4 h-4 text-primary" />
-                                                </div>
+                                                <Avatar class="w-8 h-8">
+                                                    <AvatarImage v-if="user.photo" :src="getPhotoUrl(user.photo)" alt="User Photo" />
+                                                    <AvatarFallback>{{ getInitials(user.name) }}</AvatarFallback>
+                                                </Avatar>
                                                 {{ user.name }}
                                             </div>
                                         </TableCell>
@@ -387,13 +484,22 @@ const isUserExpanded = (userId: number) => {
                                                 <!-- Header with download button -->
                                                 <div class="flex justify-between items-center pb-4 border-b">
                                                     <h3 class="text-lg font-semibold text-gray-900">Detail Laporan: {{ user.name }}</h3>
-                                                    <a 
-                                                        :href="route('laporan.download-user', { user_id: user.id, month: selectedMonth, year: selectedYear })"
-                                                        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 shadow-sm"
-                                                    >
-                                                        <Download class="w-4 h-4 mr-2" />
-                                                        Download Laporan
-                                                    </a>
+                                                    <div class="flex gap-2">
+                                                        <a 
+                                                            :href="route('laporan.download-user', { user_id: user.id, month: selectedMonth, year: selectedYear })"
+                                                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 shadow-sm"
+                                                        >
+                                                            <Download class="w-4 h-4 mr-2" />
+                                                            Download PDF
+                                                        </a>
+                                                        <a 
+                                                            :href="route('laporan.download-user-excel', { user_id: user.id, month: selectedMonth, year: selectedYear })"
+                                                            class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 h-9 px-4 shadow-sm"
+                                                        >
+                                                            <FileSpreadsheet class="w-4 h-4 mr-2" />
+                                                            Download Excel
+                                                        </a>
+                                                    </div>
                                                 </div>
                                                 
                                                 <!-- Permintaan Details -->
@@ -493,7 +599,7 @@ const isUserExpanded = (userId: number) => {
                 <CardContent>
                     <!-- Mobile view - Card layout -->
                     <div class="block md:hidden space-y-4">
-                        <div v-for="item in stokChanges" :key="item.id" class="border rounded-lg p-4 space-y-3">
+                        <div v-for="item in calculatedStokChanges" :key="item.id" class="border rounded-lg p-4 space-y-3">
                             <div class="space-y-2">
                                 <div>
                                     <h3 class="font-semibold text-lg">{{ item.nama_barang }}</h3>
@@ -541,7 +647,7 @@ const isUserExpanded = (userId: number) => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow v-for="item in stokChanges" :key="item.id" class="hover:bg-muted/30 transition-colors">
+                                    <TableRow v-for="item in calculatedStokChanges" :key="item.id" class="hover:bg-muted/30 transition-colors">
                                         <TableCell class="py-4">
                                             <div class="space-y-1">
                                                 <div class="font-semibold text-base">{{ item.nama_barang }}</div>

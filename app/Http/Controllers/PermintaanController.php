@@ -19,7 +19,7 @@ class PermintaanController extends Controller
         // If user is admin, show all requests
         // If user is regular user, show only their requests
         $permintaan = Permintaan::with(['user', 'barang'])
-            ->when($user->role !== 'admin', function ($query) use ($user) {
+            ->when(!$user->isAdmin(), function ($query) use ($user) {
                 return $query->where('user_id', $user->id);
             })
             ->latest()
@@ -28,8 +28,10 @@ class PermintaanController extends Controller
         $grouped = $permintaan->groupBy('user.name');
         
         $result = $grouped->map(function ($items, $userName) {
+            $firstItem = $items->first();
             return [
                 'user' => $userName,
+                'user_photo' => $firstItem->user->photo,
                 'items' => $items->map(function ($item) {
                     return [
                         'nama_barang' => $item->barang->nama_barang,
@@ -46,7 +48,7 @@ class PermintaanController extends Controller
         
         return Inertia::render('permintaan/index', [
             'permintaan' => $result,
-            'isAdmin' => $user->role === 'admin'
+            'isAdmin' => $user->isAdmin()
         ]);
     }
 
@@ -108,6 +110,17 @@ class PermintaanController extends Controller
 
     public function edit(Permintaan $permintaan)
     {
+        // Check if user is authorized to edit this permintaan
+        if (auth()->id() !== $permintaan->user_id && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Only allow editing if status is pending
+        if ($permintaan->status !== 'pending') {
+            return redirect()->route('permintaan.index')
+                ->with('error', 'Permintaan yang sudah disetujui/ditolak tidak dapat diubah');
+        }
+
         $barang = Barang::where('kategori', 'permintaan')->get();
         return Inertia::render('permintaan/edit', [
             'permintaan' => $permintaan->load('barang'),
@@ -117,6 +130,17 @@ class PermintaanController extends Controller
 
     public function update(Request $request, Permintaan $permintaan)
     {
+        // Check if user is authorized to update this permintaan
+        if (auth()->id() !== $permintaan->user_id && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Only allow updating if status is pending
+        if ($permintaan->status !== 'pending') {
+            return redirect()->route('permintaan.index')
+                ->with('error', 'Permintaan yang sudah disetujui/ditolak tidak dapat diubah');
+        }
+
         $request->validate([
             'barang_id' => 'required|exists:barang,id',
             'jumlah' => 'required|integer|min:1',
@@ -135,13 +159,49 @@ class PermintaanController extends Controller
 
     public function destroy(Permintaan $permintaan)
     {
+        // Check if user is authorized to delete this permintaan
+        if (auth()->id() !== $permintaan->user_id && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Only allow deletion if status is pending
+        if ($permintaan->status !== 'pending') {
+            return redirect()->route('permintaan.index')
+                ->with('error', 'Permintaan yang sudah disetujui/ditolak tidak dapat dihapus');
+        }
+
         $permintaan->delete();
         return redirect()->route('permintaan.index')
             ->with('message', 'Permintaan berhasil dihapus');
     }
 
+    public function complete(Permintaan $permintaan)
+    {
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if permintaan is approved
+        if ($permintaan->status !== 'approved') {
+            return redirect()->back()->with('error', 'Hanya permintaan yang disetujui yang dapat ditandai sebagai selesai');
+        }
+
+        $permintaan->update([
+            'status' => 'completed'
+        ]);
+
+        return redirect()->route('permintaan.index')
+            ->with('message', 'Permintaan berhasil ditandai sebagai selesai');
+    }
+
     public function approval()
     {
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $permintaan = Permintaan::with(['user', 'barang', 'approvedBy'])
             ->where('status', 'pending')
             ->latest()
@@ -160,6 +220,11 @@ class PermintaanController extends Controller
     
     public function approve(Request $request)
     {
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
             'permintaan_id' => 'required|exists:permintaan,id',
             'action' => 'required|in:approve,reject',

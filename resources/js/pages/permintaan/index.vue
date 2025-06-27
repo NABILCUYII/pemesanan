@@ -3,11 +3,13 @@ import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, User, Edit, X } from 'lucide-vue-next';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Plus, Search, User, Edit, X, Check, XCircle } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { useInitials } from '@/composables/useInitials';
 
 // Declare route function globally for TypeScript
 declare function route(name: string, params?: any): string;
@@ -24,6 +26,7 @@ interface PermintaanItem {
 
 interface PermintaanGroup {
     user: string;
+    user_photo?: string;
     items: PermintaanItem[];
 }
 
@@ -35,12 +38,18 @@ const props = defineProps<{
 // Get user role from auth
 const page = usePage();
 const user = page.props.auth.user;
+const { getInitials } = useInitials();
 
 // Debug: Log props saat komponen dimuat
 console.log('Props permintaan:', props.permintaan);
 
 const searchQuery = ref('');
 const selectedStatus = ref('');
+
+const getPhotoUrl = (photoPath: string) => {
+    if (!photoPath) return '';
+    return `/storage/${photoPath}`;
+};
 
 const filteredPermintaan = computed(() => {
     console.log('Filtering permintaan:', props.permintaan); // Debug log
@@ -74,7 +83,11 @@ const filteredPermintaan = computed(() => {
                 return matchesSearch && matchesStatus;
             });
 
-            return filteredItems.length > 0 ? { user: group.user, items: filteredItems } : null;
+            return filteredItems.length > 0 ? { 
+                user: group.user, 
+                user_photo: group.user_photo,
+                items: filteredItems 
+            } : null;
         })
         .filter(Boolean) as PermintaanGroup[];
 });
@@ -112,6 +125,34 @@ const deletePermintaan = (id: number) => {
         router.delete(route('permintaan.destroy', id));
     }
 };
+
+const approvePermintaan = (id: number) => {
+    if (confirm('Apakah Anda yakin ingin menyetujui permintaan ini?')) {
+        router.post(route('permintaan.approve'), {
+            permintaan_id: id,
+            action: 'approve',
+            alasan: 'Permintaan disetujui',
+            catatan: ''
+        });
+    }
+};
+
+const rejectPermintaan = (id: number) => {
+    if (confirm('Apakah Anda yakin ingin menolak permintaan ini?')) {
+        router.post(route('permintaan.approve'), {
+            permintaan_id: id,
+            action: 'reject',
+            alasan: 'Permintaan ditolak',
+            catatan: ''
+        });
+    }
+};
+
+const completePermintaan = (id: number) => {
+    if (confirm('Apakah Anda yakin ingin menandai permintaan ini sebagai selesai?')) {
+        router.patch(route('permintaan.complete', id));
+    }
+};
 </script>
 
 <template>
@@ -122,14 +163,22 @@ const deletePermintaan = (id: number) => {
                 <div>
                     <h1 class="text-2xl font-semibold text-gray-800">Daftar Permintaan</h1>
                     <p v-if="!isAdmin" class="text-sm text-gray-500 mt-1">Menampilkan permintaan Anda</p>
-                    <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua permintaan</p>
+                    <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua permintaan pengguna</p>
                 </div>
-                <Link :href="route('permintaan.create')">
-                    <Button class="w-full sm:w-auto">
-                        <Plus class="w-4 h-4 mr-2" />
-                        Buat Permintaan
-                    </Button>
-                </Link>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <Link v-if="isAdmin" :href="route('permintaan.approval')">
+                        <Button variant="outline" class="w-full sm:w-auto">
+                            <Check class="w-4 h-4 mr-2" />
+                            Approval
+                        </Button>
+                    </Link>
+                    <Link :href="route('permintaan.create')">
+                        <Button class="w-full sm:w-auto">
+                            <Plus class="w-4 h-4 mr-2" />
+                            Buat Permintaan
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <!-- Filter & Search -->
@@ -160,7 +209,14 @@ const deletePermintaan = (id: number) => {
                 <div v-for="group in filteredPermintaan" :key="group.user" class="mb-8">
                     <!-- User Header -->
                     <div class="flex items-center gap-2 mb-4 bg-gray-50 p-4 rounded-lg">
-                        <User class="w-5 h-5 text-gray-500" />
+                        <Avatar class="w-10 h-10">
+                            <AvatarImage 
+                                v-if="group.user_photo && getPhotoUrl(group.user_photo)" 
+                                :src="getPhotoUrl(group.user_photo)" 
+                                alt="User Photo" 
+                            />
+                            <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
+                        </Avatar>
                         <h2 class="font-semibold text-lg">{{ group.user }}</h2>
                     </div>
 
@@ -189,6 +245,7 @@ const deletePermintaan = (id: number) => {
                                 </TableCell>
                                 <TableCell class="text-right">
                                     <div class="flex justify-end gap-2">
+                                        <!-- Admin Actions -->
                                         <Link
                                             v-if="item.status === 'pending'"
                                             :href="route('permintaan.edit', item.id)"
@@ -202,6 +259,32 @@ const deletePermintaan = (id: number) => {
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
+                                        </button>
+                                        
+                                        <!-- Admin Approval Actions -->
+                                        <button
+                                            v-if="isAdmin && item.status === 'pending'"
+                                            @click="approvePermintaan(item.id)"
+                                            class="text-green-600 hover:text-green-800"
+                                            title="Setujui"
+                                        >
+                                            <Check class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'pending'"
+                                            @click="rejectPermintaan(item.id)"
+                                            class="text-red-600 hover:text-red-800"
+                                            title="Tolak"
+                                        >
+                                            <XCircle class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'approved'"
+                                            @click="completePermintaan(item.id)"
+                                            class="text-blue-600 hover:text-blue-800"
+                                            title="Tandai Selesai"
+                                        >
+                                            <Check class="w-4 h-4" />
                                         </button>
                                     </div>
                                 </TableCell>
@@ -221,7 +304,10 @@ const deletePermintaan = (id: number) => {
                     <!-- User Header -->
                     <div class="bg-gray-50 p-4 border-b">
                         <div class="flex items-center gap-2">
-                            <User class="w-5 h-5 text-gray-500" />
+                            <Avatar class="w-10 h-10">
+                                <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo)" alt="User Photo" />
+                                <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
+                            </Avatar>
                             <h2 class="font-semibold text-lg">{{ group.user }}</h2>
                         </div>
                     </div>
@@ -258,6 +344,32 @@ const deletePermintaan = (id: number) => {
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
+                                        </button>
+                                        
+                                        <!-- Admin Approval Actions -->
+                                        <button
+                                            v-if="isAdmin && item.status === 'pending'"
+                                            @click="approvePermintaan(item.id)"
+                                            class="text-green-600 hover:text-green-800"
+                                            title="Setujui"
+                                        >
+                                            <Check class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'pending'"
+                                            @click="rejectPermintaan(item.id)"
+                                            class="text-red-600 hover:text-red-800"
+                                            title="Tolak"
+                                        >
+                                            <XCircle class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-if="isAdmin && item.status === 'approved'"
+                                            @click="completePermintaan(item.id)"
+                                            class="text-blue-600 hover:text-blue-800"
+                                            title="Tandai Selesai"
+                                        >
+                                            <Check class="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>

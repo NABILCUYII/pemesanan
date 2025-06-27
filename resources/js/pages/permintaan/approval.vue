@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useInitials } from '@/composables/useInitials';
 
 
 interface Barang {
@@ -25,6 +27,7 @@ interface User {
     id: number;
     name: string;
     email: string;
+    photo?: string;
 }
 
 interface Permintaan {
@@ -55,6 +58,12 @@ const props = defineProps<{
     permintaan: Permintaan[];
     peminjaman: Peminjaman[];
 }>();
+
+const { getInitials } = useInitials();
+
+const getPhotoUrl = (photoPath: string) => {
+    return `/storage/${photoPath}`;
+};
 
 const searchQuery = ref('');
 const selectedStatus = ref('pending');
@@ -201,7 +210,12 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPermintaan" :key="group.user.id" class="border-b last:border-b-0">
                             <div class="bg-gray-50 px-4 py-3 border-b">
                                 <div class="flex items-center gap-2">
-                                    <User class="w-5 h-5 text-gray-500" />
+                                    <Avatar class="w-10 h-10">
+                                        <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                        <AvatarFallback>
+                                            {{ getInitials(group.user.name) }}
+                                        </AvatarFallback>
+                                    </Avatar>
                                     <div>
                                         <div class="font-medium">{{ group.user.name }}</div>
                                         <div class="text-xs text-gray-500">{{ group.user.email }}</div>
@@ -268,7 +282,12 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPermintaan" :key="group.user.id" class="border rounded-lg overflow-hidden">
                             <div class="bg-gray-50 px-4 py-3 border-b">
                                 <div class="flex items-center gap-2">
-                                    <User class="w-5 h-5 text-gray-500" />
+                                    <Avatar class="w-10 h-10">
+                                        <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                        <AvatarFallback>
+                                            {{ getInitials(group.user.name) }}
+                                        </AvatarFallback>
+                                    </Avatar>
                                     <div>
                                         <div class="font-medium">{{ group.user.name }}</div>
                                         <div class="text-xs text-gray-500">{{ group.user.email }}</div>
@@ -322,7 +341,12 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPeminjaman" :key="group.user.id" class="border-b last:border-b-0">
                             <div class="bg-gray-50 px-4 py-3 border-b">
                                 <div class="flex items-center gap-2">
-                                    <User class="w-5 h-5 text-gray-500" />
+                                    <Avatar class="w-10 h-10">
+                                        <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                        <AvatarFallback>
+                                            {{ getInitials(group.user.name) }}
+                                        </AvatarFallback>
+                                    </Avatar>
                                     <div>
                                         <div class="font-medium">{{ group.user.name }}</div>
                                         <div class="text-xs text-gray-500">{{ group.user.email }}</div>
@@ -396,7 +420,12 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPeminjaman" :key="group.user.id" class="border rounded-lg overflow-hidden">
                             <div class="bg-gray-50 px-4 py-3 border-b">
                                 <div class="flex items-center gap-2">
-                                    <User class="w-5 h-5 text-gray-500" />
+                                    <Avatar class="w-10 h-10">
+                                        <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                        <AvatarFallback>
+                                            {{ getInitials(group.user.name) }}
+                                        </AvatarFallback>
+                                    </Avatar>
                                     <div>
                                         <div class="font-medium">{{ group.user.name }}</div>
                                         <div class="text-xs text-gray-500">{{ group.user.email }}</div>

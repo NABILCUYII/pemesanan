@@ -17,7 +17,8 @@ import {
     Check,
     History,
     FileText,
-    TrendingUp
+    TrendingUp,
+    AlertTriangle
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed } from 'vue';
@@ -56,6 +57,12 @@ const mainNavItems: NavItem[] = [
         title: 'Barang',
         href: route('barang.index'),
         icon: Package,
+        adminOnly: true,
+    },
+    {
+        title: 'Barang Rusak',
+        href: route('barang-rusak.index'),
+        icon: AlertTriangle,
         adminOnly: true,
     },
     {

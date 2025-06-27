@@ -1,14 +1,17 @@
 ﻿<script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
+import { useInitials } from '@/composables/useInitials';
 import { type BreadcrumbItem, type User } from '@/types';
 
 interface Props {
@@ -27,16 +30,49 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const page = usePage();
 const user = page.props.auth.user as User;
+const { getInitials } = useInitials();
+
+const photoInput = ref<HTMLInputElement>();
 
 const form = useForm({
     name: user.name,
     email: user.email,
+    photo: null as File | null,
 });
 
+const selectPhoto = () => {
+    photoInput.value?.click();
+};
+
+const updatePhotoPreview = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files[0]) {
+        form.photo = target.files[0];
+    }
+};
+
 const submit = () => {
-    form.patch(route('profile.update'), {
-        preserveScroll: true,
-    });
+    if (form.photo) {
+        // Use POST for file uploads
+        form.post(route('profile.update.post'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                form.photo = null;
+                if (photoInput.value) {
+                    photoInput.value.value = '';
+                }
+            },
+        });
+    } else {
+        // Use PATCH for regular updates
+        form.patch(route('profile.update'), {
+            preserveScroll: true,
+        });
+    }
+};
+
+const getPhotoUrl = (photoPath: string) => {
+    return `/storage/${photoPath}`;
 };
 </script>
 
@@ -46,7 +82,53 @@ const submit = () => {
 
         <SettingsLayout>
             <div class="flex flex-col space-y-6">
-                <HeadingSmall title="Profile information" description="Update your name and email address" />
+                <HeadingSmall title="Profile information" description="Update your name, email address, and profile photo" />
+
+                <!-- Profile Photo Section -->
+                <div class="flex items-center space-x-6">
+                    <div class="flex flex-col items-center space-y-4">
+                        <Avatar class="h-24 w-24">
+                            <AvatarImage 
+                                v-if="user.photo" 
+                                :src="getPhotoUrl(user.photo)" 
+                                :alt="user.name" 
+                            />
+                            <AvatarFallback class="text-lg font-semibold">
+                                {{ getInitials(user.name) }}
+                            </AvatarFallback>
+                        </Avatar>
+                        
+                        <div class="flex flex-col space-y-2">
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm"
+                                @click="selectPhoto"
+                                :disabled="form.processing"
+                            >
+                                {{ user.photo ? 'Change Photo' : 'Add Photo' }}
+                            </Button>
+                            
+                            <input
+                                ref="photoInput"
+                                type="file"
+                                class="hidden"
+                                accept="image/*"
+                                @change="updatePhotoPreview"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <div v-if="form.photo" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p class="text-sm text-green-700">
+                                Photo selected: {{ form.photo.name }}
+                            </p>
+                        </div>
+                        
+                        <InputError class="mt-2" :message="form.errors.photo" />
+                    </div>
+                </div>
 
                 <form @submit.prevent="submit" class="space-y-6">
                     <div class="grid gap-2">

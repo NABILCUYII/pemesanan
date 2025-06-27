@@ -5,6 +5,10 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
+import Chart from 'chart.js/auto';
+
+// Make Chart.js available globally
+(window as any).Chart = Chart;
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

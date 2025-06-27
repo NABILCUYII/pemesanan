@@ -3,11 +3,13 @@ import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Search, User, Edit, X, RotateCcw } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { useInitials } from '@/composables/useInitials';
 
 // Declare route function globally for TypeScript
 declare function route(name: string, params?: any): string;
@@ -40,6 +42,7 @@ interface PeminjamanItem {
 
 interface PeminjamanGroup {
     user: string;
+    user_photo?: string;
     items: PeminjamanItem[];
 }
 
@@ -47,6 +50,8 @@ const props = defineProps<{
     peminjaman: PeminjamanGroup[];
     isAdmin: boolean;
 }>();
+
+const { getInitials } = useInitials();
 
 const searchQuery = ref('');
 const selectedStatus = ref('');
@@ -75,7 +80,7 @@ const filteredPeminjaman = computed(() => {
                 return matchesSearch && matchesStatus;
             });
 
-            return filteredItems.length > 0 ? { user: group.user, items: filteredItems } : null;
+            return filteredItems.length > 0 ? { user: group.user, user_photo: group.user_photo, items: filteredItems } : null;
         })
         .filter(Boolean) as PeminjamanGroup[];
 });
@@ -141,6 +146,10 @@ const closeReturnModal = () => {
     showReturnModal.value = false;
     selectedPeminjaman.value = null;
 };
+
+const getPhotoUrl = (photoPath: string) => {
+    return `/storage/${photoPath}`;
+};
 </script>
 
 <template>
@@ -197,9 +206,15 @@ const closeReturnModal = () => {
             <div class="hidden md:block">
                 <div v-for="group in filteredPeminjaman" :key="group.user" class="mb-8">
                     <!-- User Header -->
-                    <div class="flex items-center gap-2 mb-4 bg-gray-50 p-4 rounded-lg">
-                        <User class="w-5 h-5 text-gray-500" />
-                        <h2 class="font-semibold text-lg">{{ group.user }}</h2>
+                    <div class="flex items-center gap-3 mb-4 bg-gray-50 p-4 rounded-lg">
+                        <Avatar class="w-12 h-12">
+                            <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo)" alt="User Photo" />
+                            <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h2 class="font-semibold text-lg">{{ group.user }}</h2>
+                            <p class="text-sm text-gray-500">Peminjam</p>
+                        </div>
                     </div>
 
                     <!-- Loans Table -->
@@ -271,7 +286,10 @@ const closeReturnModal = () => {
                     <!-- User Header -->
                     <div class="bg-gray-50 p-4 border-b">
                         <div class="flex items-center gap-2">
-                            <User class="w-5 h-5 text-gray-500" />
+                            <Avatar class="w-10 h-10">
+                                <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo)" alt="User Photo" />
+                                <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
+                            </Avatar>
                             <h2 class="font-semibold text-lg">{{ group.user }}</h2>
                         </div>
                     </div>
