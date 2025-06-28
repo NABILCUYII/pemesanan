@@ -44,6 +44,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('barang/{barang}', [BarangController::class, 'destroy'])->name('barang.destroy');
     Route::get('barang/stok', [BarangController::class, 'stok'])->name('barang.stok');
     Route::post('barang/{barang}/add-stok', [BarangController::class, 'addStok'])->name('barang.add-stok');
+    Route::get('api/barang/stok-menipis-count', [BarangController::class, 'stokMenipisCount']);
 });
 
 // Rute Barang Rusak

@@ -21,12 +21,24 @@ import {
     AlertTriangle
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const page = usePage();
 const user = page.props.auth.user;
 
-const mainNavItems: NavItem[] = [
+const stokMenipisCount = ref(0);
+
+onMounted(async () => {
+    try {
+        const res = await fetch('/api/barang/stok-menipis-count');
+        const data = await res.json();
+        stokMenipisCount.value = data.count;
+    } catch (e) {
+        stokMenipisCount.value = 0;
+    }
+});
+
+const mainNavItems = computed<NavItem[]>(() => [
     {
         title: 'Dashboard',
         href: route('dashboard'),
@@ -70,6 +82,7 @@ const mainNavItems: NavItem[] = [
         href: route('barang.stok'),
         icon: Package,
         adminOnly: true,
+        badge: stokMenipisCount.value,
     },
     {
         title: 'Riwayat Stok',
@@ -89,10 +102,10 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
         adminOnly: true,
     },
-];
+]);
 
 const filteredMainNavItems = computed(() => {
-    return mainNavItems.filter(item => {
+    return mainNavItems.value.filter(item => {
         if (!item.adminOnly) return true;
         return user?.role === 'admin';
     });
@@ -106,7 +119,7 @@ const footerNavItems: NavItem[] = [
     },
     {
         title: 'Pengaturan',
-        href: route('profile.edit'),
+        href: '#',
         icon: Settings,
     },
 ];

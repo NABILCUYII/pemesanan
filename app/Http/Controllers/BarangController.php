@@ -99,6 +99,10 @@ class BarangController extends Controller
             ->with('message', "Stok berhasil ditambahkan. Stok baru: {$barang->stok}");
     }
 
-
-    
+    // Endpoint notifikasi stok menipis
+    public function stokMenipisCount()
+    {
+        $count = Barang::stokMenipis()->count();
+        return response()->json(['count' => $count]);
+    }
 }

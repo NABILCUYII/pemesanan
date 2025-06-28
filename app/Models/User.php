@@ -63,4 +63,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Peminjaman::class);
     }
+
+    /**
+     * Get the full URL for the user's photo.
+     */
+    public function getPhotoUrlAttribute()
+    {
+        if ($this->photo) {
+            return \Storage::disk('public')->url($this->photo);
+        }
+        return null;
+    }
 }

@@ -17,6 +17,7 @@ export interface NavItem {
     isActive?: boolean;
     permissions?: string[];
     adminOnly?: boolean;
+    badge?: number | string;
 }
 
 export type AppPageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
@@ -33,6 +34,7 @@ export interface User {
     email: string;
     avatar?: string;
     photo?: string;
+    photo_url?: string;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;

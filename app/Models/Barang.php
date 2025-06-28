@@ -54,4 +54,10 @@ class Barang extends Model
             'referensi' => $referensi
         ]);
     }
+
+    // Scope untuk stok menipis
+    public function scopeStokMenipis($query, $threshold = 5)
+    {
+        return $query->where('stok', '<=', $threshold);
+    }
 }

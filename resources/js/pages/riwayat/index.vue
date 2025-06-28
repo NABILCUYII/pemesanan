@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Package, Calendar, Edit, X } from 'lucide-vue-next';
+import { Search, Package, Calendar, Edit, X, Trash2 } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
 
@@ -91,6 +91,12 @@ const cancelItem = (item: RiwayatItem) => {
     }
 };
 
+const deleteAllHistory = () => {
+    if (confirm('Apakah Anda yakin ingin menghapus semua riwayat? Tindakan ini tidak dapat dibatalkan.')) {
+        router.delete(route('riwayat.delete-all'));
+    }
+};
+
 const getPhotoUrl = (photoPath: string) => {
     return `/storage/${photoPath}`;
 };
@@ -105,6 +111,14 @@ const getPhotoUrl = (photoPath: string) => {
                     <h1 class="text-2xl font-semibold text-gray-800">Riwayat</h1>
                     <p class="text-sm text-gray-500 mt-1">Riwayat permintaan dan peminjaman Anda</p>
                 </div>
+                <Button 
+                    @click="deleteAllHistory" 
+                    variant="destructive" 
+                    class="flex items-center gap-2"
+                >
+                    <Trash2 class="w-4 h-4" />
+                    Hapus Semua
+                </Button>
             </div>
 
             <!-- Filter & Search -->
@@ -172,9 +186,16 @@ const getPhotoUrl = (photoPath: string) => {
                             </TableCell>
                             <TableCell>
                                 <div class="flex gap-2">
-                                    <Badge :variant="getStatusVariant(item.status)">
-                                        {{ getStatusText(item.status) }}
-                                    </Badge>
+                                    <Button 
+                                        v-if="item.status === 'pending'"
+                                        @click="cancelItem(item)" 
+                                        variant="outline" 
+                                        size="sm"
+                                        class="flex items-center gap-1"
+                                    >
+                                        <X class="w-3 h-3" />
+                                        Batalkan
+                                    </Button>
                                 </div>
                             </TableCell>
                         </TableRow>

@@ -20,6 +20,9 @@ defineProps<Props>();
                 >
                     <component :is="item.icon" class="h-5 w-5" />
                     <span>{{ item.title }}</span>
+                    <span v-if="item.badge && Number(item.badge) > 0" class="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                        {{ item.badge }}
+                    </span>
                 </Link>
             </SidebarMenuButton>
         </SidebarMenuItem>
