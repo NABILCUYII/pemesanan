@@ -22,13 +22,13 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+    <div class="min-h-screen bg-gradient-to-br from-[#F0F8FF] via-[#87CEEB] to-[#98FB98] flex items-center justify-center p-4">
         <!-- Animated Background -->
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -inset-[10px] opacity-50">
-                <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-                <div class="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-                <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+                <div class="absolute top-0 -left-4 w-72 h-72 bg-[#87CEEB] rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+                <div class="absolute top-0 -right-4 w-72 h-72 bg-[#98FB98] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+                <div class="absolute -bottom-8 left-20 w-72 h-72 bg-[#20B2AA] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
             </div>
         </div>
 
@@ -37,11 +37,11 @@ const submit = () => {
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">Forgot Password?</h1>
-                    <p class="text-white/80">Enter your email to receive a password reset link</p>
+                    <h1 class="text-3xl font-bold text-[#2F4F4F] mb-2">Lupa Password?</h1>
+                    <p class="text-[#2F4F4F]/80">Masukkan email Anda untuk menerima link reset password</p>
                 </div>
 
-                <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-400 bg-green-500/20 p-3 rounded-lg">
+                <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-600 bg-green-100 p-3 rounded-lg border border-green-200">
                     {{ status }}
                 </div>
 
@@ -49,7 +49,7 @@ const submit = () => {
                     <div class="space-y-4">
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail class="h-5 w-5 text-white/60" />
+                                <Mail class="h-5 w-5 text-[#2F4F4F]/60" />
                             </div>
                             <Input
                                 id="email"
@@ -59,8 +59,8 @@ const submit = () => {
                                 autofocus
                                 autocomplete="off"
                                 v-model="form.email"
-                                placeholder="Enter your email"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                placeholder="Masukkan email Anda"
+                                class="pl-10 bg-white/10 border-white/20 text-[#2F4F4F] placeholder:text-[#2F4F4F]/60 focus:border-white/40"
                             />
                             <InputError :message="form.errors.email" />
                         </div>
@@ -68,22 +68,22 @@ const submit = () => {
 
                     <div class="my-6">
                         <Button 
-                            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-2.5 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]" 
+                            class="w-full bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]" 
                             :disabled="form.processing"
                         >
                             <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin mr-2" />
-                            Send Reset Link
+                            {{ form.processing ? 'Mengirim...' : 'Kirim Link Reset' }}
                         </Button>
                     </div>
                 </form>
 
                 <div class="text-center text-sm">
-                    <span class="text-white/60">Remember your password?</span>
+                    <span class="text-[#2F4F4F]/80">Ingat password Anda?</span>
                     <TextLink 
                         :href="route('login')" 
-                        class="ml-1 text-white hover:text-white/80 transition-colors"
+                        class="ml-1 text-[#2F4F4F] font-semibold hover:text-[#2F4F4F]/90 transition-colors"
                     >
-                        Back to login
+                        Kembali ke login
                     </TextLink>
                 </div>
             </div>

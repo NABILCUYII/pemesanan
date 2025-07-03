@@ -57,47 +57,47 @@ const submitPeminjaman = () => {
 <template>
     <Head title="Edit Peminjaman" />
     <AppLayout>
-        <div class="p-6">
-            <div class="mb-6">
-                <div class="flex items-center gap-4 mb-4">
-                    <Link :href="route('peminjaman.index')" class="text-muted-foreground hover:text-foreground">
-                        <ArrowLeft class="h-5 w-5" />
+        <div class="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-10">
+            <div class="max-w-2xl mx-auto">
+                <!-- Header -->
+                <div class="flex items-center gap-3 mb-8">
+                    <Link :href="route('peminjaman.index')" class="text-blue-500 hover:text-blue-700 transition">
+                        <ArrowLeft class="h-6 w-6" />
                     </Link>
-                    <h1 class="text-2xl font-semibold flex items-center gap-2">
-                        <Package class="h-6 w-6" />
+                    <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center bg-blue-100 text-blue-600 rounded-full p-2 shadow">
+                            <Package class="h-7 w-7" />
+                        </span>
                         Edit Peminjaman Barang
                     </h1>
                 </div>
-                <p class="text-muted-foreground">Edit detail peminjaman barang</p>
-            </div>
-
-            <div class="max-w-2xl mx-auto">
-                <div class="bg-white rounded-lg border p-6">
-                    <h2 class="text-lg font-medium mb-6">Form Edit Peminjaman</h2>
-                    
+                <div class="bg-white/90 shadow-xl rounded-2xl border border-blue-100 p-8">
+                    <h2 class="text-xl font-semibold text-blue-700 mb-7 flex items-center gap-2">
+                        <span class="inline-block w-2 h-6 bg-blue-400 rounded-full mr-2"></span>
+                        Formulir Edit Peminjaman
+                    </h2>
                     <!-- Informasi Peminjaman -->
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                        <h3 class="font-medium text-gray-900 mb-2">Informasi Peminjaman:</h3>
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
+                        <h3 class="font-medium text-blue-900 mb-2">Informasi Peminjaman:</h3>
                         <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <span class="font-medium">Peminjam:</span>
-                                <p>{{ peminjaman?.user?.name || 'N/A' }}</p>
+                                <p>{{ props.peminjaman?.user?.name || 'N/A' }}</p>
                             </div>
                             <div>
                                 <span class="font-medium">Tanggal Dibuat:</span>
-                                <p>{{ new Date(peminjaman?.created_at).toLocaleDateString('id-ID') }}</p>
+                                <p>{{ new Date(props.peminjaman?.created_at).toLocaleDateString('id-ID') }}</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <form @submit.prevent="submitPeminjaman" class="space-y-6">
+                    <form @submit.prevent="submitPeminjaman" class="space-y-7">
                         <!-- Pilih Barang -->
-                        <div class="space-y-2">
-                            <Label for="barang_id">Barang *</Label>
+                        <div>
+                            <Label for="barang_id" class="font-semibold text-gray-700 mb-1">Pilih Barang <span class="text-red-500">*</span></Label>
                             <select
                                 id="barang_id"
                                 v-model="form.barang_id"
-                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                class="w-full rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-400 transition"
                                 required
                             >
                                 <option value="">Pilih barang</option>
@@ -105,89 +105,100 @@ const submitPeminjaman = () => {
                                     {{ item.nama_barang }} ({{ item.kode_barang }}) - Stok: {{ item.stok }}
                                 </option>
                             </select>
-                            <p v-if="form.errors.barang_id" class="text-sm text-red-500">
-                                {{ form.errors.barang_id }}
-                            </p>
+                            <transition name="fade">
+                                <p v-if="form.errors.barang_id" class="text-xs text-red-600 mt-1">{{ form.errors.barang_id }}</p>
+                            </transition>
                         </div>
-
+                        
                         <!-- Jumlah -->
-                        <div class="space-y-2">
-                            <Label for="jumlah">Jumlah *</Label>
+                        <div>
+                            <Label for="jumlah" class="font-semibold text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></Label>
                             <Input
                                 id="jumlah"
                                 v-model="form.jumlah"
                                 type="number"
                                 min="1"
                                 placeholder="Masukkan jumlah"
+                                class="rounded-xl border-blue-200 py-3"
                                 required
                             />
-                            <p v-if="form.errors.jumlah" class="text-sm text-red-500">
-                                {{ form.errors.jumlah }}
-                            </p>
+                            <transition name="fade">
+                                <p v-if="form.errors.jumlah" class="text-xs text-red-600 mt-1">{{ form.errors.jumlah }}</p>
+                            </transition>
                         </div>
 
                         <!-- Tenggat Waktu -->
-                        <div class="space-y-2">
-                            <Label for="due_date">Tenggat Waktu *</Label>
+                        <div>
+                            <Label for="due_date" class="font-semibold text-gray-700 mb-1">Tenggat Waktu <span class="text-red-500">*</span></Label>
                             <div class="relative">
                                 <Input
                                     id="due_date"
                                     v-model="form.due_date"
                                     type="date"
-                                    class="pr-10"
+                                    class="pr-10 rounded-xl border-blue-200 py-3"
                                     required
                                 />
-                                <CalendarDays class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                                <CalendarDays class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none" />
                             </div>
-                            <p v-if="form.errors.due_date" class="text-sm text-red-500">
-                                {{ form.errors.due_date }}
-                            </p>
+                            <transition name="fade">
+                                <p v-if="form.errors.due_date" class="text-xs text-red-600 mt-1">{{ form.errors.due_date }}</p>
+                            </transition>
                         </div>
 
                         <!-- Tanggal Kembali -->
-                        <div class="space-y-2">
-                            <Label for="tanggal_pengembalian">Tanggal Kembali *</Label>
+                        <div>
+                            <Label for="tanggal_pengembalian" class="font-semibold text-gray-700 mb-1">Tanggal Kembali <span class="text-red-500">*</span></Label>
                             <div class="relative">
                                 <Input
                                     id="tanggal_pengembalian"
                                     v-model="form.tanggal_pengembalian"
                                     type="date"
-                                    class="pr-10"
+                                    class="pr-10 rounded-xl border-blue-200 py-3"
                                     required
                                 />
-                                <CalendarDays class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                                <CalendarDays class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none" />
                             </div>
-                            <p v-if="form.errors.tanggal_pengembalian" class="text-sm text-red-500">
-                                {{ form.errors.tanggal_pengembalian }}
-                            </p>
+                            <transition name="fade">
+                                <p v-if="form.errors.tanggal_pengembalian" class="text-xs text-red-600 mt-1">{{ form.errors.tanggal_pengembalian }}</p>
+                            </transition>
                         </div>
 
                         <!-- Keterangan -->
-                        <div class="space-y-2">
-                            <Label for="keterangan">Keterangan (Opsional)</Label>
+                        <div>
+                            <Label for="keterangan" class="font-semibold text-gray-700 mb-1">Keterangan (Opsional)</Label>
                             <textarea
                                 id="keterangan"
                                 v-model="form.keterangan"
                                 rows="4"
-                                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                class="w-full rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-sm focus:ring-2 focus:ring-blue-400 transition"
                             />
-                            <p v-if="form.errors.keterangan" class="text-sm text-red-500">
-                                {{ form.errors.keterangan }}
-                            </p>
+                            <transition name="fade">
+                                <p v-if="form.errors.keterangan" class="text-xs text-red-600 mt-1">{{ form.errors.keterangan }}</p>
+                            </transition>
                         </div>
 
                         <!-- Tombol Submit -->
-                        <div class="flex gap-4">
+                        <div class="flex gap-4 pt-2">
                             <Button 
                                 type="submit" 
                                 :disabled="form.processing"
-                                class="flex-1"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl py-3 transition"
                             >
-                                {{ form.processing ? 'Menyimpan...' : 'Simpan Perubahan' }}
+                                <span v-if="form.processing">
+                                    <svg class="animate-spin h-5 w-5 inline-block mr-2" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                    </svg>
+                                    Menyimpan...
+                                </span>
+                                <span v-else>
+                                    Simpan Perubahan
+                                </span>
                             </Button>
                             <Button 
                                 type="button" 
                                 variant="outline"
+                                class="flex-1 border-blue-400 text-blue-600 hover:bg-blue-50 rounded-xl py-3"
                                 @click="$inertia.visit(route('peminjaman.index'))"
                             >
                                 Batal
@@ -198,4 +209,4 @@ const submitPeminjaman = () => {
             </div>
         </div>
     </AppLayout>
-</template> 
+</template>
