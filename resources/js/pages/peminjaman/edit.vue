@@ -55,7 +55,7 @@ const submitPeminjaman = () => {
 </script>
 
 <template>
-    <Head title="Edit Peminjaman" />
+    <Head title="Edit Aset" />
     <AppLayout>
         <div class="p-6">
             <div class="mb-6">
@@ -65,19 +65,19 @@ const submitPeminjaman = () => {
                     </Link>
                     <h1 class="text-2xl font-semibold flex items-center gap-2">
                         <Package class="h-6 w-6" />
-                        Edit Peminjaman Barang
+                        Edit Aset Barang
                     </h1>
                 </div>
-                <p class="text-muted-foreground">Edit detail peminjaman barang</p>
+                <p class="text-muted-foreground">Perbarui informasi aset yang dipinjam</p>
             </div>
 
             <div class="max-w-2xl mx-auto">
                 <div class="bg-white rounded-lg border p-6">
-                    <h2 class="text-lg font-medium mb-6">Form Edit Peminjaman</h2>
+                    <h2 class="text-lg font-medium mb-6">Form Edit Aset</h2>
                     
-                    <!-- Informasi Peminjaman -->
+                    <!-- Informasi Aset -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                        <h3 class="font-medium text-gray-900 mb-2">Informasi Peminjaman:</h3>
+                        <h3 class="font-medium text-gray-900 mb-2">Informasi Aset:</h3>
                         <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <span class="font-medium">Peminjam:</span>

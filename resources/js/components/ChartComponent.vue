@@ -65,6 +65,7 @@ const createChart = () => {
   // Set default font family and color for Chart.js v3+
   window.Chart.defaults.font.family = 'Nunito, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
   window.Chart.defaults.color = '#858796';
+  window.Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255, 255, 255, 0.95)';
 
   // Create chart with default options
   const defaultOptions = {
@@ -79,61 +80,61 @@ const createChart = () => {
       }
     },
     scales: props.chartData.type === 'line' || props.chartData.type === 'bar' ? {
-      xAxes: [{
-        gridLines: {
+      x: {
+        grid: {
           display: false,
           drawBorder: false
         },
         ticks: {
           maxTicksLimit: 7,
-          fontColor: '#858796'
+          color: '#858796'
         }
-      }],
-      yAxes: [{
+      },
+      y: {
         ticks: {
           maxTicksLimit: 5,
           padding: 10,
-          fontColor: '#858796',
+          color: '#858796',
           callback: function(value: any, index: any, values: any) {
             return value.toLocaleString();
           }
         },
-        gridLines: {
+        grid: {
           color: "rgb(234, 236, 244)",
-          zeroLineColor: "rgb(234, 236, 244)",
+          borderColor: "rgb(234, 236, 244)",
           drawBorder: false,
           borderDash: [2],
           zeroLineBorderDash: [2]
         }
-      }]
+      }
     } : undefined,
-    legend: {
-      display: false
-    },
-    tooltips: {
-      backgroundColor: "rgb(255,255,255)",
-      bodyFontColor: "#858796",
-      titleMarginBottom: 10,
-      titleFontColor: '#6e707e',
-      titleFontSize: 14,
-      borderColor: '#dddfeb',
-      borderWidth: 1,
-      xPadding: 15,
-      yPadding: 15,
-      displayColors: false,
-      intersect: false,
-      mode: 'index',
-      caretPadding: 10,
-      callbacks: {
-        label: function(tooltipItem: any, chart: any) {
-          const datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
-          return datasetLabel + ': ' + tooltipItem.yLabel.toLocaleString();
+    plugins: {
+      tooltip: {
+        backgroundColor: "rgb(255,255,255)",
+        titleColor: '#6e707e',
+        bodyColor: "#858796",
+        titleFont: {
+          size: 14
+        },
+        borderColor: '#dddfeb',
+        borderWidth: 1,
+        padding: 15,
+        displayColors: false,
+        intersect: false,
+        mode: 'index',
+        callbacks: {
+          label: function(context: any) {
+            const datasetLabel = context.dataset.label || '';
+            return datasetLabel + ': ' + context.parsed.y.toLocaleString();
+          }
         }
+      },
+      legend: {
+        display: false
       }
     },
     animation: {
-      duration: 2000,
-      easing: 'easeInOutQuart'
+      duration: 2000
     },
     hover: {
       animationDuration: 300
@@ -148,7 +149,7 @@ const createChart = () => {
 
   // Special handling for doughnut/pie charts
   if (props.chartData.type === 'doughnut' || props.chartData.type === 'pie') {
-    finalOptions.cutoutPercentage = 80;
+    finalOptions.cutout = '80%';
     delete finalOptions.scales;
   }
 

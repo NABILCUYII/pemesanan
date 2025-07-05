@@ -11,6 +11,17 @@ class StokLogController extends Controller
 {
     public function index(Request $request)
     {
+
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
+        }
+        
         $query = StokLog::with(['barang', 'user'])
             ->orderBy('created_at', 'desc');
 
@@ -52,6 +63,17 @@ class StokLogController extends Controller
 
     public function show($id)
     {
+
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
+        }
+        
         $stokLog = StokLog::with(['barang', 'user'])->findOrFail($id);
         
         return Inertia::render('stok-log/show', [
@@ -61,6 +83,16 @@ class StokLogController extends Controller
 
     public function barang($barangId)
     {
+
+        if (!auth()->user()->isAdmin()) {
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
+        }
+        
         $barang = Barang::findOrFail($barangId);
         $stokLogs = $barang->stokLogs()
             ->with(['user'])

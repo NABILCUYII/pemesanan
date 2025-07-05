@@ -1,10 +1,35 @@
 ﻿<script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const page = usePage();
 const isAuthenticated = computed(() => page.props.auth?.user);
+const isAdmin = computed(() => page.props.auth?.user?.role === 'admin');
+
+// Stock notification variables
+const stokMenipisCount = ref(0);
+const stokHabisCount = ref(0);
+
+onMounted(async () => {
+    if (isAdmin.value) {
+        try {
+            // Fetch low stock count
+            const lowStockRes = await fetch('/api/barang/stok-menipis-count');
+            const lowStockData = await lowStockRes.json();
+            stokMenipisCount.value = lowStockData.count;
+            
+            // Fetch out of stock count
+            const outOfStockRes = await fetch('/api/barang/stok-habis-count');
+            const outOfStockData = await outOfStockRes.json();
+            stokHabisCount.value = outOfStockData.count;
+        } catch (error) {
+            console.error('Error fetching stock data:', error);
+            stokMenipisCount.value = 0;
+            stokHabisCount.value = 0;
+        }
+    }
+});
 </script>
 
 <template>
@@ -33,7 +58,7 @@ const isAuthenticated = computed(() => page.props.auth?.user);
                         </span>
                     </h1>
                     <p class="text-xl text-[#2F4F4F]/80 max-w-2xl mx-auto">
-                        Sistem Peminjaman Barang Modern dan Terpercaya
+                        Sistem Pemesanan Barang Modern dan Terpercaya
                     </p>
                 </div>
 
@@ -87,35 +112,66 @@ const isAuthenticated = computed(() => page.props.auth?.user);
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300">
+                    <Link :href="route('permintaan.create')" class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300">
                         <div class="w-12 h-12 bg-white/30 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-[#2F4F4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Peminjaman Cepat</h3>
-                        <p class="text-[#2F4F4F]/70">Proses peminjaman yang mudah dan cepat dalam hitungan menit</p>
-                    </div>
-
-                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300">
+                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Buat Pemesanan Cepat</h3>
+                        <p class="text-[#2F4F4F]/70">Proses pemesanan dapat di lihat secara real time</p>
+                    </Link>
+                  
+                  <Link :href="route('peminjaman.create')" class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300">
                         <div class="w-12 h-12 bg-white/30 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-[#2F4F4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Manajemen Barang</h3>
-                        <p class="text-[#2F4F4F]/70">Kelola dan lacak semua barang dengan sistem yang terintegrasi</p>
-                    </div>
-
-                    <div class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300">
+                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Buat Pemesanan Cepat</h3>
+                        <p class="text-[#2F4F4F]/70">Proses pemesanan dapat di lihat secara real time</p>
+                    </Link>
+                    
+                    <Link v-if="isAdmin" :href="route('barang.stok')" class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300 relative">
                         <div class="w-12 h-12 bg-white/30 rounded-xl flex items-center justify-center mb-4">
                             <svg class="w-6 h-6 text-[#2F4F4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Notifikasi Real-time</h3>
-                        <p class="text-[#2F4F4F]/70">Dapatkan pemberitahuan instan untuk setiap aktivitas peminjaman</p>
-                    </div>
+                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Stok Barang</h3>
+                        <p class="text-[#2F4F4F]/70">Kelola dan pantau stok barang dengan sistem yang terintegrasi</p>
+                        
+                        <!-- Notification badges for low stock and out of stock -->
+                        <div class="absolute top-4 right-4 flex flex-col gap-1">
+                            <!-- Low stock notification -->
+                            <div v-if="stokMenipisCount > 0" class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 animate-pulse">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                {{ stokMenipisCount }}
+                            </div>
+                            
+                            <!-- Out of stock notification -->
+                            <div v-if="stokHabisCount > 0" class="bg-red-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 animate-pulse">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                {{ stokHabisCount }}
+                            </div>
+                        </div>
+                    </Link>
+
+                    <Link :href="route('permintaan.index')" class="bg-white/20 backdrop-blur-lg rounded-2xl p-6 border border-white/30 transform hover:scale-105 transition duration-300" :class="{ 'md:col-span-2': isAdmin }">
+                        <div class="w-12 h-12 bg-white/30 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-[#2F4F4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-[#2F4F4F] mb-2">Manajemen Pemesanan</h3>
+                        <p class="text-[#2F4F4F]/70">Kelola dan lacak semua pemesanan dengan sistem yang terintegrasi</p>
+                    </Link>
+
+                   
                 </div>
             </main>
         </div>

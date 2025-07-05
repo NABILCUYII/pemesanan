@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertTriangle, Plus, Minus, History, Box, Handshake } from 'lucide-vue-next';
+import { Package, AlertTriangle, Plus, Minus, History, Box, Handshake, MapPin, Ruler } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 
 interface Barang {
@@ -17,6 +17,8 @@ interface Barang {
     deskripsi: string;
     kategori: string;
     stok: number;
+    satuan?: string;
+    lokasi?: string;
 }
 
 interface Props {
@@ -36,7 +38,7 @@ const form = useForm({
 const groupedBarang = computed(() => {
     const groups: { [key: string]: Barang[] } = {};
     props.barang.forEach(item => {
-        const kategori = item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan';
+        const kategori = item.kategori === 'peminjaman' ? 'Aset' : 'Permintaan';
         if (!groups[kategori]) {
             groups[kategori] = [];
         }
@@ -85,15 +87,15 @@ const viewStokHistory = (barangId: number) => {
 };
 
 const getKategoriIcon = (kategori: string) => {
-    return kategori === 'Peminjaman' ? Handshake : Box;
+    return kategori === 'Aset' ? Handshake : Box;
 };
 
 const getKategoriColor = (kategori: string) => {
-    return kategori === 'Peminjaman' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200';
+    return kategori === 'Aset' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200';
 };
 
 const getKategoriTextColor = (kategori: string) => {
-    return kategori === 'Peminjaman' ? 'text-blue-700' : 'text-green-700';
+    return kategori === 'Aset' ? 'text-blue-700' : 'text-green-700';
 };
 </script>
 
@@ -182,7 +184,7 @@ const getKategoriTextColor = (kategori: string) => {
                             v-for="item in items" 
                             :key="item.id"
                             class="hover:shadow-md transition-shadow"
-                            :class="getKategoriColor(kategori)"
+                            :class="getKategoriColor(kategori as string)"
                         >
                             <CardHeader class="pb-3">
                                 <div class="flex items-start justify-between">
@@ -193,6 +195,14 @@ const getKategoriTextColor = (kategori: string) => {
                                         <CardDescription class="text-sm">
                                             {{ item.kode_barang }}
                                         </CardDescription>
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                            <span v-if="item.satuan" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
+                                                <Ruler class="w-3 h-3 mr-1" /> Satuan: {{ item.satuan }}
+                                            </span>
+                                            <span v-if="item.lokasi" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
+                                                <MapPin class="w-3 h-3 mr-1" /> Lokasi: {{ item.lokasi }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <Badge :variant="getStokStatus(item.stok).variant" class="ml-2">
                                         {{ getStokStatus(item.stok).status }}
@@ -206,9 +216,14 @@ const getKategoriTextColor = (kategori: string) => {
                                         <span class="text-sm font-medium text-muted-foreground">Stok:</span>
                                         <span :class="['text-lg font-bold', getStokColor(item.stok)]">
                                             {{ item.stok }}
+                                            <span v-if="item.satuan" class="text-base font-normal text-gray-500 ml-1">({{ item.satuan }})</span>
                                         </span>
                                     </div>
                                     
+                                    <div v-if="item.lokasi" class="flex items-center text-xs text-gray-500">
+                                        <MapPin class="w-4 h-4 mr-1" /> Lokasi: {{ item.lokasi }}
+                                    </div>
+
                                     <div v-if="item.deskripsi" class="text-sm text-muted-foreground line-clamp-2">
                                         {{ item.deskripsi }}
                                     </div>
@@ -235,7 +250,13 @@ const getKategoriTextColor = (kategori: string) => {
                                                 <div class="bg-gray-50 p-3 rounded-lg">
                                                     <p class="text-sm font-medium">Barang: {{ selectedBarang?.nama_barang }}</p>
                                                     <p class="text-sm text-gray-600">Kode: {{ selectedBarang?.kode_barang }}</p>
-                                                    <p class="text-sm text-gray-600">Stok Saat Ini: {{ selectedBarang?.stok }}</p>
+                                                    <p class="text-sm text-gray-600">Stok Saat Ini: {{ selectedBarang?.stok }}<span v-if="selectedBarang?.satuan"> ({{ selectedBarang?.satuan }})</span></p>
+                                                    <p v-if="selectedBarang?.lokasi" class="text-sm text-gray-600 flex items-center">
+                                                        <MapPin class="w-4 h-4 mr-1" /> Lokasi: {{ selectedBarang?.lokasi }}
+                                                    </p>
+                                                    <p v-if="selectedBarang?.satuan" class="text-sm text-gray-600 flex items-center">
+                                                        <Ruler class="w-4 h-4 mr-1" /> Satuan: {{ selectedBarang?.satuan }}
+                                                    </p>
                                                 </div>
                                                 
                                                 <div class="space-y-2">
@@ -311,4 +332,3 @@ const getKategoriTextColor = (kategori: string) => {
         </div>
     </AppLayout>
 </template>
-

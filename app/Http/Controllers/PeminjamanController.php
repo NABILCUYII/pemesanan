@@ -41,6 +41,8 @@ class PeminjamanController extends Controller
                         'tanggal_pengembalian' => $item->tanggal_pengembalian,
                         'due_date' => $item->due_date,
                         'keterangan' => $item->keterangan,
+                        'alasan_approval' => $item->alasan_approval,
+                        'catatan_approval' => $item->catatan_approval,
                         'kondisi_barang' => $item->kondisi_barang,
                         'catatan_pengembalian' => $item->catatan_pengembalian,
                         'returned_at' => $item->returned_at,
@@ -90,6 +92,16 @@ class PeminjamanController extends Controller
 
     public function approve(Request $request)
     {
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
+        }
+
         $request->validate([
             'peminjaman_id' => 'required|exists:peminjaman,id',
             'action' => 'required|in:approve,reject',
@@ -156,7 +168,12 @@ class PeminjamanController extends Controller
     {
         // Check if user is authorized to edit this peminjaman
         if (auth()->id() !== $peminjaman->user_id && !auth()->user()->isAdmin()) {
-            abort(403);
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
         }
 
         // Only allow editing if status is pending
@@ -176,7 +193,12 @@ class PeminjamanController extends Controller
     {
         // Check if user is authorized to update this peminjaman
         if (auth()->id() !== $peminjaman->user_id && !auth()->user()->isAdmin()) {
-            abort(403);
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
         }
 
         // Only allow updating if status is pending
@@ -209,7 +231,12 @@ class PeminjamanController extends Controller
     {
         // Check if user is authorized to delete this peminjaman
         if (auth()->id() !== $peminjaman->user_id && !auth()->user()->isAdmin()) {
-            abort(403);
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
         }
 
         // Only allow deletion if status is pending
@@ -228,6 +255,52 @@ class PeminjamanController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghapus peminjaman: ' . $e->getMessage());
+        }
+    }
+
+    public function startProgress(Peminjaman $peminjaman)
+    {
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
+        }
+
+        // Check if peminjaman is approved
+        if ($peminjaman->status !== 'approved') {
+            return redirect()->back()->with('error', 'Hanya peminjaman yang disetujui yang dapat dimulai prosesnya');
+        }
+
+        DB::beginTransaction();
+        try {
+            $peminjaman->update([
+                'status' => 'in_progress',
+                'started_at' => now(),
+                'started_by' => auth()->id()
+            ]);
+
+            // Buat log stok untuk menandakan peminjaman dimulai
+            $barang = $peminjaman->barang;
+            $keterangan = "Proses peminjaman dimulai oleh " . auth()->user()->name;
+            
+            $barang->addStokLog(
+                'keluar', 
+                0, // Tidak ada perubahan stok, hanya log
+                $keterangan,
+                "Proses Peminjaman #" . $peminjaman->id,
+                $peminjaman->user_id
+            );
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Proses peminjaman berhasil dimulai!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memulai proses peminjaman: ' . $e->getMessage());
         }
     }
 
@@ -327,6 +400,6 @@ class PeminjamanController extends Controller
             return 0; // Tidak ada stok yang dikembalikan
         } else {
             return $peminjaman->jumlah; // 100% stok kembali
-        }
+        } 
     }
 }

@@ -16,6 +16,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Laptop untuk keperluan kantor',
                 'kategori' => 'peminjaman',
                 'stok' => 5,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang IT',
             ],
             [
                 'kode_barang' => 'BRG002',
@@ -23,6 +25,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Proyektor untuk presentasi',
                 'kategori' => 'peminjaman',
                 'stok' => 3,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang A/V',
             ],
             [
                 'kode_barang' => 'BRG003',
@@ -30,6 +34,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Printer laser untuk cetak dokumen',
                 'kategori' => 'peminjaman',
                 'stok' => 2,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang IT',
             ],
             [
                 'kode_barang' => 'BRG004',
@@ -37,6 +43,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Scanner untuk digitalisasi dokumen',
                 'kategori' => 'peminjaman',
                 'stok' => 1,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang IT',
             ],
             [
                 'kode_barang' => 'BRG005',
@@ -44,6 +52,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Kamera untuk dokumentasi acara',
                 'kategori' => 'peminjaman',
                 'stok' => 2,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang A/V',
             ],
             [
                 'kode_barang' => 'BRG006',
@@ -51,6 +61,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Mikrofon untuk presentasi',
                 'kategori' => 'peminjaman',
                 'stok' => 4,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang A/V',
             ],
             [
                 'kode_barang' => 'BRG007',
@@ -58,6 +70,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Speaker untuk acara outdoor',
                 'kategori' => 'peminjaman',
                 'stok' => 3,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang A/V',
             ],
             [
                 'kode_barang' => 'BRG008',
@@ -65,6 +79,8 @@ class BarangSeeder extends Seeder
                 'deskripsi' => 'Tablet untuk demo aplikasi',
                 'kategori' => 'peminjaman',
                 'stok' => 2,
+                'satuan' => 'Unit',
+                'lokasi' => 'Gudang IT',
             ],
         ];
 

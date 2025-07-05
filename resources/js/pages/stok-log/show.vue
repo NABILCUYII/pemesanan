@@ -166,7 +166,7 @@ const getJenisLabel = (jenis: string) => {
                         <div class="flex items-center justify-between">
                             <span class="text-sm font-medium">Kategori:</span>
                             <Badge :variant="stokLog.barang.kategori === 'peminjaman' ? 'default' : 'secondary'">
-                                {{ stokLog.barang.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}
+                                {{ stokLog.barang.kategori === 'peminjaman' ? 'Aset' : 'Permintaan' }}
                             </Badge>
                         </div>
 

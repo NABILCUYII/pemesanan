@@ -79,7 +79,7 @@ const getStatusText = (status: string) => {
 };
 
 const getTypeText = (type: string) => {
-    return type === 'permintaan' ? 'Permintaan' : 'Peminjaman';
+    return type === 'permintaan' ? 'Permintaan' : 'Aset';
 };
 
 const cancelItem = (item: RiwayatItem) => {
@@ -138,7 +138,7 @@ const getPhotoUrl = (photoPath: string) => {
                 >
                     <option value="">Semua Tipe</option>
                     <option value="permintaan">Permintaan</option>
-                    <option value="peminjaman">Peminjaman</option>
+                    <option value="peminjaman">Aset</option>
                 </select>
                 <select
                     v-model="selectedStatus"

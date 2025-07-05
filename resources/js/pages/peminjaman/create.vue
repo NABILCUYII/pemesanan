@@ -23,8 +23,8 @@ const props = defineProps<{
 }>()
 
 const breadcrumbs: BreadcrumbItem[] = [
-  { title: 'Peminjaman', href: route('peminjaman.index') },
-  { title: 'Buat Peminjaman', href: route('peminjaman.create') },
+    { title: 'Aset', href: route('peminjaman.index') },
+    { title: 'Buat Aset', href: route('peminjaman.create') },
 ];
 
 const form = useForm({
@@ -173,6 +173,9 @@ onUnmounted(() => {
                                 :max="selectedBarang ? selectedBarang.stok : undefined"
                             />
                             <p v-if="form.errors.jumlah" class="text-sm text-red-600">{{ form.errors.jumlah }}</p>
+                            <p v-if="selectedBarang && form.jumlah && parseInt(form.jumlah) > selectedBarang.stok" class="text-sm text-red-600">
+                                ⚠️ Jumlah yang diminta melebihi stok yang tersedia (Stok: {{ selectedBarang.stok }})
+                            </p>
                         </div>
 
                         <!-- TENGGAT WAKTU -->

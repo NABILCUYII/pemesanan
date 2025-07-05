@@ -21,7 +21,7 @@
                                 class="inline-flex items-center px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                             >
                                 <User class="w-4 h-4 mr-2" />
-                                Kembali ke Peminjaman
+                                Kembali ke Aset
                             </Link>
                         </div>
 

@@ -26,6 +26,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const searchQuery = ref('');
 
+// Modal state
+const showDeleteModal = ref(false);
+const userToDelete = ref<User | null>(null);
+
 const filteredUsers = computed(() => {
   if (!searchQuery.value.trim()) {
     return props.users;
@@ -38,9 +42,23 @@ const filteredUsers = computed(() => {
   );
 });
 
-const destroy = (id: number) => {
-  if (confirm('Are you sure you want to delete this user?')) {
-    router.delete(route('users.destroy', id));
+const confirmDelete = (user: User) => {
+  userToDelete.value = user;
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+  userToDelete.value = null;
+};
+
+const destroy = () => {
+  if (userToDelete.value) {
+    router.delete(route('users.destroy', userToDelete.value.id), {
+      onFinish: () => {
+        closeDeleteModal();
+      }
+    });
   }
 };
 </script>
@@ -117,7 +135,7 @@ const destroy = (id: number) => {
                       Edit
                     </Link>
                     <button
-                      @click="destroy(user.id)"
+                      @click="confirmDelete(user)"
                       class="text-sm text-red-600 hover:text-red-800"
                     >
                       Delete
@@ -159,7 +177,7 @@ const destroy = (id: number) => {
                   Edit
                 </Link>
                 <button
-                  @click="destroy(user.id)"
+                  @click="confirmDelete(user)"
                   class="text-red-600 hover:text-red-800 text-sm font-medium inline-flex items-center gap-1"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -173,5 +191,63 @@ const destroy = (id: number) => {
         </div>
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Hapus User -->
+    <transition name="fade">
+      <div
+        v-if="showDeleteModal"
+        class="fixed inset-0 z-50 flex items-center justify-center"
+      >
+        <!-- Backdrop, semi-transparent and blurred, but not covering with color -->
+        <div
+          class="absolute inset-0 bg-black/20 backdrop-blur-sm"
+          @click="closeDeleteModal"
+        ></div>
+        <!-- Modal Card -->
+        <div
+          class="relative z-10 max-w-md w-full mx-4 rounded-2xl shadow-2xl bg-gradient-to-br from-green-200 via-white to-teal-100 border border-green-300 p-8 animate-fade-in"
+        >
+          <!-- Close Button -->
+          <button
+            @click="closeDeleteModal"
+            class="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition"
+            aria-label="Tutup"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div class="flex flex-col items-center text-center">
+            <div class="bg-red-100 rounded-full p-3 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+              </svg>
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Konfirmasi Hapus User</h2>
+            <p class="text-gray-700 mb-6">
+              Apakah Anda yakin ingin menghapus user
+              <span class="font-bold text-red-600">{{ userToDelete?.name }}</span>
+              ({{ userToDelete?.email }})?
+              <br />
+              <span class="text-sm text-gray-500">Tindakan ini tidak dapat dibatalkan.</span>
+            </p>
+            <div class="flex w-full justify-center gap-4">
+              <button
+                @click="closeDeleteModal"
+                class="px-5 py-2 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition"
+              >
+                Batal
+              </button>
+              <button
+                @click="destroy"
+                class="px-5 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold shadow hover:from-red-600 hover:to-pink-600 transition"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </AppLayout>
 </template>

@@ -18,6 +18,10 @@ class Peminjaman extends Model
         'tanggal_pengembalian',
         'due_date',
         'status',
+        'alasan_approval',
+        'catatan_approval',
+        'approved_by',
+        'approved_at',
         'kondisi_barang',
         'catatan_pengembalian',
         'returned_by',
@@ -54,10 +58,21 @@ class Peminjaman extends Model
         return $this->belongsTo(User::class, 'returned_by');
     }
 
+    /**
+     * Get the user who approved the peminjaman
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     protected $casts = [
         'tanggal_peminjaman' => 'date',
         'tanggal_pengembalian' => 'date',
         'due_date' => 'date',
+        'approved_at' => 'datetime',
         'returned_at' => 'datetime',
     ];
 }

@@ -43,8 +43,8 @@ const submit = () => {
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">Welcome Back!</h1>
-                    <p class="text-white/80">Enter your credentials to access your account</p>
+                    <h1 class="text-3xl font-bold text-white mb-2">Login jika anda sudah memiliki akun!</h1>
+                    <p class="text-white/80">Masukan Email dan Password anda untuk melanjutkan</p>
                 </div>
 
                 <div v-if="status" class="mb-4 text-center text-sm font-medium text-green-400 bg-green-500/20 p-3 rounded-lg">

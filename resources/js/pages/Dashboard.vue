@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Clock, Users, AlertCircle, Sparkles, ArrowUpRight, Star, Database, FileText, Settings, Activity, TrendingUp, BarChart3, PieChart } from 'lucide-vue-next';
 import { computed } from 'vue';
 import ChartComponent from '@/components/ChartComponent.vue';
+import VideoBeritaCard from '@/components/VideoBeritaCard.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -45,6 +46,21 @@ interface ChartData {
   barangMasuk: ChartDataItem[];
   seringDiminta: ChartDataItem[];
   seringDipinjam: ChartDataItem[];
+}
+
+interface VideoBerita {
+  id: number;
+  judul: string;
+  deskripsi?: string;
+  video_url: string;
+  thumbnail_url?: string;
+  sumber?: string;
+  tanggal_publish: string;
+  is_active: boolean;
+  urutan: number;
+  youtube_id?: string;
+  embed_url?: string;
+  youtube_thumbnail?: string;
 }
 
 const page = usePage();
@@ -91,6 +107,12 @@ const recentActivities = computed<ActivityItem[]>(() => {
       time: '',
     },
   ];
+});
+
+const videoBeritas = computed<VideoBerita[]>(() => {
+  const videos = page.props.videoBeritas as VideoBerita[] || [];
+  console.log('Dashboard - videoBeritas:', videos);
+  return videos;
 });
 
 // Chart data for barang masuk (items in)
@@ -438,6 +460,11 @@ const frequentlyBorrowedChart = computed(() => {
             />
           </CardContent>
         </Card>
+      </div>
+
+      <!-- Video Berita Section -->
+      <div class="mt-8">
+        <VideoBeritaCard :videoBeritas="videoBeritas" />
       </div>
 
       <!-- Recent Activity -->

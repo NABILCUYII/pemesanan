@@ -10,6 +10,12 @@ class BarangRusakController extends Controller
 {
     public function index()
     {
+
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+        
         $barangRusak = Barang::whereIn('status', ['rusak', 'hilang'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -21,6 +27,12 @@ class BarangRusakController extends Controller
 
     public function create()
     {
+
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+        
         $barangList = Barang::where('status', 'baik')
             ->orderBy('nama_barang', 'asc')
             ->get(['id', 'kode_barang', 'nama_barang', 'stok']);
