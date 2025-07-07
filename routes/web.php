@@ -7,6 +7,7 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\BarangRusakController;
 use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\SelamatDatangController;
 use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\LaporanController;
@@ -51,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('api/barang/stok-menipis-count', [BarangController::class, 'stokMenipisCount']);
     Route::get('api/barang/stok-habis-count', [BarangController::class, 'stokHabisCount']);
     Route::get('api/permintaan/pending-count', [PermintaanController::class, 'pendingCount']);
+    Route::get('api/inventaris/pending-count', [InventarisController::class, 'pendingCount']);
 });
 
 // Rute Barang Rusak
@@ -94,6 +96,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('peminjaman-returns', [PeminjamanController::class, 'returns'])->name('peminjaman.returns');
     Route::get('/peminjaman/returns', [PeminjamanController::class, 'returns'])->name('peminjaman.returns');
     Route::post('/peminjaman/{peminjaman}/return', [PeminjamanController::class, 'processReturn'])->name('peminjaman.process-return');
+});
+
+// Rute Inventaris
+Route::middleware(['auth'])->group(function () {
+    Route::get('inventaris', [InventarisController::class, 'index'])->name('inventaris.index');
+    Route::get('inventaris/create', [InventarisController::class, 'create'])->name('inventaris.create');
+    Route::post('inventaris', [InventarisController::class, 'store'])->name('inventaris.store');
+    Route::post('inventaris/approve', [InventarisController::class, 'approve'])->name('inventaris.approve');
+    Route::get('inventaris/{inventaris}/edit', [InventarisController::class, 'edit'])->name('inventaris.edit');
+    Route::put('inventaris/{inventaris}', [InventarisController::class, 'update'])->name('inventaris.update');
+    Route::delete('inventaris/{inventaris}', [InventarisController::class, 'destroy'])->name('inventaris.destroy');
+    Route::patch('inventaris/{inventaris}/start-progress', [InventarisController::class, 'startProgress'])->name('inventaris.start-progress');
+    Route::get('inventaris/{inventaris}/return', [InventarisController::class, 'return'])->name('inventaris.return');
+    Route::post('inventaris/{inventaris}/return', [InventarisController::class, 'processReturn'])->name('inventaris.process-return');
+    Route::get('inventaris-returns', [InventarisController::class, 'returns'])->name('inventaris.returns');
+    Route::get('inventaris/{inventaris}', [InventarisController::class, 'show'])->name('inventaris.show');
 });
 
 // Rute Riwayat

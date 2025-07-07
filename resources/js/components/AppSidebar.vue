@@ -35,6 +35,7 @@ const user = page.props.auth.user;
 
 const stokMenipisCount = ref(0);
 const pendingApprovalCount = ref(0);
+const pendingInventarisCount = ref(0);
 let refreshInterval: number | null = null;
 
 const fetchCounts = async () => {
@@ -52,6 +53,19 @@ const fetchCounts = async () => {
         pendingApprovalCount.value = data.count;
     } catch (e) {
         pendingApprovalCount.value = 0;
+    }
+
+    // Only fetch inventaris pending count for admin
+    if (user?.role === 'admin') {
+        try {
+            const res = await fetch('/api/inventaris/pending-count');
+            const data = await res.json();
+            pendingInventarisCount.value = data.count;
+        } catch (e) {
+            pendingInventarisCount.value = 0;
+        }
+    } else {
+        pendingInventarisCount.value = 0;
     }
 };
 
@@ -89,9 +103,9 @@ const mainNavItems = computed(() => [
 
     {
         title: 'Inventaris',
-        href: route('barang.index'),
+        href: route('inventaris.index'),
         icon: Package,
-        
+        badge: user?.role === 'admin' ? pendingInventarisCount.value : undefined,
     },
 
     {
@@ -181,6 +195,8 @@ const filteredMainNavItems = computed(() => {
             newItem.badge = stokMenipisCount.value;
         } else if (item.title === 'Persetujuan') {
             newItem.badge = pendingApprovalCount.value;
+        } else if (item.title === 'Inventaris') {
+            newItem.badge = user?.role === 'admin' ? pendingInventarisCount.value : undefined;
         }
         
         return newItem;
