@@ -1,26 +1,28 @@
 ﻿<script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, User, Mail, Shield } from 'lucide-vue-next';
 
-const props = defineProps<{
-    user: {
-        id: number;
-        name: string;
-        email: string;
-        role: string | { role: string } | null;
-    };
-}>();
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string | { role: string };
+}
+
+interface Props {
+    user: User;
+}
+
+const props = defineProps<Props>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Users',
-        href: route('users.index'),
-    },
-    {
-        title: 'Edit User',
-        href: route('users.edit', props.user.id),
-    },
+    { title: 'Users', href: route('users.index') },
+    { title: 'Edit User', href: route('users.edit', props.user.id) },
 ];
 
 const form = useForm({
@@ -31,6 +33,10 @@ const form = useForm({
 
 const submit = () => {
     form.put(route('users.update', props.user.id));
+};
+
+const goBack = () => {
+    router.visit(route('users.index'));
 };
 </script>
 
@@ -52,12 +58,12 @@ const submit = () => {
             </div>
             <form @submit.prevent="submit" class="space-y-8 bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
                 <div>
-                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
-                    <input
+                    <Label for="name" class="block text-sm font-semibold text-gray-700 mb-1">Name</Label>
+                    <Input
                         id="name"
                         v-model="form.name"
                         type="text"
-                        class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+                        class="mt-1"
                         required
                         autocomplete="off"
                         placeholder="Enter user name"
@@ -68,12 +74,12 @@ const submit = () => {
                 </div>
 
                 <div>
-                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                    <input
+                    <Label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email</Label>
+                    <Input
                         id="email"
                         v-model="form.email"
                         type="email"
-                        class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+                        class="mt-1"
                         required
                         autocomplete="off"
                         placeholder="Enter user email"
@@ -83,34 +89,34 @@ const submit = () => {
                     </div>
                 </div>
 
-                    <div class="flex flex-col">
-                        <label for="role" class="text-sm font-semibold text-gray-600 mb-1">
-                            Role saat ini: {{ typeof form.role === 'string' && form.role ? form.role.charAt(0).toUpperCase() + form.role.slice(1) : '-' }}
-                        </label>
-                        <select
-                            id="role"
-                            name="role"
-                            v-model="form.role"
-                            class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
-                            :required="!form.role"
-                        >
-                          
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
-                        </select>
-                        <div v-if="form.errors.role" class="mt-1 text-xs text-red-600">
-                            {{ form.errors.role }}
-                        </div>
+                <div class="flex flex-col">
+                    <Label for="role" class="text-sm font-semibold text-gray-600 mb-1">
+                        Role saat ini: {{ typeof form.role === 'string' && form.role ? form.role.charAt(0).toUpperCase() + form.role.slice(1) : '-' }}
+                    </Label>
+                    <select
+                        id="role"
+                        name="role"
+                        v-model="form.role"
+                        class="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+                        :required="!form.role"
+                    >
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                    </select>
+                    <div v-if="form.errors.role" class="mt-1 text-xs text-red-600">
+                        {{ form.errors.role }}
                     </div>
+                </div>
 
                 <div class="flex justify-end gap-3 pt-4">
-                    <a
-                        :href="route('users.index')"
+                    <Button
+                        type="button"
+                        @click="goBack"
                         class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-50 transition"
                     >
                         Cancel
-                    </a>
-                    <button
+                    </Button>
+                    <Button
                         type="submit"
                         class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 py-2 px-6 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
                         :disabled="form.processing"
@@ -120,7 +126,7 @@ const submit = () => {
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
                         </svg>
                         Update User
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>

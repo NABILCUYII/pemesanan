@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Barang extends Model
 {
@@ -47,7 +48,7 @@ class Barang extends Model
         $this->save();
 
         return $this->stokLogs()->create([
-            'user_id' => $user_id ?? auth()->id(),
+            'user_id' => $user_id ?? Auth::id(),
             'jenis' => $jenis,
             'jumlah' => $jumlah,
             'stok_sebelum' => $stokSebelum,

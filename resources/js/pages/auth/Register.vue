@@ -24,13 +24,13 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+    <div class="min-h-screen bg-gradient-to-br from-[#20B2AA] via-[#87CEEB] to-[#5F9EA0] flex items-center justify-center p-4">
         <!-- Animated Background -->
         <div class="absolute inset-0 overflow-hidden">
             <div class="absolute -inset-[10px] opacity-50">
-                <div class="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-                <div class="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-                <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+                <div class="absolute top-0 -left-4 w-72 h-72 bg-[#20B2AA] rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+                <div class="absolute top-0 -right-4 w-72 h-72 bg-[#87CEEB] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+                <div class="absolute -bottom-8 left-20 w-72 h-72 bg-[#5F9EA0] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
             </div>
         </div>
 
@@ -119,7 +119,7 @@ const submit = () => {
 
                         <Button 
                             type="submit" 
-                            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]"
+                            class="w-full bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]"
                             :disabled="form.processing"
                         >
                             <UserPlus v-if="!form.processing" class="h-5 w-5 mr-2" />

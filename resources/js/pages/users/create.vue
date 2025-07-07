@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, Link } from '@inertiajs/vue3';
+import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,10 @@ const form = useForm({
 const submit = () => {
   form.post(route('users.store'));
 };
+
+const goBack = () => {
+  router.visit(route('users.index'));
+};
 </script>
 
 <template>
@@ -31,9 +35,9 @@ const submit = () => {
     <div class="p-4 md:p-6 space-y-6 flex flex-col items-center min-h-screen">
       <!-- Header -->
       <div class="flex items-center gap-4 w-full max-w-2xl">
-        <Link :href="route('users.index')" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button @click="goBack" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <ArrowLeft class="w-5 h-5 text-gray-600" />
-        </Link>
+        </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-800">Create User</h1>
           <p class="text-gray-500 text-sm">Add a new user to the system</p>
@@ -162,12 +166,13 @@ const submit = () => {
 
           <!-- Action Buttons -->
           <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
-            <Link 
-              :href="route('users.index')"
+            <Button 
+              type="button"
+              @click="goBack"
               class="inline-flex items-center px-6 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-50 transition"
             >
               Cancel
-            </Link>
+            </Button>
             <Button
               type="submit"
               class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 py-3 px-6 text-sm font-semibold text-white shadow-md hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"

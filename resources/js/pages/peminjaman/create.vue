@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { Head, Link } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -41,7 +41,7 @@ const selectedBarang = ref<Barang | null>(null);
 
 const filteredBarang = computed(() => {
     if (!searchQuery.value) return props.barang.filter(item => item.kategori === 'peminjaman');
-    
+    console.log(props.barang);
     return props.barang.filter(item => 
         item.kategori === 'peminjaman' &&
         (item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -95,138 +95,167 @@ onUnmounted(() => {
 <template>
     <Head title="Buat Peminjaman" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-4 md:p-6 space-y-6">
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <Link :href="route('peminjaman.index')" class="text-muted-foreground hover:text-foreground">
-                            <ArrowLeft class="h-5 w-5" />
-                        </Link>
-                        <h1 class="text-2xl font-semibold text-gray-800 flex items-center gap-2">
-                            <Package class="h-6 w-6" />
-                            Buat Peminjaman Barang
-                        </h1>
-                    </div>
-                    <p class="text-muted-foreground">Buat peminjaman barang dengan tenggat waktu</p>
+        <div class="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-10">
+            <div class="max-w-2xl mx-auto">
+                <!-- Header -->
+                <div class="flex items-center gap-3 mb-8">
+                    <Link :href="route('peminjaman.index')" class="text-blue-500 hover:text-blue-700 transition">
+                        <ArrowLeft class="h-6 w-6" />
+                    </Link>
+                    <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+                        <span class="inline-flex items-center justify-center bg-blue-100 text-blue-600 rounded-full p-2 shadow">
+                            <Package class="h-7 w-7" />
+                        </span>
+                        Buat Peminjaman Barang
+                    </h1>
                 </div>
-            </div>
-
-            <!-- Form Container -->
-            <div class="max-w-xl mx-auto">
-                <div class="bg-white rounded-lg border p-6">
-                    <h2 class="text-lg font-medium mb-6">Form Peminjaman Barang</h2>
-
-                    <form @submit.prevent="submitPeminjaman" class="space-y-6">
+                <div class="bg-white/90 shadow-xl rounded-2xl border border-blue-100 p-8">
+                    <h2 class="text-xl font-semibold text-blue-700 mb-7 flex items-center gap-2">
+                        <span class="inline-block w-2 h-6 bg-blue-400 rounded-full mr-2"></span>
+                        Formulir Peminjaman
+                    </h2>
+                    <form @submit.prevent="submitPeminjaman" class="space-y-7">
                         <!-- PILIH BARANG -->
-                        <div class="space-y-1 dropdown-container">
-                            <Label>Pilih Barang *</Label>
+                        <div class="dropdown-container">
+                            <Label class="font-semibold text-gray-700 mb-1">Pilih Barang <span class="text-red-500">*</span></Label>
                             <div class="relative">
                                 <Input
                                     type="text"
                                     v-model="searchQuery"
                                     @focus="toggleDropdown"
-                                    placeholder="Cari barang..."
-                                    class="pr-10"
+                                    placeholder="Cari nama/kode barang..."
+                                    class="pr-12 py-3 rounded-xl border-blue-200 focus:ring-2 focus:ring-blue-400 transition"
                                 />
-                                <Search class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                                <Search class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none" />
                             </div>
                             <input type="hidden" v-model="form.barang_id" />
-                            <p v-if="form.errors.barang_id" class="text-sm text-red-600">{{ form.errors.barang_id }}</p>
-
-                            <div v-if="selectedBarang" class="mt-2 p-3 border rounded-md bg-gray-100 flex items-center justify-between">
-                                <div class="flex flex-col">
-                                    <span class="font-medium">{{ selectedBarang.nama_barang }}</span>
-                                    <span class="text-sm text-gray-600">Kode: {{ selectedBarang.kode_barang }} | Stok: {{ selectedBarang.stok }}</span>
-                                </div>
-                                <Button type="button" variant="ghost" size="sm" @click="selectedBarang = null; form.barang_id = ''; searchQuery = ''">
-                                    X
-                                </Button>
-                            </div>
-
-                            <ul v-if="showDropdown && filteredBarang.length > 0" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
-                                <li
-                                    v-for="item in filteredBarang"
-                                    :key="item.id"
-                                    @click="handleBarangSelect(item)"
-                                    class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                >
-                                    <div class="flex flex-col">
-                                        <span class="font-medium">{{ item.nama_barang }}</span>
-                                        <span class="text-sm text-gray-600">Kode: {{ item.kode_barang }} | Stok: {{ item.stok }}</span>
+                            <transition name="fade">
+                                <p v-if="form.errors.barang_id" class="text-xs text-red-600 mt-1">{{ form.errors.barang_id }}</p>
+                            </transition>
+                            <transition name="fade">
+                                <div v-if="selectedBarang" class="mt-3 p-4 border border-blue-200 rounded-xl bg-blue-50 flex items-center justify-between shadow-sm">
+                                    <div>
+                                        <span class="font-semibold text-blue-700">{{ selectedBarang.nama_barang }}</span>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            Kode: <span class="font-mono">{{ selectedBarang.kode_barang }}</span> &nbsp;|&nbsp; Stok: <span class="font-semibold">{{ selectedBarang.stok }}</span>
+                                        </div>
                                     </div>
-                                </li>
-                            </ul>
-                            <p v-if="showDropdown && filteredBarang.length === 0" class="px-4 py-2 text-sm text-gray-500">
-                                Tidak ada barang tersedia untuk dipinjam.
-                            </p>
+                                    <Button type="button" variant="ghost" size="icon" class="text-red-500 hover:bg-red-100" @click="selectedBarang = null; form.barang_id = ''; searchQuery = ''">
+                                        <span class="text-lg font-bold">&times;</span>
+                                    </Button>
+                                </div>
+                            </transition>
+                            <transition name="fade">
+                                <ul v-if="showDropdown && filteredBarang.length > 0" class="absolute z-20 w-full bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto mt-2">
+                                    <li
+                                        v-for="item in filteredBarang"
+                                        :key="item.id"
+                                        @click="handleBarangSelect(item)"
+                                        class="px-5 py-3 hover:bg-blue-50 cursor-pointer transition flex flex-col"
+                                    >
+                                        <span class="font-semibold text-gray-800">{{ item.nama_barang }}</span>
+                                        <span class="text-xs text-gray-500">Kode: {{ item.kode_barang }} | Stok: {{ item.stok }}</span>
+                                    </li>
+                                </ul>
+                            </transition>
+                            <transition name="fade">
+                                <p v-if="showDropdown && filteredBarang.length === 0" class="px-5 py-3 text-xs text-gray-500 bg-gray-50 rounded-xl mt-2">
+                                    Tidak ada barang tersedia untuk dipinjam.
+                                </p>
+                            </transition>
                         </div>
 
                         <!-- JUMLAH -->
-                        <div class="space-y-1">
-                            <Label for="jumlah">Jumlah *</Label>
+                        <div>
+                            <Label for="jumlah" class="font-semibold text-gray-700 mb-1">Jumlah <span class="text-red-500">*</span></Label>
                             <Input
                                 id="jumlah"
                                 type="number"
                                 v-model="form.jumlah"
                                 :min="1"
                                 :max="selectedBarang ? selectedBarang.stok : undefined"
+                                class="rounded-xl border-blue-200 py-3 focus:ring-2 focus:ring-blue-400 transition"
+                                placeholder="Masukkan jumlah"
                             />
-                            <p v-if="form.errors.jumlah" class="text-sm text-red-600">{{ form.errors.jumlah }}</p>
+                            <transition name="fade">
+                                <p v-if="form.errors.jumlah" class="text-xs text-red-600 mt-1">{{ form.errors.jumlah }}</p>
+                            </transition>
                             <p v-if="selectedBarang && form.jumlah && parseInt(form.jumlah) > selectedBarang.stok" class="text-sm text-red-600">
                                 ⚠️ Jumlah yang diminta melebihi stok yang tersedia (Stok: {{ selectedBarang.stok }})
                             </p>
                         </div>
 
                         <!-- TENGGAT WAKTU -->
-                        <div class="space-y-1">
-                            <Label for="due_date">Tenggat Waktu *</Label>
+                        <div>
+                            <Label for="due_date" class="font-semibold text-gray-700 mb-1">Tenggat Waktu <span class="text-red-500">*</span></Label>
                             <div class="relative">
                                 <Input
                                     id="due_date"
                                     type="date"
                                     v-model="form.due_date"
-                                    class="pr-10"
+                                    class="pr-12 rounded-xl border-blue-200 py-3 focus:ring-2 focus:ring-blue-400 transition"
                                 />
-                                <CalendarDays class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                                <CalendarDays class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none" />
                             </div>
-                            <p v-if="form.errors.due_date" class="text-sm text-red-600">{{ form.errors.due_date }}</p>
+                            <transition name="fade">
+                                <p v-if="form.errors.due_date" class="text-xs text-red-600 mt-1">{{ form.errors.due_date }}</p>
+                            </transition>
                         </div>
 
                         <!-- TANGGAL KEMBALI -->
-                        <div class="space-y-1">
-                            <Label for="tanggal_pengembalian">Tanggal Kembali *</Label>
+                        <div>
+                            <Label for="tanggal_pengembalian" class="font-semibold text-gray-700 mb-1">Tanggal Kembali <span class="text-red-500">*</span></Label>
                             <div class="relative">
                                 <Input
                                     id="tanggal_pengembalian"
                                     type="date"
                                     v-model="form.tanggal_pengembalian"
-                                    class="pr-10"
+                                    class="pr-12 rounded-xl border-blue-200 py-3 focus:ring-2 focus:ring-blue-400 transition"
                                 />
-                                <CalendarDays class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                                <CalendarDays class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none" />
                             </div>
-                            <p v-if="form.errors.tanggal_pengembalian" class="text-sm text-red-600">{{ form.errors.tanggal_pengembalian }}</p>
+                            <transition name="fade">
+                                <p v-if="form.errors.tanggal_pengembalian" class="text-xs text-red-600 mt-1">{{ form.errors.tanggal_pengembalian }}</p>
+                            </transition>
                         </div>
 
                         <!-- KETERANGAN (Opsional) -->
-                        <div class="space-y-1">
-                            <Label for="keterangan">Keterangan (Opsional)</Label>
+                        <div>
+                            <Label for="keterangan" class="font-semibold text-gray-700 mb-1">Keterangan <span class="text-gray-400">(Opsional)</span></Label>
                             <textarea
                                 id="keterangan"
                                 v-model="form.keterangan"
                                 rows="3"
-                                class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full p-3 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition resize-none"
+                                placeholder="Tulis keterangan tambahan jika diperlukan..."
                             ></textarea>
-                            <p v-if="form.errors.keterangan" class="text-sm text-red-600">{{ form.errors.keterangan }}</p>
+                            <transition name="fade">
+                                <p v-if="form.errors.keterangan" class="text-xs text-red-600 mt-1">{{ form.errors.keterangan }}</p>
+                            </transition>
                         </div>
 
-                        <Button type="submit" :disabled="form.processing">
-                            <span v-if="form.processing">Memproses...</span>
-                            <span v-else>Ajukan Peminjaman</span>
-                        </Button>
+                        <div class="pt-2 flex justify-end">
+                            <Button
+                                type="submit"
+                                :disabled="form.processing"
+                                class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition disabled:opacity-60"
+                            >
+                                <span v-if="form.processing">Memproses...</span>
+                                <span v-else>Ajukan Peminjaman</span>
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>
