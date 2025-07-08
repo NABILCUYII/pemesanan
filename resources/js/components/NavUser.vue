@@ -17,7 +17,30 @@ const { isMobile, state } = useSidebar();
         <SidebarMenuItem>
             <DropdownMenu>
                 <DropdownMenuTrigger as-child>
-                    <SidebarMenuButton size="lg" class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                    <SidebarMenuButton size="lg" class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground flex items-center gap-2">
+                        <!-- User icon profile -->
+                        <template v-if="user?.photo">
+                            <img
+                                :src="user.photo"
+                                alt="User photo"
+                                class="w-8 h-8 rounded-full object-cover"
+                            />
+                        </template>
+                        <template v-else>
+                            <svg
+                                class="w-8 h-8 rounded-full bg-gray-300 text-gray-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <circle cx="12" cy="8" r="4" stroke-width="2" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 20c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                            </svg>
+                        </template>
+                        <div v-else class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
+                            {{ user?.name?.charAt(0) || '?' }}
+                        </div>
                         <UserInfo :user="user" />
                         <ChevronsUpDown class="ml-auto size-4" />
                     </SidebarMenuButton>
@@ -34,4 +57,3 @@ const { isMobile, state } = useSidebar();
         </SidebarMenuItem>
     </SidebarMenu>
 </template>
-
