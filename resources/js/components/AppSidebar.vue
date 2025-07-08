@@ -18,7 +18,8 @@ import {
     History,
     FileText,
     TrendingUp,
-    AlertTriangle
+    AlertTriangle,
+    User
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 import { computed, ref, onMounted } from 'vue';
@@ -112,6 +113,11 @@ const filteredMainNavItems = computed(() => {
 });
 
 const footerNavItems: NavItem[] = [
+    {
+        title: 'Profil',
+        href: route('profile.edit'),
+        icon: User,
+    },
     {
         title: 'Bantuan',
         href: '#',
