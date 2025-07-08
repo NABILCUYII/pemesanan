@@ -13,6 +13,7 @@ import {
     Users, 
     Settings, 
     HelpCircle,
+    Info,
     BarChart,
     Check,
     History,
@@ -208,14 +209,14 @@ const filteredMainNavItems = computed(() => {
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Bantuan',
-        href: '#',
-        icon: HelpCircle,
+        title: 'Tentang',
+        href: route('tentang'),
+        icon: Info,
     },
     {
-        title: 'Pengaturan',
-        href: '#',
-        icon: Settings,
+        title: 'Bantuan',
+        href: route('bantuan'),
+        icon: HelpCircle,
     },
 ];
 </script>
