@@ -23,8 +23,8 @@ const props = defineProps<{
 }>()
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Aset', href: route('peminjaman.index') },
-    { title: 'Buat Aset', href: route('peminjaman.create') },
+  { title: 'Peminjaman', href: route('peminjaman.index') },
+  { title: 'Buat Peminjaman', href: route('peminjaman.create') },
 ];
 
 const form = useForm({
@@ -180,9 +180,6 @@ onUnmounted(() => {
                             <transition name="fade">
                                 <p v-if="form.errors.jumlah" class="text-xs text-red-600 mt-1">{{ form.errors.jumlah }}</p>
                             </transition>
-                            <p v-if="selectedBarang && form.jumlah && parseInt(form.jumlah) > selectedBarang.stok" class="text-sm text-red-600">
-                                ⚠️ Jumlah yang diminta melebihi stok yang tersedia (Stok: {{ selectedBarang.stok }})
-                            </p>
                         </div>
 
                         <!-- TENGGAT WAKTU -->

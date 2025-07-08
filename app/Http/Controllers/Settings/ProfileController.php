@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,13 +36,14 @@ class ProfileController extends Controller
         // Handle photo upload
         if ($request->hasFile('photo')) {
             // Delete old photo if exists
-            if ($user->photo) {
-                \Storage::disk('public')->delete($user->photo);
+            if ($user->photo_url) {
+                $oldPath = str_replace('/storage/', '', $user->photo_url);
+                Storage::disk('public')->delete($oldPath);
             }
-            
+
             // Store new photo
             $photoPath = $request->file('photo')->store('profile-photos', 'public');
-            $data['photo'] = $photoPath;
+            $data['photo_url'] = '/storage/' . $photoPath;
         }
 
         $user->fill($data);

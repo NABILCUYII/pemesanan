@@ -90,7 +90,7 @@ const getStatusIcon = (status: string) => {
 };
 
 const getTypeText = (type: string) => {
-    return type === 'permintaan' ? 'Permintaan' : 'Aset';
+    return type === 'permintaan' ? 'Permintaan' : 'Peminjaman';
 };
 
 const getTypeColor = (type: string) => {
@@ -159,7 +159,7 @@ const getPhotoUrl = (photoPath: string) => {
                 >
                     <option value="">Semua Tipe</option>
                     <option value="permintaan">Permintaan</option>
-                    <option value="peminjaman">Aset</option>
+                    <option value="peminjaman">Peminjaman</option>
                 </select>
                 <select
                     v-model="selectedStatus"

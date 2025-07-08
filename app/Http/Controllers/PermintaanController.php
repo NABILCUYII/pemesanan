@@ -112,12 +112,7 @@ class PermintaanController extends Controller
     {
         // Check if user is authorized to edit this permintaan
         if (auth()->id() !== $permintaan->user_id && !auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+            abort(403);
         }
 
         // Only allow editing if status is pending
@@ -137,12 +132,7 @@ class PermintaanController extends Controller
     {
         // Check if user is authorized to update this permintaan
         if (auth()->id() !== $permintaan->user_id && !auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+            abort(403);
         }
 
         // Only allow updating if status is pending
@@ -171,12 +161,7 @@ class PermintaanController extends Controller
     {
         // Check if user is authorized to delete this permintaan
         if (auth()->id() !== $permintaan->user_id && !auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+            abort(403);
         }
 
         // Only allow deletion if status is pending
@@ -194,12 +179,7 @@ class PermintaanController extends Controller
     {
         // Check if user is admin
         if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+            abort(403, 'Unauthorized action.');
         }
 
         // Check if permintaan is approved
@@ -219,12 +199,7 @@ class PermintaanController extends Controller
     {
         // Check if user is admin
         if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+            abort(403, 'Unauthorized action.');
         }
 
         $permintaan = Permintaan::with(['user', 'barang', 'approvedBy'])
@@ -247,12 +222,7 @@ class PermintaanController extends Controller
     {
         // Check if user is admin
         if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+            abort(403, 'Unauthorized action.');
         }
 
         $request->validate([
@@ -315,14 +285,5 @@ class PermintaanController extends Controller
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());
         }
-    }
-
-    // Endpoint notifikasi permintaan pending
-    public function pendingCount()
-    {
-        $permintaanCount = Permintaan::where('status', 'pending')->count();
-        $peminjamanCount = Peminjaman::where('status', 'pending')->count();
-        $totalCount = $permintaanCount + $peminjamanCount;
-        return response()->json(['count' => $totalCount]);
     }
 }

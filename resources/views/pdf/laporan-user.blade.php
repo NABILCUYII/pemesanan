@@ -116,7 +116,7 @@
         <p><strong>Nama:</strong> {{ $user->name }}</p>
         <p><strong>Email:</strong> {{ $user->email }}</p>
         <p><strong>Total Permintaan:</strong> {{ $permintaan->count() }}</p>
-        <p><strong>Total Aset:</strong> {{ $peminjaman->count() }}</p>
+        <p><strong>Total Peminjaman:</strong> {{ $peminjaman->count() }}</p>
     </div>
 
     <div class="section">
@@ -164,7 +164,7 @@
     </div>
 
     <div class="section">
-        <h3>Detail Aset</h3>
+        <h3>Detail Peminjaman Barang</h3>
         @if($peminjaman->count() > 0)
         <table>
             <thead>

@@ -95,7 +95,7 @@
             <div class="user-section">
                 <div class="user-header">
                     <h3>{{ $user['name'] ?? 'N/A' }}</h3>
-                    <p>Total Permintaan: {{ $user['total_permintaan'] ?? 0 }} | Total Aset: {{ $user['total_peminjaman'] ?? 0 }}</p>
+                    <p>Total Permintaan: {{ $user['total_permintaan'] ?? 0 }} | Total Peminjaman: {{ $user['total_peminjaman'] ?? 0 }}</p>
                 </div>
 
                 @if(count($user['permintaan']) > 0)
@@ -126,7 +126,7 @@
                 @endif
 
                 @if(count($user['peminjaman']) > 0)
-                    <h4>Daftar Aset</h4>
+                    <h4>Daftar Peminjaman</h4>
                     <table>
                         <thead>
                             <tr>
@@ -165,8 +165,8 @@
                     <th>Barang</th>
                     <th>Stok Awal<br><small>(Pertama Masuk)</small></th>
                     <th>Permintaan Keluar</th>
-                    <th>Aset Keluar</th>
-                    <th>Aset Kembali</th>
+                    <th>Peminjaman Keluar</th>
+                    <th>Peminjaman Kembali</th>
                     <th>Stok Akhir<br><small>(Total Saat Ini)</small></th>
                 </tr>
             </thead>

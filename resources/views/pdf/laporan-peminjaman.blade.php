@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Aset</title>
+    <title>Laporan Peminjaman Barang</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,7 +63,7 @@
     <div style="font-family: Arial, Helvetica, sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 60px; box-sizing: border-box;">
         <div style="width: 100%; max-width: 600px; margin: 0 auto;">
             <div style="margin-bottom: 40px;">
-                <p style="font-size: 12pt; margin: 0 0 8px 0; color: #222;">Laporan Aset</p>
+                <p style="font-size: 12pt; margin: 0 0 8px 0; color: #222;">Laporan Peminjaman Barang</p>
                 <p style="font-size: 16pt; font-weight: bold; margin: 0 0 24px 0;">
                     <span style="text-transform: uppercase;">UPT Puskesmas BONTANG UTARA 1</span>
                 </p>
@@ -88,7 +88,7 @@
     </div>
 
     <div class="section">
-        <h2>Daftar Aset</h2>
+        <h2>Daftar Peminjaman Barang</h2>
         @if(count($peminjaman) > 0)
             <table>
                 <thead>

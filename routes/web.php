@@ -7,14 +7,11 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\BarangRusakController;
 use App\Http\Controllers\PermintaanController;
 use App\Http\Controllers\PeminjamanController;
-use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\SelamatDatangController;
 use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\StokLogController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ErrorController;
-use App\Http\Controllers\VideoBeritaController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -40,8 +37,6 @@ Route::middleware(['auth'])->group(function () {
 // Rute Barang
 Route::middleware(['auth'])->group(function () {
     Route::get('barang', [BarangController::class, 'index'])->name('barang.index');
-    Route::get('barang/aset', [BarangController::class, 'aset'])->name('barang.aset');
-    Route::get('barang/permintaan', [BarangController::class, 'permintaan'])->name('barang.permintaan');
     Route::get('barang/create', [BarangController::class, 'create'])->name('barang.create');
     Route::post('barang', [BarangController::class, 'store'])->name('barang.store');
     Route::get('barang/{barang}/edit', [BarangController::class, 'edit'])->name('barang.edit');
@@ -50,9 +45,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('barang/stok', [BarangController::class, 'stok'])->name('barang.stok');
     Route::post('barang/{barang}/add-stok', [BarangController::class, 'addStok'])->name('barang.add-stok');
     Route::get('api/barang/stok-menipis-count', [BarangController::class, 'stokMenipisCount']);
-    Route::get('api/barang/stok-habis-count', [BarangController::class, 'stokHabisCount']);
-    Route::get('api/permintaan/pending-count', [PermintaanController::class, 'pendingCount']);
-    Route::get('api/inventaris/pending-count', [InventarisController::class, 'pendingCount']);
 });
 
 // Rute Barang Rusak
@@ -90,28 +82,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('peminjaman/{peminjaman}/edit', [PeminjamanController::class, 'edit'])->name('peminjaman.edit');
     Route::put('peminjaman/{peminjaman}', [PeminjamanController::class, 'update'])->name('peminjaman.update');
     Route::delete('peminjaman/{peminjaman}', [PeminjamanController::class, 'destroy'])->name('peminjaman.destroy');
-    Route::patch('peminjaman/{peminjaman}/start-progress', [PeminjamanController::class, 'startProgress'])->name('peminjaman.start-progress');
     Route::get('peminjaman/{peminjaman}/return', [PeminjamanController::class, 'return'])->name('peminjaman.return');
     Route::post('peminjaman/{peminjaman}/return', [PeminjamanController::class, 'processReturn'])->name('peminjaman.process-return');
     Route::get('peminjaman-returns', [PeminjamanController::class, 'returns'])->name('peminjaman.returns');
     Route::get('/peminjaman/returns', [PeminjamanController::class, 'returns'])->name('peminjaman.returns');
     Route::post('/peminjaman/{peminjaman}/return', [PeminjamanController::class, 'processReturn'])->name('peminjaman.process-return');
-});
-
-// Rute Inventaris
-Route::middleware(['auth'])->group(function () {
-    Route::get('inventaris', [InventarisController::class, 'index'])->name('inventaris.index');
-    Route::get('inventaris/create', [InventarisController::class, 'create'])->name('inventaris.create');
-    Route::post('inventaris', [InventarisController::class, 'store'])->name('inventaris.store');
-    Route::post('inventaris/approve', [InventarisController::class, 'approve'])->name('inventaris.approve');
-    Route::get('inventaris/{inventaris}/edit', [InventarisController::class, 'edit'])->name('inventaris.edit');
-    Route::put('inventaris/{inventaris}', [InventarisController::class, 'update'])->name('inventaris.update');
-    Route::delete('inventaris/{inventaris}', [InventarisController::class, 'destroy'])->name('inventaris.destroy');
-    Route::patch('inventaris/{inventaris}/start-progress', [InventarisController::class, 'startProgress'])->name('inventaris.start-progress');
-    Route::get('inventaris/{inventaris}/return', [InventarisController::class, 'return'])->name('inventaris.return');
-    Route::post('inventaris/{inventaris}/return', [InventarisController::class, 'processReturn'])->name('inventaris.process-return');
-    Route::get('inventaris-returns', [InventarisController::class, 'returns'])->name('inventaris.returns');
-    Route::get('inventaris/{inventaris}', [InventarisController::class, 'show'])->name('inventaris.show');
 });
 
 // Rute Riwayat
@@ -140,70 +115,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('stok-log/barang/{barangId}', [StokLogController::class, 'barang'])->name('stok-log.barang');
 });
 
-// Rute Video Berita
-Route::middleware(['auth'])->group(function () {
-    Route::get('video-berita', [VideoBeritaController::class, 'index'])->name('video-berita.index');
-    Route::get('video-berita/create', [VideoBeritaController::class, 'create'])->name('video-berita.create');
-    Route::post('video-berita', [VideoBeritaController::class, 'store'])->name('video-berita.store');
-    Route::get('video-berita/{videoBerita}/edit', [VideoBeritaController::class, 'edit'])->name('video-berita.edit');
-    Route::put('video-berita/{videoBerita}', [VideoBeritaController::class, 'update'])->name('video-berita.update');
-    Route::delete('video-berita/{videoBerita}', [VideoBeritaController::class, 'destroy'])->name('video-berita.destroy');
-    Route::get('api/video-berita/active', [VideoBeritaController::class, 'getActiveVideos'])->name('video-berita.active');
-});
-
-// Rute Halaman Informasi
-Route::middleware(['auth'])->group(function () {
-    Route::get('tentang', function () {
-        return Inertia::render('Tentang');
-    })->name('tentang');
-    
-    Route::get('bantuan', function () {
-        return Inertia::render('Bantuan');
-    })->name('bantuan');
-});
-
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
-
-// Error routes
-Route::get('/404', [ErrorController::class, 'notFound'])->name('error.404');
-Route::get('/403', [ErrorController::class, 'unauthorized'])->name('error.403');
-Route::get('/forbidden', [ErrorController::class, 'forbidden'])->name('error.forbidden');
-Route::get('/500', [ErrorController::class, 'serverError'])->name('error.500');
-Route::get('/loading', [ErrorController::class, 'loading'])->name('error.loading');
-
-// Test page untuk error pages
-Route::get('/test-error-pages', function () {
-    return Inertia::render('TestErrorPages');
-})->name('test.error.pages');
-
-// Test page untuk 403 error handling
-Route::get('/test-403-page', function () {
-    return Inertia::render('Test403');
-})->name('test.403.page');
-
-// Test routes untuk error handling
-Route::get('/test-403', function () {
-    abort(403, 'Access denied');
-})->name('test.403');
-
-Route::get('/test-403-auth', function () {
-    throw new \Illuminate\Auth\Access\AuthorizationException('You are not authorized to access this page.');
-})->name('test.403.auth');
-
-Route::get('/test-403-http', function () {
-    throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Access denied');
-})->name('test.403.http');
-
-Route::get('/test-404', function () {
-    abort(404, 'Page not found');
-})->name('test.404');
-
-Route::get('/test-500', function () {
-    abort(500, 'Server error');
-})->name('test.500');
-
-// Fallback route untuk 404 - harus di akhir file
-Route::fallback(function () {
-    return Inertia::render('NotFound');
-});

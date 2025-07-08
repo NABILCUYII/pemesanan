@@ -117,7 +117,7 @@ const getStokStatus = (stok: number) => {
                         <div>
                             <p class="text-sm font-medium text-muted-foreground">Kategori</p>
                             <Badge :variant="barang.kategori === 'peminjaman' ? 'default' : 'secondary'">
-                                {{ barang.kategori === 'peminjaman' ? 'Aset' : 'Permintaan' }}
+                                {{ barang.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}
                             </Badge>
                         </div>
                         <div>

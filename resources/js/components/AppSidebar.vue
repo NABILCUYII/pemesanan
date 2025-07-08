@@ -13,33 +13,23 @@ import {
     Users, 
     Settings, 
     HelpCircle,
-    Info,
     BarChart,
     Check,
     History,
     FileText,
     TrendingUp,
     AlertTriangle,
-    ChevronDown
+    User
 } from 'lucide-vue-next';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import AppLogo from './AppLogo.vue';
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const page = usePage();
 const user = page.props.auth.user;
 
 const stokMenipisCount = ref(0);
-const pendingApprovalCount = ref(0);
-const pendingInventarisCount = ref(0);
-let refreshInterval: number | null = null;
 
-const fetchCounts = async () => {
+onMounted(async () => {
     try {
         const res = await fetch('/api/barang/stok-menipis-count');
         const data = await res.json();
@@ -47,43 +37,9 @@ const fetchCounts = async () => {
     } catch (e) {
         stokMenipisCount.value = 0;
     }
-
-    try {
-        const res = await fetch('/api/permintaan/pending-count');
-        const data = await res.json();
-        pendingApprovalCount.value = data.count;
-    } catch (e) {
-        pendingApprovalCount.value = 0;
-    }
-
-    // Only fetch inventaris pending count for admin
-    if (user?.role === 'admin') {
-        try {
-            const res = await fetch('/api/inventaris/pending-count');
-            const data = await res.json();
-            pendingInventarisCount.value = data.count;
-        } catch (e) {
-            pendingInventarisCount.value = 0;
-        }
-    } else {
-        pendingInventarisCount.value = 0;
-    }
-};
-
-onMounted(async () => {
-    await fetchCounts();
-    
-    // Refresh counts every 30 seconds
-    refreshInterval = setInterval(fetchCounts, 30000);
 });
 
-onUnmounted(() => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-});
-
-const mainNavItems = computed(() => [
+const mainNavItems = computed<NavItem[]>(() => [
     {
         title: 'Dashboard',
         href: route('dashboard'),
@@ -94,65 +50,34 @@ const mainNavItems = computed(() => [
         href: route('permintaan.index'),
         icon: ShoppingCart,
     },
-    
     {
         title: 'Peminjaman',
         href: route('peminjaman.index'),
         icon: ClipboardList,
-        
     },
-
     {
-        title: 'Inventaris',
-        href: route('inventaris.index'),
-        icon: Package,
-        badge: user?.role === 'admin' ? pendingInventarisCount.value : undefined,
+        title: 'Riwayat',
+        href: route('riwayat.index'),
+        icon: History,
     },
-
     {
         title: 'Persetujuan',
         href: route('permintaan.approval'),
         icon: Check,
         adminOnly: true,
     },
-
     {
         title: 'Barang',
+        href: route('barang.index'),
         icon: Package,
         adminOnly: true,
-        isDropdown: true,
-        dropdownItems: [
-            {
-                title: 'Daftar Semua Barang',
-                href: route('barang.index'),
-                icon: Package,
-                adminOnly: true,
-            },
-            {
-                title: 'Aset',
-                href: route('barang.aset'),
-                icon: Package,
-                adminOnly: true,
-            },
-            {
-                title: 'Barang Permintaan',
-                href: route('barang.permintaan'),
-                icon: Package,
-                adminOnly: true,
-            },
-
-            {
+    },
+    {
         title: 'Barang Rusak',
         href: route('barang-rusak.index'),
         icon: AlertTriangle,
         adminOnly: true,
     },
-        ],
-    },
-
- 
-  
- 
     {
         title: 'Stok Barang',
         href: route('barang.stok'),
@@ -178,30 +103,10 @@ const mainNavItems = computed(() => [
         icon: FileText,
         adminOnly: true,
     },
-
-    {
-        title: 'Riwayat',
-        href: route('riwayat.index'),
-        icon: History,
-    },
 ]);
 
 const filteredMainNavItems = computed(() => {
-    return mainNavItems.value.map(item => {
-        // Create a new object to avoid mutating the original
-        const newItem = { ...item };
-        
-        // Update badge values reactively
-        if (item.title === 'Stok Barang') {
-            newItem.badge = stokMenipisCount.value;
-        } else if (item.title === 'Persetujuan') {
-            newItem.badge = pendingApprovalCount.value;
-        } else if (item.title === 'Inventaris') {
-            newItem.badge = user?.role === 'admin' ? pendingInventarisCount.value : undefined;
-        }
-        
-        return newItem;
-    }).filter(item => {
+    return mainNavItems.value.filter(item => {
         if (!item.adminOnly) return true;
         return user?.role === 'admin';
     });
@@ -209,14 +114,19 @@ const filteredMainNavItems = computed(() => {
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Tentang',
-        href: route('tentang'),
-        icon: Info,
+        title: 'Profil',
+        href: route('profile.edit'),
+        icon: User,
     },
     {
         title: 'Bantuan',
-        href: route('bantuan'),
+        href: '#',
         icon: HelpCircle,
+    },
+    {
+        title: 'Pengaturan',
+        href: '#',
+        icon: Settings,
     },
 ];
 </script>
@@ -246,3 +156,4 @@ const footerNavItems: NavItem[] = [
     </Sidebar>
     <slot />
 </template>
+

@@ -7,7 +7,6 @@ use App\Models\Barang;
 use App\Models\Permintaan;
 use App\Models\Peminjaman;
 use App\Models\StokLog;
-use App\Models\VideoBerita;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -88,27 +87,6 @@ class DashboardController extends Controller
         // Get chart data from stok_logs
         $chartData = $this->getChartData();
 
-        // Get active video berita with computed attributes
-        $videoBeritas = VideoBerita::active()->ordered()->take(3)->get()->map(function ($video) {
-            return [
-                'id' => $video->id,
-                'judul' => $video->judul,
-                'deskripsi' => $video->deskripsi,
-                'video_url' => $video->video_url,
-                'thumbnail_url' => $video->thumbnail_url,
-                'sumber' => $video->sumber,
-                'tanggal_publish' => $video->tanggal_publish,
-                'is_active' => $video->is_active,
-                'urutan' => $video->urutan,
-                'youtube_id' => $video->youtube_id,
-                'google_drive_id' => $video->google_drive_id,
-                'video_type' => $video->video_type,
-                'embed_url' => $video->embed_url,
-                'youtube_thumbnail' => $video->youtube_thumbnail,
-                'video_source_name' => $video->video_source_name,
-            ];
-        });
-
         // Get recent activities
         $recentActivities = collect();
 
@@ -170,8 +148,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'stats' => $stats,
             'recentActivities' => $recentActivities,
-            'chartData' => $chartData,
-            'videoBeritas' => $videoBeritas
+            'chartData' => $chartData
         ]);
     }
 

@@ -9,17 +9,19 @@ interface Props {
     user: User;
 }
 
+const props = defineProps<Props>();
+
 const handleLogout = () => {
     router.flushAll();
 };
 
-defineProps<Props>();
+// Remove duplicate defineProps
 </script>
 
 <template>
     <DropdownMenuLabel class="p-0 font-normal">
         <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-            <UserInfo :user="user" :show-email="true" />  
+            <UserInfo :user="props.user" :show-email="true" :key="props.user.photo_url" />  
         </div>
     </DropdownMenuLabel>
     <DropdownMenuSeparator />

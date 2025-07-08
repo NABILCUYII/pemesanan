@@ -11,17 +11,6 @@ class UserController extends Controller
 {
     public function index()
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         $users = User::with('role')->get();
         return Inertia::render('users/index', [
             'users' => $users
@@ -30,17 +19,6 @@ class UserController extends Controller
 
     public function create()
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         return Inertia::render('users/create');
     }
 
@@ -68,17 +46,6 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         return Inertia::render('users/edit', [
             'user' => $user->load('role')
         ]);
@@ -89,7 +56,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'nullable|string'
+            'role' => 'required|string'
         ]);
 
         $user->update([
@@ -97,27 +64,15 @@ class UserController extends Controller
             'email' => $validated['email'],
         ]);
 
-        if (array_key_exists('role', $validated) && $validated['role'] !== null && $validated['role'] !== '') {
-            $user->role()->update([
-                'role' => $validated['role']
-            ]);
-        }
+        $user->role()->update([
+            'role' => $validated['role']
+        ]);
 
         return redirect()->route('users.index');
     }
 
     public function destroy(User $user)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
         $user->role()->delete();
         $user->delete();
         return redirect()->route('users.index');

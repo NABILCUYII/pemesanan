@@ -247,7 +247,7 @@ const getPhotoUrl = (photoPath: string) => {
                 <CardHeader class="pb-4">
                     <CardTitle class="flex items-center gap-2 text-lg">
                         <Calendar class="h-5 w-5 text-primary" />
-                        Pilih Periode Laporan
+                        Filter Periode Laporan
                     </CardTitle>
                     <CardDescription class="text-base">Pilih periode laporan yang ingin ditampilkan dan analisis</CardDescription>
                 </CardHeader>

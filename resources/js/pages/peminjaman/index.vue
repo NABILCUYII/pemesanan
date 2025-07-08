@@ -4,15 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Search, User, Edit, X, RotateCcw, Play, Check, XCircle } from 'lucide-vue-next';
+import { Plus, Search, User, Edit, X, RotateCcw } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, computed, inject } from 'vue';
+import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { ToastContainer } from '@/components/ui/toast';
 
 // Declare route function globally for TypeScript
 declare function route(name: string, params?: any): string;
@@ -33,13 +30,11 @@ interface PeminjamanItem {
     nama_barang: string;
     kode_barang: string;
     jumlah: number;
-    status: 'pending' | 'approved' | 'in_progress' | 'rejected' | 'returned' | 'completed';
+    status: 'pending' | 'approved' | 'rejected' | 'returned' | 'completed';
     tanggal_peminjaman: string;
     tanggal_pengembalian: string | null;
     due_date: string;
     keterangan?: string;
-    alasan_approval?: string;
-    catatan_approval?: string;
     kondisi_barang?: string;
     catatan_pengembalian?: string;
     returned_at?: string;
@@ -57,9 +52,6 @@ const props = defineProps<{
 }>();
 
 const { getInitials } = useInitials();
-
-// Toast notification system
-const addToast = inject('addToast') as ((toast: any) => void);
 
 const searchQuery = ref('');
 const selectedStatus = ref('');
@@ -105,7 +97,6 @@ const getStatusVariant = (status: string) => {
     switch (status) {
         case 'pending': return 'secondary';
         case 'approved': return 'default';
-        case 'in_progress': return 'default';
         case 'rejected': return 'destructive';
         case 'returned': return 'outline';
         case 'completed': return 'outline';
@@ -117,7 +108,6 @@ const getStatusText = (status: string) => {
     switch (status) {
         case 'pending': return 'Menunggu';
         case 'approved': return 'Disetujui';
-        case 'in_progress': return 'Proses Peminjaman';
         case 'rejected': return 'Ditolak';
         case 'returned': return 'Dikembalikan';
         case 'completed': return 'Selesai';
@@ -127,22 +117,7 @@ const getStatusText = (status: string) => {
 
 const deletePeminjaman = (id: number) => {
     if (confirm('Apakah Anda yakin ingin menghapus peminjaman ini?')) {
-        router.delete(route('peminjaman.destroy', id), {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Berhasil',
-                    message: 'Peminjaman berhasil dihapus'
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menghapus peminjaman'
-                });
-            }
-        });
+        router.delete(route('peminjaman.destroy', id));
     }
 };
 
@@ -156,27 +131,6 @@ const processReturn = (peminjaman: PeminjamanItem) => {
     showReturnModal.value = true;
 };
 
-const startPeminjaman = (peminjaman: PeminjamanItem) => {
-    if (confirm('Apakah Anda yakin ingin memulai proses peminjaman ini?')) {
-        router.patch(route('peminjaman.start-progress', peminjaman.id), {}, {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Berhasil',
-                    message: 'Proses peminjaman telah dimulai'
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal memulai proses peminjaman'
-                });
-            }
-        });
-    }
-};
-
 const submitReturn = () => {
     if (!selectedPeminjaman.value) return;
     
@@ -184,18 +138,6 @@ const submitReturn = () => {
         onSuccess: () => {
             showReturnModal.value = false;
             selectedPeminjaman.value = null;
-            addToast({
-                type: 'success',
-                title: 'Berhasil',
-                message: 'Pengembalian berhasil diproses'
-            });
-        },
-        onError: () => {
-            addToast({
-                type: 'error',
-                title: 'Gagal',
-                message: 'Gagal memproses pengembalian'
-            });
         }
     });
 };
@@ -205,70 +147,18 @@ const closeReturnModal = () => {
     selectedPeminjaman.value = null;
 };
 
-const approvePeminjaman = (peminjaman: PeminjamanItem) => {
-    if (confirm('Apakah Anda yakin ingin menyetujui peminjaman ini?')) {
-        router.post('/peminjaman/approve', {
-            peminjaman_id: peminjaman.id,
-            action: 'approve',
-            alasan: 'Peminjaman disetujui',
-            catatan: ''
-        }, {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Disetujui',
-                    message: `Peminjaman ${peminjaman.nama_barang} berhasil disetujui`
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menyetujui peminjaman'
-                });
-            }
-        });
-    }
-};
-
-const rejectPeminjaman = (peminjaman: PeminjamanItem) => {
-    if (confirm('Apakah Anda yakin ingin menolak peminjaman ini?')) {
-        router.post('/peminjaman/approve', {
-            peminjaman_id: peminjaman.id,
-            action: 'reject',
-            alasan: 'Peminjaman ditolak',
-            catatan: ''
-        }, {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Ditolak',
-                    message: `Peminjaman ${peminjaman.nama_barang} berhasil ditolak`
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menolak peminjaman'
-                });
-            }
-        });
-    }
-};
-
 const getPhotoUrl = (photoPath: string) => {
     return `/storage/${photoPath}`;
 };
 </script>
 
 <template>
-    <Head title="Aset" />
+    <Head title="Peminjaman" />
     <AppLayout>
         <div class="p-4 md:p-6 space-y-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                    <h1 class="text-2xl font-semibold text-gray-800">Daftar Aset</h1>
+                    <h1 class="text-2xl font-semibold text-gray-800">Daftar Peminjaman</h1>
                     <p v-if="!isAdmin" class="text-sm text-gray-500 mt-1">Menampilkan peminjaman Anda</p>
                     <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua peminjaman</p>
                 </div>
@@ -282,7 +172,7 @@ const getPhotoUrl = (photoPath: string) => {
                     <Link :href="route('peminjaman.create')">
                         <Button class="w-full sm:w-auto">
                             <Plus class="w-4 h-4 mr-2" />
-                            Buat Aset
+                            Buat Peminjaman
                         </Button>
                     </Link>
                 </div>
@@ -306,7 +196,6 @@ const getPhotoUrl = (photoPath: string) => {
                     <option value="">Semua Status</option>
                     <option value="pending">Menunggu</option>
                     <option value="approved">Disetujui</option>
-                    <option value="in_progress">Proses Peminjaman</option>
                     <option value="rejected">Ditolak</option>
                     <option value="returned">Dikembalikan</option>
                     <option value="completed">Selesai</option>
@@ -364,35 +253,8 @@ const getPhotoUrl = (photoPath: string) => {
                                         >
                                             <Edit class="w-4 h-4" />
                                         </Link>
-                                        
-                                        <!-- Admin Approval Actions -->
-                                        <button
-                                            v-if="isAdmin && item.status === 'pending'"
-                                            @click="approvePeminjaman(item)"
-                                            class="text-green-600 hover:text-green-800"
-                                            title="Setujui"
-                                        >
-                                            <Check class="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            v-if="isAdmin && item.status === 'pending'"
-                                            @click="rejectPeminjaman(item)"
-                                            class="text-red-600 hover:text-red-800"
-                                            title="Tolak"
-                                        >
-                                            <XCircle class="w-4 h-4" />
-                                        </button>
-                                        
                                         <button
                                             v-if="item.status === 'approved' && isAdmin"
-                                            @click="startPeminjaman(item)"
-                                            class="text-blue-600 hover:text-blue-800"
-                                            title="Mulai Peminjaman"
-                                        >
-                                            <Play class="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            v-if="item.status === 'in_progress' && isAdmin"
                                             @click="processReturn(item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Kembalikan"
@@ -461,35 +323,8 @@ const getPhotoUrl = (photoPath: string) => {
                                         >
                                             <Edit class="w-4 h-4" />
                                         </Link>
-                                        
-                                        <!-- Admin Approval Actions -->
-                                        <button
-                                            v-if="isAdmin && item.status === 'pending'"
-                                            @click="approvePeminjaman(item)"
-                                            class="text-green-600 hover:text-green-800"
-                                            title="Setujui"
-                                        >
-                                            <Check class="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            v-if="isAdmin && item.status === 'pending'"
-                                            @click="rejectPeminjaman(item)"
-                                            class="text-red-600 hover:text-red-800"
-                                            title="Tolak"
-                                        >
-                                            <XCircle class="w-4 h-4" />
-                                        </button>
-                                        
                                         <button
                                             v-if="item.status === 'approved' && isAdmin"
-                                            @click="startPeminjaman(item)"
-                                            class="text-blue-600 hover:text-blue-800"
-                                            title="Mulai Peminjaman"
-                                        >
-                                            <Play class="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            v-if="item.status === 'in_progress' && isAdmin"
                                             @click="processReturn(item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Kembalikan"
@@ -529,9 +364,9 @@ const getPhotoUrl = (photoPath: string) => {
                     </div>
 
                     <div v-if="selectedPeminjaman" class="space-y-4">
-                        <!-- Informasi Aset -->
-                        <div class="space-y-2">
-                            <h4 class="font-medium text-gray-800">Informasi Aset</h4>
+                        <!-- Informasi Peminjaman -->
+                        <div class="bg-gray-50 p-3 rounded">
+                            <h4 class="font-medium text-gray-800">Informasi Peminjaman</h4>
                             <p class="text-sm text-gray-600">Barang: {{ selectedPeminjaman.nama_barang }}</p>
                             <p class="text-sm text-gray-600">Jumlah: {{ selectedPeminjaman.jumlah }}</p>
                             <p class="text-sm text-gray-600">Tanggal Pinjam: {{ formatDate(selectedPeminjaman.tanggal_peminjaman) }}</p>
@@ -607,7 +442,28 @@ const getPhotoUrl = (photoPath: string) => {
                 </div>
             </div>
 
-           
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Daftar Peminjaman</h3>
+                    <p class="text-sm text-gray-600">Kelola semua peminjaman barang</p>
+                </div>
+                <div class="flex gap-3">
+                    <Link
+                        :href="route('peminjaman.returns')"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                        <RotateCcw class="w-4 h-4 mr-2" />
+                        Lihat Pengembalian
+                    </Link>
+                    <Link
+                        :href="route('peminjaman.create')"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                        <Plus class="w-4 h-4 mr-2" />
+                        Tambah Peminjaman
+                    </Link>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

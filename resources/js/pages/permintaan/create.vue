@@ -281,7 +281,7 @@ onUnmounted(() => {
                                                             <div class="flex items-center gap-2">
                                                                 <span class="text-xs px-2 py-1 rounded-full"
                                                                       :class="item.kategori === 'peminjaman' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'">
-                                                                    {{ item.kategori === 'peminjaman' ? 'Aset' : 'Permintaan' }}
+                                                                    {{ item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan' }}
                                                                 </span>
                                                                 <Check v-if="request.selectedBarang && request.selectedBarang.id === item.id" class="w-4 h-4 text-blue-600" />
                                                             </div>

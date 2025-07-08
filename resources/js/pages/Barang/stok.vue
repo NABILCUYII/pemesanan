@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertTriangle, Plus, History, Box, Handshake, ArrowUpCircle, MapPin, Ruler } from 'lucide-vue-next';
+import { Package, AlertTriangle, Plus, History, Box, Handshake, ArrowUpCircle } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 
 interface Barang {
@@ -17,8 +17,6 @@ interface Barang {
     deskripsi: string;
     kategori: string;
     stok: number;
-    satuan?: string;
-    lokasi?: string;
 }
 
 interface Props {
@@ -38,7 +36,7 @@ const form = useForm({
 const groupedBarang = computed(() => {
     const groups: { [key: string]: Barang[] } = {};
     props.barang.forEach(item => {
-        const kategori = item.kategori === 'peminjaman' ? 'Aset' : 'Permintaan';
+        const kategori = item.kategori === 'peminjaman' ? 'Peminjaman' : 'Permintaan';
         if (!groups[kategori]) {
             groups[kategori] = [];
         }
@@ -209,14 +207,6 @@ const getKategoriTextColor = (kategori: string | number) => {
                                         <CardDescription class="text-sm text-gray-500">
                                             {{ item.kode_barang }}
                                         </CardDescription>
-                                        <div class="flex flex-wrap gap-2 mt-2">
-                                            <span v-if="item.satuan" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
-                                                <Ruler class="w-3 h-3 mr-1" /> Satuan: {{ item.satuan }}
-                                            </span>
-                                            <span v-if="item.lokasi" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
-                                                <MapPin class="w-3 h-3 mr-1" /> Lokasi: {{ item.lokasi }}
-                                            </span>
-                                        </div>
                                     </div>
                                     <Badge :variant="getStokStatus(item.stok).variant" class="ml-2 px-3 py-1 text-base">
                                         {{ getStokStatus(item.stok).status }}
@@ -230,7 +220,6 @@ const getKategoriTextColor = (kategori: string | number) => {
                                         <span class="text-sm font-medium text-gray-500">Stok:</span>
                                         <span :class="['text-2xl font-extrabold', getStokColor(item.stok)]">
                                             {{ item.stok }}
-                                            <span v-if="item.satuan" class="text-base font-normal text-gray-500 ml-1">({{ item.satuan }})</span>
                                         </span>
                                     </div>
                                     
@@ -365,3 +354,4 @@ const getKategoriTextColor = (kategori: string | number) => {
         </div>
     </AppLayout>
 </template>
+

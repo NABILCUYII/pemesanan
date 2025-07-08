@@ -61,7 +61,7 @@ const formatDate = (dateString: string) => {
 </script>
 
 <template>
-    <Head title="Pengembalian Aset" />
+    <Head title="Pengembalian Peminjaman" />
     <AppLayout>
         <div class="p-4 md:p-6 space-y-6">
             <!-- Header -->
@@ -70,14 +70,14 @@ const formatDate = (dateString: string) => {
                     <ArrowLeft class="w-5 h-5" />
                 </Link>
                 <div>
-                    <h1 class="text-2xl font-semibold text-gray-800">Pengembalian Aset</h1>
-                    <p class="text-sm text-gray-500 mt-1">Proses pengembalian aset yang dipinjam</p>
+                    <h1 class="text-2xl font-semibold text-gray-800">Pengembalian Peminjaman</h1>
+                    <p class="text-sm text-gray-500 mt-1">Proses pengembalian barang yang dipinjam</p>
                 </div>
             </div>
 
             <!-- Informasi Peminjaman -->
             <div class="bg-white rounded-lg border p-6 space-y-4">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Informasi Aset</h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Informasi Peminjaman</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Informasi Peminjam -->
@@ -102,11 +102,11 @@ const formatDate = (dateString: string) => {
                         </div>
                     </div>
 
-                    <!-- Tanggal Aset -->
+                    <!-- Tanggal Peminjaman -->
                     <div class="space-y-3">
                         <div class="flex items-center gap-2">
                             <CalendarDays class="w-4 h-4 text-gray-500" />
-                            <span class="font-medium text-gray-700">Tanggal Aset:</span>
+                            <span class="font-medium text-gray-700">Tanggal Pinjam:</span>
                         </div>
                         <p class="text-gray-600 ml-6">{{ formatDate(peminjaman.tanggal_peminjaman) }}</p>
                     </div>
@@ -121,9 +121,9 @@ const formatDate = (dateString: string) => {
                     </div>
                 </div>
 
-                <!-- Keterangan Aset -->
+                <!-- Keterangan Peminjaman -->
                 <div v-if="peminjaman.keterangan" class="space-y-2">
-                    <span class="font-medium text-gray-700">Keterangan Aset:</span>
+                    <span class="font-medium text-gray-700">Keterangan Peminjaman:</span>
                     <p class="text-gray-600">{{ peminjaman.keterangan }}</p>
                 </div>
             </div>

@@ -14,8 +14,6 @@ class Barang extends Model
         'kategori',
         'stok',
         'status',
-        'satuan',
-        'lokasi',
     ];
 
     protected $table = 'barang';

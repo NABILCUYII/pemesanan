@@ -5,49 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft } from 'lucide-vue-next';
-import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, computed } from 'vue';
-import { PackagePlus } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { PackagePlus, ArrowLeft } from 'lucide-vue-next';
 
 const form = useForm({
     kode_barang: '',
     nama_barang: '',
     kategori: '',
     stok: '',
-    deskripsi: '',
-    satuan: '',
-    lokasi: ''
-});
-
-const manualSatuan = ref('');
-const manualLokasi = ref('');
-
-const satuanValue = computed({
-    get() {
-        return form.satuan === 'Lainnya' ? manualSatuan.value : form.satuan;
-    },
-    set(val) {
-        if (form.satuan === 'Lainnya') {
-            manualSatuan.value = val;
-        } else {
-            form.satuan = val;
-        }
-    }
-});
-
-const lokasiValue = computed({
-    get() {
-        return form.lokasi === 'Lainnya' ? manualLokasi.value : form.lokasi;
-    },
-    set(val) {
-        if (form.lokasi === 'Lainnya') {
-            manualLokasi.value = val;
-        } else {
-            form.lokasi = val;
-        }
-    }
+    deskripsi: ''
 });
 
 const kategoriOptions = [
@@ -56,12 +23,6 @@ const kategoriOptions = [
 ];
 
 const submit = () => {
-    if (form.satuan === 'Lainnya') {
-        form.satuan = manualSatuan.value;
-    }
-    if (form.lokasi === 'Lainnya') {
-        form.lokasi = manualLokasi.value;
-    }
     form.post(route('barang.store'));
 };
 </script>
@@ -144,70 +105,6 @@ const submit = () => {
                                 />
                                 <p v-if="form.errors.stok" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.stok }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label for="satuan" class="font-medium text-gray-700">Satuan</Label>
-                                <Select v-model="form.satuan">
-                                    <SelectTrigger id="satuan" class="w-full mt-1">
-                                        <SelectValue placeholder="Pilih satuan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="buah">Buah</SelectItem>
-                                        <SelectItem value="pcs">Pcs</SelectItem>
-                                        <SelectItem value="Pak">Pak</SelectItem>
-                                        <SelectItem value="set">Set</SelectItem>
-                                        <SelectItem value="box">Box</SelectItem>
-                                        <SelectItem value="unit">Unit</SelectItem>
-                                        <SelectItem value="lembar">Lembar</SelectItem>
-                                        <SelectItem value="paket">Paket</SelectItem>
-                                        <SelectItem value="botol">Botol</SelectItem>
-                                        <SelectItem value="kg">Kg</SelectItem>
-                                        <SelectItem value="liter">Liter</SelectItem>
-                                        <SelectItem value="meter">Meter</SelectItem>
-                                        <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    v-if="form.satuan === 'Lainnya'"
-                                    v-model="manualSatuan"
-                                    type="text"
-                                    placeholder="Masukkan satuan manual"
-                                    class="w-full mt-2"
-                                />
-                                <p v-if="form.errors.satuan" class="text-xs text-red-500 mt-1">
-                                    {{ form.errors.satuan }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <Label for="lokasi" class="font-medium text-gray-700">Lokasi</Label>
-                                <Select v-model="form.lokasi">
-                                    <SelectTrigger id="lokasi" class="w-full mt-1">
-                                        <SelectValue placeholder="Pilih lokasi" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Gudang A">Gudang A</SelectItem>
-                                        <SelectItem value="Gudang B">Gudang B</SelectItem>
-                                        <SelectItem value="Rak 1">Rak 1</SelectItem>
-                                        <SelectItem value="Rak 2">Rak 2</SelectItem>
-                                        <SelectItem value="Lemari 1">Lemari 1</SelectItem>
-                                        <SelectItem value="Lemari 2">Lemari 2</SelectItem>
-                                        <SelectItem value="Laboratorium">Laboratorium</SelectItem>
-                                        <SelectItem value="Ruang Kelas">Ruang Kelas</SelectItem>
-                                        <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    v-if="form.lokasi === 'Lainnya'"
-                                    v-model="manualLokasi"
-                                    type="text"
-                                    placeholder="Masukkan lokasi manual"
-                                    class="w-full mt-2"
-                                />
-                                <p v-if="form.errors.lokasi" class="text-xs text-red-500 mt-1">
-                                    {{ form.errors.lokasi }}
                                 </p>
                             </div>
 

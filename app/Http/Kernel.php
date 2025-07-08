@@ -63,20 +63,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'admin' => \App\Http\Middleware\AdminMiddleware::class,
-        'user' => \App\Http\Middleware\UserMiddleware::class,
-        'peminjaman' => \App\Http\Middleware\PeminjamanMiddleware::class,
-        'permintaan' => \App\Http\Middleware\PermintaanMiddleware::class,
-        'barang' => \App\Http\Middleware\BarangMiddleware::class,
-        'barang-rusak' => \App\Http\Middleware\BarangRusakMiddleware::class,
-        'stok-log' => \App\Http\Middleware\StokLogMiddleware::class,
-        'laporan' => \App\Http\Middleware\LaporanMiddleware::class,
-        'riwayat' => \App\Http\Middleware\RiwayatMiddleware::class,
-        'settings' => \App\Http\Middleware\SettingsMiddleware::class,
-        'appearance' => \App\Http\Middleware\HandleAppearance::class,
-        'handle.unauthorized' => \App\Http\Middleware\HandleUnauthorized::class,
-        'handle.forbidden' => \App\Http\Middleware\HandleForbidden::class,
-        'handle.all.errors' => \App\Http\Middleware\HandleAllErrors::class,
-        'handle.403' => \App\Http\Middleware\Handle403Errors::class,
     ];
+
+    
 }

@@ -55,7 +55,7 @@ const submitPeminjaman = () => {
 </script>
 
 <template>
-    <Head title="Edit Aset" />
+    <Head title="Edit Peminjaman" />
     <AppLayout>
         <div class="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-10">
             <div class="max-w-2xl mx-auto">

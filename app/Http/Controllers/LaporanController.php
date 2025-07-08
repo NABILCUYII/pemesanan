@@ -21,17 +21,6 @@ class LaporanController extends Controller
 {
     public function index(Request $request)
     {
-
-          // Check if user is admin
-          if (!auth()->user()->isAdmin()) {
-              return inertia('Forbidden', [
-                  'user' => auth()->user() ? [
-                      'name' => auth()->user()->name,
-                      'role' => auth()->user()->role ?? 'User'
-                  ] : null
-              ]);
-          }
-
         $month = $request->input('month');
         $year = $request->input('year');
 
@@ -164,17 +153,6 @@ class LaporanController extends Controller
 
     public function download(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             $month = $request->input('month');
             $year = $request->input('year');
@@ -340,17 +318,6 @@ class LaporanController extends Controller
 
     public function downloadUser(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             $userId = $request->input('user_id');
             $month = $request->input('month');
@@ -410,17 +377,6 @@ class LaporanController extends Controller
 
     public function testPdf()
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             // First, let's try to render the view as HTML to see if it works
             $html = view('pdf.test')->render();
@@ -564,17 +520,6 @@ class LaporanController extends Controller
 
     public function downloadUserExcel(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             $userId = $request->input('user_id');
             $month = $request->input('month');
@@ -637,16 +582,6 @@ class LaporanController extends Controller
 
     public function downloadPermintaan(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
         try {
             $month = $request->input('month');
             $year = $request->input('year');
@@ -703,17 +638,6 @@ class LaporanController extends Controller
 
     public function downloadPeminjaman(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             $month = $request->input('month');
             $year = $request->input('year');
@@ -773,17 +697,6 @@ class LaporanController extends Controller
 
     public function downloadPermintaanExcel(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             $month = $request->input('month');
             $year = $request->input('year');
@@ -822,17 +735,6 @@ class LaporanController extends Controller
 
     public function downloadPeminjamanExcel(Request $request)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
         try {
             $month = $request->input('month');
             $year = $request->input('year');

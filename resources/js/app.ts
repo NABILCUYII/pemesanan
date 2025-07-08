@@ -10,7 +10,7 @@ import Chart from 'chart.js/auto';
 // Make Chart.js available globally
 (window as any).Chart = Chart;
 
-const appName = import.meta.env.VITE_APP_NAME || 'Pemesanan';
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
