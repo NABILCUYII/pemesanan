@@ -766,15 +766,24 @@ const statusOptions = [
                             type="date" 
                         />
                     </div>
-                    <div>
-                        <Label for="kondisi_barang">Kondisi Barang</Label>
-                        <Select v-model="returnForm.kondisi_barang" id="kondisi_barang">
-                            <option value="baik">Baik</option>
-                            <option value="rusak_ringan">Rusak Ringan</option>
-                            <option value="rusak_berat">Rusak Berat</option>
-                            <option value="hilang">Hilang</option>
-                        </Select>
-                    </div>
+                  <!-- Kondisi Barang Dropdown -->
+<div class="mb-4">
+  <label for="kondisi_barang" class="block text-sm font-medium text-gray-700 mb-2">Kondisi Barang</label>
+  <select
+    id="kondisi_barang"
+    v-model="returnForm.kondisi_barang"
+    class="block w-64 max-w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base py-2 px-3"
+  >
+    <option value="">Pilih kondisi</option>
+    <option value="baik">Baik</option>
+    <option value="rusak_ringan">Rusak Ringan</option>
+    <option value="rusak_berat">Rusak Berat</option>
+    <option value="hilang">Hilang</option>
+  </select>
+</div>
+
+
+
                     <div>
                         <Label for="catatan_pengembalian">Catatan Pengembalian</Label>
                         <Textarea 

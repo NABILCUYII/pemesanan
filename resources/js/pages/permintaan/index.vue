@@ -210,7 +210,7 @@ const completePermintaan = (id: number) => {
                         <Avatar class="w-10 h-10">
                             <AvatarImage 
                                 v-if="group.user_photo && getPhotoUrl(group.user_photo)" 
-                                :src="getPhotoUrl(group.user_photo)" 
+                                :src="getPhotoUrl(group.user_photo) ?? ''" 
                                 alt="User Photo" 
                             />
                             <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
@@ -303,7 +303,7 @@ const completePermintaan = (id: number) => {
                     <div class="bg-gray-50 p-4 border-b">
                         <div class="flex items-center gap-2">
                             <Avatar class="w-10 h-10">
-                                <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo)" alt="User Photo" />
+                                <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo) ?? ''" alt="User Photo" />
                                 <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
                             </Avatar>
                             <h2 class="font-semibold text-lg">{{ group.user }}</h2>

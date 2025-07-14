@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Search, User, Edit, X, RotateCcw, Play, Check, XCircle } from 'lucide-vue-next';
+import { Plus, Search, User, Edit, X, RotateCcw, Play, Check, XCircle, AlertTriangle } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed, inject } from 'vue';
@@ -14,6 +14,8 @@ import { usePhotoUrl } from '@/composables/usePhotoUrl';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ToastContainer } from '@/components/ui/toast';
+import { provide } from 'vue';
+import { useToast } from '@/composables/useToast'; // Adjust path if needed
 
 // Declare route function globally for TypeScript
 declare function route(name: string, params?: any): string;
@@ -60,7 +62,8 @@ const props = defineProps<{
 const { getInitials } = useInitials();
 
 // Toast notification system
-const addToast = inject('addToast') as ((toast: any) => void);
+const { addToast } = useToast();
+provide('addToast', addToast);
 
 const searchQuery = ref('');
 const selectedStatus = ref('');
@@ -71,6 +74,99 @@ const returnForm = ref({
     kondisi_barang: 'baik',
     catatan_pengembalian: ''
 });
+
+// Modal for approval/rejection
+const showApprovalModal = ref(false);
+const approvalType = ref<'approve' | 'reject' | null>(null);
+const approvalPeminjaman = ref<PeminjamanItem | null>(null);
+const approvalForm = ref({
+    alasan: '',
+    catatan: ''
+});
+
+// Modal for delete confirmation
+const showDeleteModal = ref(false);
+const deletePeminjamanId = ref<number | null>(null);
+const deletePeminjamanItem = ref<PeminjamanItem | null>(null);
+
+const openDeleteModal = (item: PeminjamanItem) => {
+    showDeleteModal.value = true;
+    deletePeminjamanId.value = item.id;
+    deletePeminjamanItem.value = item;
+};
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false;
+    deletePeminjamanId.value = null;
+    deletePeminjamanItem.value = null;
+};
+
+const confirmDeletePeminjaman = () => {
+    if (!deletePeminjamanId.value) return;
+    router.delete(route('peminjaman.destroy', deletePeminjamanId.value), {
+        onSuccess: () => {
+            closeDeleteModal();
+            addToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: 'Peminjaman berhasil dihapus'
+            });
+        },
+        onError: () => {
+            addToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Gagal menghapus peminjaman'
+            });
+        }
+    });
+};
+
+const openApprovalModal = (type: 'approve' | 'reject', peminjaman: PeminjamanItem) => {
+    showApprovalModal.value = true;
+    approvalType.value = type;
+    approvalPeminjaman.value = peminjaman;
+    approvalForm.value = {
+        alasan: type === 'approve' ? 'Peminjaman disetujui' : 'Peminjaman ditolak',
+        catatan: ''
+    };
+};
+
+const closeApprovalModal = () => {
+    showApprovalModal.value = false;
+    approvalType.value = null;
+    approvalPeminjaman.value = null;
+    approvalForm.value = {
+        alasan: '',
+        catatan: ''
+    };
+};
+
+const submitApproval = () => {
+    if (!approvalPeminjaman.value || !approvalType.value) return;
+    router.post('/peminjaman/approve', {
+        peminjaman_id: approvalPeminjaman.value.id,
+        action: approvalType.value,
+        alasan: approvalForm.value.alasan,
+        catatan: approvalForm.value.catatan
+    }, {
+        onSuccess: () => {
+            closeApprovalModal();
+            addToast({
+                type: approvalType.value === 'approve' ? 'success' : 'success',
+                title: approvalType.value === 'approve' ? 'Disetujui' : 'Ditolak',
+                message: `Peminjaman ${approvalPeminjaman.value?.nama_barang} berhasil ${approvalType.value === 'approve' ? 'disetujui' : 'ditolak'}`
+            });
+        },
+        onError: () => {
+            addToast({
+                type: 'error',
+                title: 'Gagal',
+                message: `Gagal ${approvalType.value === 'approve' ? 'menyetujui' : 'menolak'} peminjaman`
+            });
+        }
+    });
+};
 
 const filteredPeminjaman = computed(() => {
     if (!props.peminjaman) return [];
@@ -126,26 +222,8 @@ const getStatusText = (status: string) => {
     }
 };
 
-const deletePeminjaman = (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus peminjaman ini?')) {
-        router.delete(route('peminjaman.destroy', id), {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Berhasil',
-                    message: 'Peminjaman berhasil dihapus'
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menghapus peminjaman'
-                });
-            }
-        });
-    }
-};
+// Remove old confirm dialog, use modal instead
+// const deletePeminjaman = (id: number) => { ... }
 
 const processReturn = (peminjaman: PeminjamanItem) => {
     selectedPeminjaman.value = peminjaman;
@@ -204,58 +282,6 @@ const submitReturn = () => {
 const closeReturnModal = () => {
     showReturnModal.value = false;
     selectedPeminjaman.value = null;
-};
-
-const approvePeminjaman = (peminjaman: PeminjamanItem) => {
-    if (confirm('Apakah Anda yakin ingin menyetujui peminjaman ini?')) {
-        router.post('/peminjaman/approve', {
-            peminjaman_id: peminjaman.id,
-            action: 'approve',
-            alasan: 'Peminjaman disetujui',
-            catatan: ''
-        }, {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Disetujui',
-                    message: `Peminjaman ${peminjaman.nama_barang} berhasil disetujui`
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menyetujui peminjaman'
-                });
-            }
-        });
-    }
-};
-
-const rejectPeminjaman = (peminjaman: PeminjamanItem) => {
-    if (confirm('Apakah Anda yakin ingin menolak peminjaman ini?')) {
-        router.post('/peminjaman/approve', {
-            peminjaman_id: peminjaman.id,
-            action: 'reject',
-            alasan: 'Peminjaman ditolak',
-            catatan: ''
-        }, {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Ditolak',
-                    message: `Peminjaman ${peminjaman.nama_barang} berhasil ditolak`
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal menolak peminjaman'
-                });
-            }
-        });
-    }
 };
 
 const { getPhotoUrl } = usePhotoUrl();
@@ -318,7 +344,7 @@ const { getPhotoUrl } = usePhotoUrl();
                     <!-- User Header -->
                     <div class="flex items-center gap-3 mb-4 bg-gray-50 p-4 rounded-lg">
                         <Avatar class="w-12 h-12">
-                            <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo)" alt="User Photo" />
+                            <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo) ?? ''" alt="User Photo" />
                             <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -367,7 +393,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <!-- Admin Approval Actions -->
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="approvePeminjaman(item)"
+                                            @click="openApprovalModal('approve', item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Setujui"
                                         >
@@ -375,7 +401,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="rejectPeminjaman(item)"
+                                            @click="openApprovalModal('reject', item)"
                                             class="text-red-600 hover:text-red-800"
                                             title="Tolak"
                                         >
@@ -400,7 +426,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="item.status === 'pending'"
-                                            @click="deletePeminjaman(item.id)"
+                                            @click="openDeleteModal(item)"
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
@@ -424,7 +450,7 @@ const { getPhotoUrl } = usePhotoUrl();
                     <div class="bg-gray-50 p-4 border-b">
                         <div class="flex items-center gap-2">
                             <Avatar class="w-10 h-10">
-                                <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo)" alt="User Photo" />
+                                <AvatarImage v-if="group.user_photo" :src="getPhotoUrl(group.user_photo) ?? ''" alt="User Photo" />
                                 <AvatarFallback>{{ getInitials(group.user) }}</AvatarFallback>
                             </Avatar>
                             <h2 class="font-semibold text-lg">{{ group.user }}</h2>
@@ -464,7 +490,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <!-- Admin Approval Actions -->
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="approvePeminjaman(item)"
+                                            @click="openApprovalModal('approve', item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Setujui"
                                         >
@@ -472,7 +498,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="rejectPeminjaman(item)"
+                                            @click="openApprovalModal('reject', item)"
                                             class="text-red-600 hover:text-red-800"
                                             title="Tolak"
                                         >
@@ -497,7 +523,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="item.status === 'pending'"
-                                            @click="deletePeminjaman(item.id)"
+                                            @click="openDeleteModal(item)"
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
@@ -518,7 +544,7 @@ const { getPhotoUrl } = usePhotoUrl();
             </div>
 
             <!-- Modal Pengembalian -->
-            <div v-if="showReturnModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div v-if="showReturnModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Form Pengembalian</h3>
@@ -606,6 +632,107 @@ const { getPhotoUrl } = usePhotoUrl();
                 </div>
             </div>
 
+            <!-- Modal Approve/Reject -->
+            <div v-if="showApprovalModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">
+                            {{ approvalType === 'approve' ? 'Setujui Peminjaman' : 'Tolak Peminjaman' }}
+                        </h3>
+                        <button @click="closeApprovalModal" class="text-gray-500 hover:text-gray-700">
+                            <X class="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div v-if="approvalPeminjaman" class="space-y-4">
+                        <div class="space-y-2">
+                            <h4 class="font-medium text-gray-800">Informasi Aset</h4>
+                            <p class="text-sm text-gray-600">Barang: {{ approvalPeminjaman.nama_barang }}</p>
+                            <p class="text-sm text-gray-600">Jumlah: {{ approvalPeminjaman.jumlah }}</p>
+                            <p class="text-sm text-gray-600">Tanggal Pinjam: {{ formatDate(approvalPeminjaman.tanggal_peminjaman) }}</p>
+                        </div>
+                        <form @submit.prevent="submitApproval" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Alasan {{ approvalType === 'approve' ? 'Persetujuan' : 'Penolakan' }} *
+                                </label>
+                                <input
+                                    v-model="approvalForm.alasan"
+                                    type="text"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Catatan (opsional)
+                                </label>
+                                <textarea
+                                    v-model="approvalForm.catatan"
+                                    rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Masukkan catatan tambahan"
+                                ></textarea>
+                            </div>
+                            <div class="flex gap-3 pt-4">
+                                <button
+                                    type="submit"
+                                    :class="approvalType === 'approve' ? 'flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500' : 'flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500'"
+                                >
+                                    <Check v-if="approvalType === 'approve'" class="w-4 h-4 inline mr-2" />
+                                    <XCircle v-else class="w-4 h-4 inline mr-2" />
+                                    {{ approvalType === 'approve' ? 'Setujui' : 'Tolak' }}
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="closeApprovalModal"
+                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                                >
+                                    Batal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Delete Confirmation -->
+            <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                    <div class="flex items-center gap-2 mb-4">
+                        <AlertTriangle class="w-6 h-6 text-red-600" />
+                        <h3 class="text-lg font-semibold text-red-700">Konfirmasi Hapus</h3>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start gap-3">
+                            <AlertTriangle class="w-5 h-5 text-red-600 mt-0.5" />
+                            <div>
+                                <p class="font-medium text-red-800">{{ deletePeminjamanItem?.nama_barang }}</p>
+                                <p class="text-sm text-red-600 mt-1">
+                                    Kode: {{ deletePeminjamanItem?.kode_barang }}<br>
+                                    Jumlah: {{ deletePeminjamanItem?.jumlah }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <button
+                            type="button"
+                            class="w-full sm:w-auto border border-gray-300 text-gray-700 rounded-md px-4 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            @click="closeDeleteModal"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            class="w-full sm:w-auto bg-red-600 text-white rounded-md px-4 py-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
+                            @click="confirmDeletePeminjaman"
+                        >
+                            <X class="w-4 h-4 mr-2" />
+                            Hapus Peminjaman
+                        </button>
+                    </div>
+                </div>
+            </div>
            
         </div>
     </AppLayout>
