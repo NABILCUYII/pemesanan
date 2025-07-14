@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -117,6 +118,10 @@ class UserController extends Controller
                     'role' => auth()->user()->role ?? 'User'
                 ] : null
             ]);
+        }
+        // Delete profile photo from storage if exists
+        if ($user->photo && Storage::disk('public')->exists($user->photo)) {
+            Storage::disk('public')->delete($user->photo);
         }
         $user->role()->delete();
         $user->delete();

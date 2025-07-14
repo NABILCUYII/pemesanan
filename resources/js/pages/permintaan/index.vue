@@ -10,6 +10,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
 // Declare route function globally for TypeScript
 declare function route(name: string, params?: any): string;
@@ -46,10 +47,7 @@ console.log('Props permintaan:', props.permintaan);
 const searchQuery = ref('');
 const selectedStatus = ref('');
 
-const getPhotoUrl = (photoPath: string) => {
-    if (!photoPath) return '';
-    return `/storage/${photoPath}`;
-};
+const { getPhotoUrl } = usePhotoUrl();
 
 const filteredPermintaan = computed(() => {
     console.log('Filtering permintaan:', props.permintaan); // Debug log

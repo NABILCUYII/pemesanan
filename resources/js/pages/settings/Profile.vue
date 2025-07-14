@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 import { type BreadcrumbItem, type User } from '@/types';
 
 interface Props {
@@ -31,6 +32,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 const page = usePage();
 const user = page.props.auth.user as User;
 const { getInitials } = useInitials();
+const { getPhotoUrl } = usePhotoUrl();
 
 const photoInput = ref<HTMLInputElement>();
 
@@ -71,9 +73,7 @@ const submit = () => {
     }
 };
 
-const getPhotoUrl = (photoPath: string) => {
-    return `/storage/${photoPath}`;
-};
+
 </script>
 
 <template>
@@ -89,8 +89,8 @@ const getPhotoUrl = (photoPath: string) => {
                     <div class="flex flex-col items-center space-y-4">
                         <Avatar class="h-24 w-24">
                             <AvatarImage 
-                                v-if="user.photo" 
-                                :src="getPhotoUrl(user.photo)" 
+                                v-if="user.photo && getPhotoUrl(user.photo)" 
+                                :src="getPhotoUrl(user.photo)!" 
                                 :alt="user.name" 
                             />
                             <AvatarFallback class="text-lg font-semibold">

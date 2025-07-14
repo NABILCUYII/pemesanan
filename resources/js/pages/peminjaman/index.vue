@@ -10,6 +10,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed, inject } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ToastContainer } from '@/components/ui/toast';
@@ -257,9 +258,7 @@ const rejectPeminjaman = (peminjaman: PeminjamanItem) => {
     }
 };
 
-const getPhotoUrl = (photoPath: string) => {
-    return `/storage/${photoPath}`;
-};
+const { getPhotoUrl } = usePhotoUrl();
 </script>
 
 <template>

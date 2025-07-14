@@ -241,7 +241,7 @@ const footerNavItems: NavItem[] = [
 
         <SidebarFooter class="border-t border-[#E2E8F0]">
             <NavFooter :items="footerNavItems" />
-            <NavUser />
+            <NavUser :user="user" />
         </SidebarFooter>
     </Sidebar>
     <slot />

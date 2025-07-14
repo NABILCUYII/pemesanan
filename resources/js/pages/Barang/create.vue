@@ -4,11 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { PackagePlus } from 'lucide-vue-next';
 
 const form = useForm({
@@ -24,38 +23,82 @@ const form = useForm({
 const manualSatuan = ref('');
 const manualLokasi = ref('');
 
-const satuanValue = computed({
-    get() {
-        return form.satuan === 'Lainnya' ? manualSatuan.value : form.satuan;
-    },
-    set(val) {
-        if (form.satuan === 'Lainnya') {
-            manualSatuan.value = val;
-        } else {
-            form.satuan = val;
-        }
-    }
-});
-
-const lokasiValue = computed({
-    get() {
-        return form.lokasi === 'Lainnya' ? manualLokasi.value : form.lokasi;
-    },
-    set(val) {
-        if (form.lokasi === 'Lainnya') {
-            manualLokasi.value = val;
-        } else {
-            form.lokasi = val;
-        }
-    }
-});
-
-const kategoriOptions = [
-    { value: 'peminjaman', label: 'Peminjaman' },
-    { value: 'permintaan', label: 'Permintaan' }
+const satuanOptions = [
+    'Buah', 'Pcs', 'Pak', 'Set', 'Box', 'Unit', 'Lembar', 'Paket', 'Botol', 'Kg', 'Liter', 'Meter', 'Lainnya'
 ];
 
+const lokasiOptions = [
+    'Gudang A', 'Gudang B', 'Rak 1', 'Rak 2', 'Lemari 1', 'Lemari 2', 'Laboratorium', 'Ruang Kelas', 'Lainnya'
+];
+
+const showSatuanDropdown = ref(false);
+const showLokasiDropdown = ref(false);
+
+function selectSatuan(option: string) {
+    form.satuan = option;
+    if (option !== 'Lainnya') {
+        manualSatuan.value = '';
+    }
+    showSatuanDropdown.value = false;
+}
+
+function selectLokasi(option: string) {
+    form.lokasi = option;
+    if (option !== 'Lainnya') {
+        manualLokasi.value = '';
+    }
+    showLokasiDropdown.value = false;
+}
+
 const submit = () => {
+    // Validasi kode barang harus diisi
+    if (!form.kode_barang.trim()) {
+        alert('Silakan masukkan kode barang');
+        return;
+    }
+    
+    // Validasi nama barang harus diisi
+    if (!form.nama_barang.trim()) {
+        alert('Silakan masukkan nama barang');
+        return;
+    }
+    
+    // Validasi kategori harus dipilih
+    if (!form.kategori) {
+        alert('Silakan pilih kategori barang');
+        return;
+    }
+    
+    // Validasi stok harus diisi
+    if (!form.stok || Number(form.stok) <= 0) {
+        alert('Silakan masukkan jumlah stok yang valid');
+        return;
+    }
+    
+    // Validasi satuan harus dipilih
+    if (!form.satuan) {
+        alert('Silakan pilih satuan barang');
+        return;
+    }
+    
+    // Validasi lokasi harus dipilih
+    if (!form.lokasi) {
+        alert('Silakan pilih lokasi barang');
+        return;
+    }
+    
+    // Validasi jika memilih "Lainnya" untuk satuan
+    if (form.satuan === 'Lainnya' && !manualSatuan.value.trim()) {
+        alert('Silakan masukkan satuan manual');
+        return;
+    }
+    
+    // Validasi jika memilih "Lainnya" untuk lokasi
+    if (form.lokasi === 'Lainnya' && !manualLokasi.value.trim()) {
+        alert('Silakan masukkan lokasi manual');
+        return;
+    }
+    
     if (form.satuan === 'Lainnya') {
         form.satuan = manualSatuan.value;
     }
@@ -85,129 +128,186 @@ const submit = () => {
                     <form @submit.prevent="submit" class="space-y-6 mt-2">
                         <div class="grid grid-cols-1 gap-5">
                             <div>
-                                <Label for="kode_barang" class="font-medium text-gray-700">Kode Barang</Label>
+                                <Label for="kode_barang" class="font-medium text-gray-700">Kode Barang *</Label>
                                 <Input 
                                     id="kode_barang"
                                     v-model="form.kode_barang"
                                     type="text"
                                     placeholder="Masukkan kode unik barang"
                                     class="mt-1"
+                                    :class="{ 'border-red-500': !form.kode_barang.trim() && form.errors.kode_barang }"
                                     required
                                 />
                                 <p v-if="form.errors.kode_barang" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.kode_barang }}
                                 </p>
+                                <p v-else-if="!form.kode_barang.trim()" class="text-xs text-gray-500 mt-1">
+                                    Kode barang harus diisi
+                                </p>
                             </div>
 
                             <div>
-                                <Label for="nama_barang" class="font-medium text-gray-700">Nama Barang</Label>
+                                <Label for="nama_barang" class="font-medium text-gray-700">Nama Barang *</Label>
                                 <Input 
                                     id="nama_barang"
                                     v-model="form.nama_barang"
                                     type="text"
                                     placeholder="Masukkan nama barang"
                                     class="mt-1"
+                                    :class="{ 'border-red-500': !form.nama_barang.trim() && form.errors.nama_barang }"
                                     required
                                 />
                                 <p v-if="form.errors.nama_barang" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.nama_barang }}
                                 </p>
-                            </div>
-
-                            <div>
-                                <Label for="kategori" class="font-medium text-gray-700">Kategori</Label>
-                                <Select v-model="form.kategori">
-                                    <SelectTrigger id="kategori" class="w-full mt-1" required>
-                                        <SelectValue placeholder="Pilih kategori" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="opt in kategoriOptions" :key="opt.value" :value="opt.value">
-                                            {{ opt.label }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p v-if="form.errors.kategori" class="text-xs text-red-500 mt-1">
-                                    {{ form.errors.kategori }}
+                                <p v-else-if="!form.nama_barang.trim()" class="text-xs text-gray-500 mt-1">
+                                    Nama barang harus diisi
                                 </p>
                             </div>
 
                             <div>
-                                <Label for="stok" class="font-medium text-gray-700">Stok</Label>
+                                <Label for="kategori" class="font-medium text-gray-700">Kategori *</Label>
+                                <select
+                                    id="kategori"
+                                    v-model="form.kategori"
+                                    required
+                                    class="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    :class="{ 'border-red-500': !form.kategori && form.errors.kategori }"
+                                >
+                                    <option value="" disabled selected>Pilih kategori</option>
+                                    <option value="peminjaman">Peminjaman</option>
+                                    <option value="permintaan">Permintaan</option>
+                                </select>
+                                <p v-if="form.errors.kategori" class="text-xs text-red-500 mt-1">
+                                    {{ form.errors.kategori }}
+                                </p>
+                                <p v-else-if="!form.kategori" class="text-xs text-gray-500 mt-1">
+                                    Kategori harus dipilih
+                                </p>
+                            </div>
+
+                            <div>
+                                <Label for="stok" class="font-medium text-gray-700">Stok *</Label>
                                 <Input 
                                     id="stok"
                                     v-model="form.stok"
                                     type="number"
                                     min="0"
+                                    step="1"
                                     placeholder="Masukkan jumlah stok"
                                     class="mt-1"
+                                    :class="{ 'border-red-500': (!form.stok || Number(form.stok) <= 0) && form.errors.stok }"
                                     required
                                 />
                                 <p v-if="form.errors.stok" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.stok }}
                                 </p>
+                                <p v-else-if="!form.stok || Number(form.stok) <= 0" class="text-xs text-red-500 mt-1">
+                                    Stok harus diisi dengan angka yang valid
+                                </p>
                             </div>
 
+                            <!-- Satuan Dropdown -->
                             <div>
-                                <Label for="satuan" class="font-medium text-gray-700">Satuan</Label>
-                                <Select v-model="form.satuan">
-                                    <SelectTrigger id="satuan" class="w-full mt-1">
-                                        <SelectValue placeholder="Pilih satuan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="buah">Buah</SelectItem>
-                                        <SelectItem value="pcs">Pcs</SelectItem>
-                                        <SelectItem value="Pak">Pak</SelectItem>
-                                        <SelectItem value="set">Set</SelectItem>
-                                        <SelectItem value="box">Box</SelectItem>
-                                        <SelectItem value="unit">Unit</SelectItem>
-                                        <SelectItem value="lembar">Lembar</SelectItem>
-                                        <SelectItem value="paket">Paket</SelectItem>
-                                        <SelectItem value="botol">Botol</SelectItem>
-                                        <SelectItem value="kg">Kg</SelectItem>
-                                        <SelectItem value="liter">Liter</SelectItem>
-                                        <SelectItem value="meter">Meter</SelectItem>
-                                        <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label for="satuan" class="font-medium text-gray-700">Satuan *</Label>
+                                <div class="relative">
+                                    <button
+                                        type="button"
+                                        id="satuan"
+                                        class="w-full mt-1 px-3 py-2 border rounded-md text-left bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                        :class="{ 'border-red-500': !form.satuan && form.errors.satuan }"
+                                        @click="showSatuanDropdown = !showSatuanDropdown"
+                                    >
+                                        <span v-if="form.satuan && form.satuan !== 'Lainnya'">{{ form.satuan }}</span>
+                                        <span v-else-if="form.satuan === 'Lainnya' && manualSatuan.trim()">{{ manualSatuan }}</span>
+                                        <span v-else class="text-gray-400">Pilih satuan</span>
+                                        <svg class="w-4 h-4 inline-block float-right" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <ul
+                                        v-show="showSatuanDropdown"
+                                        class="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg max-h-60 overflow-auto"
+                                    >
+                                        <li
+                                            v-for="option in satuanOptions"
+                                            :key="option"
+                                            @click="selectSatuan(option)"
+                                            class="px-4 py-2 hover:bg-indigo-100 cursor-pointer"
+                                        >
+                                            {{ option }}
+                                        </li>
+                                    </ul>
+                                </div>
                                 <Input
                                     v-if="form.satuan === 'Lainnya'"
                                     v-model="manualSatuan"
                                     type="text"
                                     placeholder="Masukkan satuan manual"
                                     class="w-full mt-2"
+                                    :class="{ 'border-red-500': form.satuan === 'Lainnya' && !manualSatuan.trim() }"
+                                    required
                                 />
                                 <p v-if="form.errors.satuan" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.satuan }}
                                 </p>
+                                <p v-else-if="!form.satuan" class="text-xs text-gray-500 mt-1">
+                                    Satuan harus dipilih
+                                </p>
+                                <p v-else-if="form.satuan === 'Lainnya' && !manualSatuan.trim()" class="text-xs text-red-500 mt-1">
+                                    Silakan masukkan satuan manual
+                                </p>
                             </div>
 
+                            <!-- Lokasi Dropdown -->
                             <div>
-                                <Label for="lokasi" class="font-medium text-gray-700">Lokasi</Label>
-                                <Select v-model="form.lokasi">
-                                    <SelectTrigger id="lokasi" class="w-full mt-1">
-                                        <SelectValue placeholder="Pilih lokasi" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Gudang A">Gudang A</SelectItem>
-                                        <SelectItem value="Gudang B">Gudang B</SelectItem>
-                                        <SelectItem value="Rak 1">Rak 1</SelectItem>
-                                        <SelectItem value="Rak 2">Rak 2</SelectItem>
-                                        <SelectItem value="Lemari 1">Lemari 1</SelectItem>
-                                        <SelectItem value="Lemari 2">Lemari 2</SelectItem>
-                                        <SelectItem value="Laboratorium">Laboratorium</SelectItem>
-                                        <SelectItem value="Ruang Kelas">Ruang Kelas</SelectItem>
-                                        <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label for="lokasi" class="font-medium text-gray-700">Lokasi *</Label>
+                                <div class="relative">
+                                    <button
+                                        type="button"
+                                        id="lokasi"
+                                        class="w-full mt-1 px-3 py-2 border rounded-md text-left bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                        :class="{ 'border-red-500': !form.lokasi && form.errors.lokasi }"
+                                        @click="showLokasiDropdown = !showLokasiDropdown"
+                                    >
+                                        <span v-if="form.lokasi && form.lokasi !== 'Lainnya'">{{ form.lokasi }}</span>
+                                        <span v-else-if="form.lokasi === 'Lainnya' && manualLokasi.trim()">{{ manualLokasi }}</span>
+                                        <span v-else class="text-gray-400">Pilih lokasi</span>
+                                        <svg class="w-4 h-4 inline-block float-right" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <ul
+                                        v-show="showLokasiDropdown"
+                                        class="absolute z-10 w-full bg-white border rounded-md mt-1 shadow-lg max-h-60 overflow-auto"
+                                    >
+                                        <li
+                                            v-for="option in lokasiOptions"
+                                            :key="option"
+                                            @click="selectLokasi(option)"
+                                            class="px-4 py-2 hover:bg-indigo-100 cursor-pointer"
+                                        >
+                                            {{ option }}
+                                        </li>
+                                    </ul>
+                                </div>
                                 <Input
                                     v-if="form.lokasi === 'Lainnya'"
                                     v-model="manualLokasi"
                                     type="text"
                                     placeholder="Masukkan lokasi manual"
                                     class="w-full mt-2"
+                                    :class="{ 'border-red-500': form.lokasi === 'Lainnya' && !manualLokasi.trim() }"
+                                    required
                                 />
                                 <p v-if="form.errors.lokasi" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.lokasi }}
+                                </p>
+                                <p v-else-if="!form.lokasi" class="text-xs text-gray-500 mt-1">
+                                    Lokasi harus dipilih
+                                </p>
+                                <p v-else-if="form.lokasi === 'Lainnya' && !manualLokasi.trim()" class="text-xs text-red-500 mt-1">
+                                    Silakan masukkan lokasi manual
                                 </p>
                             </div>
 
@@ -240,7 +340,14 @@ const submit = () => {
                                 :disabled="form.processing"
                                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6"
                             >
-                                Simpan
+                                <span v-if="form.processing" class="inline-flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Menyimpan...
+                                </span>
+                                <span v-else>Simpan</span>
                             </Button>
                         </div>
                     </form>

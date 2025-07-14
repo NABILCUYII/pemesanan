@@ -13,15 +13,7 @@ class VideoBeritaController extends Controller
      */
     public function index()
     {
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
+     
 
         $videoBeritas = VideoBerita::ordered()->get()->map(function ($video) {
             return [

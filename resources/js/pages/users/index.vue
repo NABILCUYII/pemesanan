@@ -8,6 +8,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  photo?: string;
   role?: { role: string };
 }
 
@@ -118,10 +119,32 @@ const destroy = () => {
             >
               <td class="px-8 py-4 text-gray-500 text-sm">{{ idx + 1 }}</td>
               <td class="px-8 py-4 text-gray-800 font-medium flex items-center gap-3">
-                <div class="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-                  {{ user.name.charAt(0).toUpperCase() }}
-                </div>
-                <span class="text-base">{{ user.name }}</span>
+                 <!-- User photo profile like in UserMenuContent -->
+                 <template v-if="user && user.photo">
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 overflow-hidden">
+                        <img
+                            :src="user.photo.startsWith?.('http') ? user.photo : `/storage/${user.photo}`"
+                            alt="User avatar"
+                            class="w-full h-full object-cover"
+                            @error="e => {
+                                const target = e.target as HTMLImageElement | null;
+                                if (target) {
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement as HTMLElement | null;
+                                    if (parent) {
+                                        parent.innerHTML = `<span class='text-gray-600 font-semibold'>${user?.name?.charAt(0) || '?'}</span>`;
+                                    }
+                                }
+                            }"
+                        />
+                    </span>
+                 </template>
+                        <template v-else>
+                            <div class="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
+                                {{ user?.name?.charAt(0) || '?' }}
+                            </div>
+                        </template>
+               <span class="text-base">{{ user.name }}</span>
               </td>
               <td class="px-8 py-4 text-gray-700 text-base">{{ user.email }}</td>
               <td class="px-8 py-4">

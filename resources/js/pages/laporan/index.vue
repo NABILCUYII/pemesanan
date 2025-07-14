@@ -31,11 +31,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
 interface User {
     id: number;
     name: string;
     photo?: string;
+    photo_url?: string;
     permintaan: any[];
     peminjaman: any[];
     total_permintaan: number;
@@ -180,9 +182,7 @@ function toggleExcelDropdown() {
     if (showExcelDropdown.value) showPdfDropdown.value = false;
 }
 
-const getPhotoUrl = (photoPath: string) => {
-    return `/storage/${photoPath}`;
-};
+const { getPhotoUrl } = usePhotoUrl();
 </script>
 
 <template>
@@ -318,7 +318,7 @@ const getPhotoUrl = (photoPath: string) => {
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3">
                                         <Avatar class="w-8 h-8">
-                                            <AvatarImage v-if="user.photo" :src="getPhotoUrl(user.photo)" alt="User Photo" />
+                                            <AvatarImage v-if="user.photo_url" :src="user.photo_url" alt="User Photo" />
                                             <AvatarFallback>{{ getInitials(user.name) }}</AvatarFallback>
                                         </Avatar>
                                         <div>
@@ -443,7 +443,7 @@ const getPhotoUrl = (photoPath: string) => {
                                         <TableCell class="font-medium py-4">
                                             <div class="flex items-center gap-3">
                                                 <Avatar class="w-8 h-8">
-                                                    <AvatarImage v-if="user.photo" :src="getPhotoUrl(user.photo)" alt="User Photo" />
+                                                    <AvatarImage v-if="user.photo_url" :src="user.photo_url" alt="User Photo" />
                                                     <AvatarFallback>{{ getInitials(user.name) }}</AvatarFallback>
                                                 </Avatar>
                                                 {{ user.name }}

@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
 
 interface Barang {
@@ -28,6 +29,7 @@ interface User {
     name: string;
     email: string;
     photo?: string;
+    photo_url?: string;
 }
 
 interface Permintaan {
@@ -61,7 +63,7 @@ const props = defineProps<{
 
 const { getInitials } = useInitials();
 
-const getPhotoUrl = (photoPath: string) => `/storage/${photoPath}`;
+const { getPhotoUrl } = usePhotoUrl();
 
 const searchQuery = ref('');
 const selectedStatus = ref('pending');
@@ -273,7 +275,7 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPermintaan" :key="group.user.id" class="border-b last:border-b-0">
                             <div class="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b flex items-center gap-3">
                                 <Avatar class="w-14 h-14 ring-2 ring-indigo-200 shadow">
-                                    <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url" alt="User Photo" />
                                     <AvatarFallback>
                                         {{ getInitials(group.user.name) }}
                                     </AvatarFallback>
@@ -373,7 +375,7 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPermintaan" :key="group.user.id" class="border rounded-2xl overflow-hidden shadow bg-white">
                             <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3">
                                 <Avatar class="w-12 h-12 ring-2 ring-indigo-200 shadow">
-                                    <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url" alt="User Photo" />
                                     <AvatarFallback>
                                         {{ getInitials(group.user.name) }}
                                     </AvatarFallback>
@@ -468,7 +470,7 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPeminjaman" :key="group.user.id" class="border-b last:border-b-0">
                             <div class="bg-gradient-to-r from-indigo-50 to-white px-6 py-4 border-b flex items-center gap-3">
                                 <Avatar class="w-14 h-14 ring-2 ring-indigo-200 shadow">
-                                    <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url" alt="User Photo" />
                                     <AvatarFallback>
                                         {{ getInitials(group.user.name) }}
                                     </AvatarFallback>
@@ -577,7 +579,7 @@ const groupedPeminjaman = computed(() => {
                         <div v-for="group in groupedPeminjaman" :key="group.user.id" class="border rounded-2xl overflow-hidden shadow bg-white">
                             <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3">
                                 <Avatar class="w-12 h-12 ring-2 ring-indigo-200 shadow">
-                                    <AvatarImage v-if="group.user.photo" :src="getPhotoUrl(group.user.photo)" alt="User Photo" />
+                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url || ''" alt="User Photo" />
                                     <AvatarFallback>
                                         {{ getInitials(group.user.name) }}
                                     </AvatarFallback>

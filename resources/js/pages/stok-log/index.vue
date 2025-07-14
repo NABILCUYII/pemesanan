@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { History, Filter, Eye, Calendar, TrendingUp, TrendingDown } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
 interface StokLog {
     id: number;
@@ -109,9 +110,7 @@ const getJenisLabel = (jenis: string) => {
     return jenis === 'masuk' ? 'Stok Masuk' : 'Stok Keluar';
 };
 
-const getPhotoUrl = (photoPath: string) => {
-    return `/storage/${photoPath}`;
-};
+const { getPhotoUrl } = usePhotoUrl();
 </script>
 
 <template>

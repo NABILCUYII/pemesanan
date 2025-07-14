@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Package, Calendar, Edit, X, Trash2, ClipboardList, CheckCircle2, Clock, XCircle } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
+import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
 interface RiwayatItem {
     id: number;
@@ -114,9 +115,7 @@ const deleteAllHistory = () => {
     }
 };
 
-const getPhotoUrl = (photoPath: string) => {
-    return `/storage/${photoPath}`;
-};
+const { getPhotoUrl } = usePhotoUrl();
 </script>
 
 <template>

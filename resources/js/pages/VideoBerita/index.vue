@@ -12,6 +12,7 @@
             <p class="text-[#708090]">Kelola video berita untuk ditampilkan di dashboard</p>
           </div>
           <Link
+            v-if="user?.role === 'admin'"
             :href="route('video-berita.create')"
             class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
           >
@@ -29,6 +30,7 @@
         <h3 class="text-lg font-semibold text-gray-700 mb-2">Belum ada video berita</h3>
         <p class="text-gray-600 mb-6">Mulai dengan menambahkan video berita pertama Anda</p>
         <Link
+          v-if="user?.role === 'admin'"
           :href="route('video-berita.create')"
           class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] text-white rounded-lg hover:shadow-lg transition-all duration-300"
         >
@@ -103,6 +105,7 @@
               </button>
               
               <Link
+                v-if="user?.role === 'admin'"
                 :href="route('video-berita.edit', video.id)"
                 class="inline-flex items-center justify-center p-2 bg-[#98FB98] text-[#2F4F4F] rounded-lg hover:bg-[#90EE90] transition-colors duration-300"
               >
@@ -110,6 +113,7 @@
               </Link>
               
               <button 
+                v-if="user?.role === 'admin'"
                 @click="deleteVideo(video)"
                 class="inline-flex items-center justify-center p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors duration-300"
               >
@@ -122,26 +126,26 @@
       
       <!-- Video Modal -->
       <Dialog :open="showVideoModal" @update:open="showVideoModal = false">
-        <DialogContent class="max-w-4xl">
+        <DialogContent class="max-w-6xl sm:max-w-5xl w-full">
           <DialogHeader>
-            <DialogTitle>{{ selectedVideo?.judul }}</DialogTitle>
-            <DialogDescription v-if="selectedVideo?.deskripsi">
+            <DialogTitle class="text-2xl">{{ selectedVideo?.judul }}</DialogTitle>
+            <DialogDescription v-if="selectedVideo?.deskripsi" class="text-base">
               {{ selectedVideo.deskripsi }}
             </DialogDescription>
           </DialogHeader>
-          <div class="space-y-4">
+          <div class="space-y-6">
             <div class="aspect-video">
               <iframe
                 v-if="selectedVideo?.embed_url"
                 :src="selectedVideo.embed_url"
-                class="w-full h-full rounded-lg"
+                class="w-full h-full rounded-xl"
                 frameborder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen
               ></iframe>
             </div>
 
-            <div class="flex items-center justify-between text-xs text-gray-500">
+            <div class="flex items-center justify-between text-sm text-gray-500">
               <span v-if="selectedVideo?.sumber">Sumber: {{ selectedVideo.sumber }}</span>
               <span>{{ formatDate(selectedVideo?.tanggal_publish) }}</span>
             </div>
@@ -153,8 +157,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -192,6 +196,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
 
 const showVideoModal = ref(false);
 const selectedVideo = ref<VideoBerita | null>(null);

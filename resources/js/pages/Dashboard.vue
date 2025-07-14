@@ -1,10 +1,10 @@
 ﻿<script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, usePage, Link } from '@inertiajs/vue3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Clock, Users, AlertCircle, Sparkles, ArrowUpRight, Star, Database, FileText, Settings, Activity, TrendingUp, BarChart3, PieChart } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ChartComponent from '@/components/ChartComponent.vue';
 import VideoBeritaCard from '@/components/VideoBeritaCard.vue';
 
@@ -114,6 +114,20 @@ const videoBeritas = computed<VideoBerita[]>(() => {
   console.log('Dashboard - videoBeritas:', videos);
   return videos;
 });
+
+// Modal logic for video
+const showVideoModal = ref(false);
+const selectedVideo = ref<VideoBerita | null>(null);
+
+function openVideoModal(video: VideoBerita) {
+  selectedVideo.value = video;
+  showVideoModal.value = true;
+}
+
+function closeVideoModal() {
+  showVideoModal.value = false;
+  selectedVideo.value = null;
+}
 
 // Chart data for barang masuk (items in)
 const barangMasukChart = computed(() => {
@@ -464,7 +478,91 @@ const frequentlyBorrowedChart = computed(() => {
 
       <!-- Video Berita Section -->
       <div class="mt-8">
-        <VideoBeritaCard :videoBeritas="videoBeritas" />
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-[#2F4F4F]">Video Berita</h2>
+          <Link
+            href="/video-berita"
+            class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-[#20B2AA] text-white hover:bg-[#178d87] transition"
+          >
+            Lihat Semua Video
+          </Link>
+        </div>
+        <!-- Custom grid for bigger video cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+          <template v-for="video in videoBeritas" :key="video.id">
+            <div
+              class="cursor-pointer rounded-2xl overflow-hidden shadow-lg border border-[#B0C4DE] bg-white/90 hover:scale-105 transition-all duration-300"
+              @click="openVideoModal(video)"
+            >
+              <div class="relative aspect-video bg-black">
+                <img
+                  v-if="video.thumbnail_url || video.youtube_thumbnail"
+                  :src="video.thumbnail_url || video.youtube_thumbnail"
+                  alt="Thumbnail"
+                  class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <svg class="w-20 h-20 text-white/80" fill="currentColor" viewBox="0 0 84 84">
+                    <circle cx="42" cy="42" r="42" fill="black" fill-opacity="0.4"/>
+                    <polygon points="34,28 62,42 34,56" fill="white"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="p-6">
+                <h3 class="text-xl font-bold text-[#2F4F4F] mb-2 truncate">{{ video.judul }}</h3>
+                <p class="text-sm text-[#708090] line-clamp-2 mb-2">{{ video.deskripsi }}</p>
+                <div class="flex items-center justify-between text-xs text-[#B0C4DE]">
+                  <span>{{ video.tanggal_publish }}</span>
+                  <span v-if="video.sumber">Sumber: {{ video.sumber }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+        <!-- Video Modal -->
+        <transition name="fade">
+          <div
+            v-if="showVideoModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+            @click.self="closeVideoModal"
+          >
+            <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 p-0 overflow-hidden relative">
+              <button
+                class="absolute top-4 right-4 z-10 bg-[#20B2AA] text-white rounded-full p-2 hover:bg-[#178d87] transition"
+                @click="closeVideoModal"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div class="w-full aspect-video bg-black flex items-center justify-center">
+                <template v-if="selectedVideo">
+                  <iframe
+                    v-if="selectedVideo.embed_url"
+                    :src="selectedVideo.embed_url"
+                    frameborder="0"
+                    allowfullscreen
+                    class="w-full h-full"
+                  ></iframe>
+                  <video
+                    v-else
+                    :src="selectedVideo.video_url"
+                    controls
+                    class="w-full h-full"
+                  ></video>
+                </template>
+              </div>
+              <div class="p-6">
+                <h3 class="text-2xl font-bold text-[#2F4F4F] mb-2">{{ selectedVideo?.judul }}</h3>
+                <p class="text-base text-[#708090] mb-2">{{ selectedVideo?.deskripsi }}</p>
+                <div class="flex items-center justify-between text-xs text-[#B0C4DE]">
+                  <span>{{ selectedVideo?.tanggal_publish }}</span>
+                  <span v-if="selectedVideo?.sumber">Sumber: {{ selectedVideo?.sumber }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
 
       <!-- Recent Activity -->
@@ -581,5 +679,13 @@ const frequentlyBorrowedChart = computed(() => {
   .lg\\:grid-cols-3 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
+}
+
+/* Modal fade transition */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
