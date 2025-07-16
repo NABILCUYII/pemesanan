@@ -37,6 +37,8 @@ const form = useForm<{ requests: RequestItem[] }>({
 const showDropdown = ref<string | null>(null)
 const searchQuery = ref('')
 
+const showMinRequestModal = ref(false) // Modal state
+
 const filteredBarang = computed(() => {
     if (!props.barang) return []
     return props.barang.filter(item => 
@@ -103,7 +105,8 @@ const submitPermintaan = () => {
     const validRequests = requests.filter(req => req.barang_id && req.jumlah)
 
     if (validRequests.length === 0) {
-        alert('Minimal harus ada satu permintaan yang valid')
+        // alert('Minimal harus ada satu permintaan yang valid')
+        showMinRequestModal.value = true
         return
     }
 
@@ -349,6 +352,31 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
+
+        <!-- Modal for minimal request -->
+        <transition name="fade">
+            <div v-if="showMinRequestModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative">
+                    <div class="mb-4">
+                        <Sparkles class="mx-auto text-[#20B2AA] animate-pulse" :size="40" />
+                    </div>
+                    <h3 class="text-xl font-bold text-[#2F4F4F] mb-2">Permintaan Tidak Valid</h3>
+                    <p class="text-[#708090] mb-6">Minimal harus ada satu permintaan yang valid sebelum mengirimkan formulir.</p>
+                    <Button
+                        type="button"
+                        class="w-full bg-gradient-to-r from-[#20B2AA] to-[#98FB98] text-white font-bold text-lg shadow hover:from-[#1A9A94] hover:to-[#7ED957] transition"
+                        @click="showMinRequestModal = false"
+                    >
+                        OK
+                    </Button>
+                    <button
+                        class="absolute top-2 right-2 text-[#B0C4DE] hover:text-[#20B2AA] text-xl"
+                        @click="showMinRequestModal = false"
+                        aria-label="Tutup"
+                    >&times;</button>
+                </div>
+            </div>
+        </transition>
     </AppLayout>
 </template>
 
@@ -361,5 +389,11 @@ onUnmounted(() => {
     right: 0;
     bottom: 0;
     z-index: 40;
+}
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.2s;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
 }
 </style>

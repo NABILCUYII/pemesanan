@@ -6,7 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Package, Search, CalendarDays } from 'lucide-vue-next'
+import { ArrowLeft, Package, Search, CalendarDays, Sparkles } from 'lucide-vue-next'
 import { type BreadcrumbItem } from '@/types';
 
 interface Barang {
@@ -39,9 +39,11 @@ const showDropdown = ref(false)
 const searchQuery = ref('')
 const selectedBarang = ref<Barang | null>(null);
 
+// Modal state for "Pilih barang terlebih dahulu"
+const showBarangRequiredModal = ref(false);
+
 const filteredBarang = computed(() => {
     if (!searchQuery.value) return props.barang.filter(item => item.kategori === 'peminjaman');
-    console.log(props.barang);
     return props.barang.filter(item => 
         item.kategori === 'peminjaman' &&
         (item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -64,6 +66,11 @@ const toggleDropdown = () => {
 }
 
 const submitPeminjaman = () => {
+    // Cek jika barang_id belum dipilih, tampilkan modal
+    if (!form.barang_id) {
+        showBarangRequiredModal.value = true;
+        return;
+    }
     form.post(route('peminjaman.store'), {
         onSuccess: () => {
             form.reset()
@@ -89,7 +96,6 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
-
 </script>
 
 <template>
@@ -248,6 +254,31 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
+
+        <!-- Modal: Pilih Barang Terlebih Dahulu -->
+        <transition name="fade">
+            <div v-if="showBarangRequiredModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center relative">
+                    <div class="mb-4">
+                        <Sparkles class="mx-auto text-blue-400 animate-pulse" :size="40" />
+                    </div>
+                    <h3 class="text-xl font-bold text-blue-700 mb-2">Pilih Barang Terlebih Dahulu</h3>
+                    <p class="text-gray-600 mb-6">Anda harus memilih barang yang ingin dipinjam sebelum mengajukan formulir peminjaman.</p>
+                    <Button
+                        type="button"
+                        class="w-full bg-gradient-to-r from-blue-500 to-blue-400 text-white font-bold text-lg shadow hover:from-blue-600 hover:to-blue-700 transition"
+                        @click="showBarangRequiredModal = false"
+                    >
+                        OK
+                    </Button>
+                    <button
+                        class="absolute top-2 right-2 text-blue-200 hover:text-blue-500 text-xl"
+                        @click="showBarangRequiredModal = false"
+                        aria-label="Tutup"
+                    >&times;</button>
+                </div>
+            </div>
+        </transition>
     </AppLayout>
 </template>
 

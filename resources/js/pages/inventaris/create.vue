@@ -144,9 +144,7 @@ watch(() => form.barang_id, (val) => {
                                 {{ item.nama_barang }} (Stok: {{ item.stok }})
                             </option>
                         </select>
-                        <div class="text-xs text-blue-500">Selected barang_id: {{ form.barang_id }}</div>
-                        <div class="text-xs text-blue-500">SelectedBarang: {{ selectedBarang }}</div>
-                        <p v-if="form.errors.barang_id" class="text-sm text-red-600">{{ form.errors.barang_id }}</p>
+                        
                         <!-- Info stok -->
                         <div v-if="selectedBarang" class="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
                             <div class="font-medium mb-1">Informasi Barang:</div>

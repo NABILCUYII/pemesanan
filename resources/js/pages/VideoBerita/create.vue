@@ -21,6 +21,32 @@
         </div>
       </div>
 
+      <!-- Modal untuk validasi kosong -->
+      <transition name="fade">
+        <div
+          v-if="showModal"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        >
+          <div class="bg-white rounded-xl shadow-lg max-w-sm w-full p-6 border border-red-200">
+            <div class="flex items-center gap-3 mb-3">
+              <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
+              </svg>
+              <span class="text-lg font-semibold text-red-600">Data Belum Lengkap</span>
+            </div>
+            <div class="text-gray-700 mb-4">
+              Silakan isi <span class="font-semibold">Judul Video</span> dan <span class="font-semibold">URL Video YouTube</span> terlebih dahulu sebelum menyimpan.
+            </div>
+            <div class="flex justify-end">
+              <Button @click="showModal = false" class="bg-red-500 hover:bg-red-600 text-white">
+                Tutup
+              </Button>
+            </div>
+          </div>
+        </div>
+      </transition>
+
       <!-- Form -->
       <Card class="max-w-2xl mx-auto overflow-hidden rounded-2xl border border-[#B0C4DE] bg-white/80 shadow-xl backdrop-blur-xl">
         <CardHeader class="border-b border-[#B0C4DE] bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] p-6">
@@ -30,7 +56,7 @@
           </CardTitle>
         </CardHeader>
         <CardContent class="p-6">
-          <form @submit.prevent="submit" class="space-y-6">
+          <form @submit.prevent="handleSubmit" class="space-y-6">
             <!-- Judul -->
             <div>
               <Label for="judul" class="text-sm font-medium text-[#2F4F4F]">Judul Video *</Label>
@@ -217,7 +243,14 @@ const form = useForm({
   urutan: 0 as number,
 });
 
-const submit = () => {
+const showModal = ref(false);
+
+const handleSubmit = () => {
+  // Validasi: judul dan video_url wajib diisi
+  if (!form.judul.trim() || !form.video_url.trim()) {
+    showModal.value = true;
+    return;
+  }
   form.post(route('video-berita.store'), {
     onSuccess: () => {
       // Redirect will be handled by the controller

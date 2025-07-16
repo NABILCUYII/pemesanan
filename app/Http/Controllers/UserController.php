@@ -7,46 +7,93 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function index()
+    /**
+     * Helper to get the current authenticated user.
+     *
+     * @return \App\Models\User|null
+     */
+    protected function currentUser()
     {
+        return Auth::user();
+    }
 
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-        
-        $users = User::with('role')->get();
-        return Inertia::render('users/index', [
-            'users' => $users
+    /**
+     * Helper to check if the current user is admin.
+     *
+     * @return bool
+     */
+    protected function isAdmin()
+    {
+        $user = $this->currentUser();
+        return $user && method_exists($user, 'isAdmin') && $user->isAdmin();
+    }
+
+    /**
+     * Helper to return the forbidden Inertia response.
+     *
+     * @return \Inertia\Response
+     */
+    protected function forbiddenResponse()
+    {
+        $user = $this->currentUser();
+        return Inertia::render('Forbidden', [
+            'user' => $user ? [
+                'name' => $user->name,
+                'role' => $user->role->role ?? 'User'
+            ] : null
         ]);
     }
 
+    public function index(Request $request)
+    {
+        if (!$this->isAdmin()) {
+            return $this->forbiddenResponse();
+        }
+
+        $query = User::with('role');
+
+        if ($request->q) {
+            $query->where('name', 'like', '%' . $request->q . '%')
+                  ->orWhere('email', 'like', '%' . $request->q . '%');
+        }
+
+        $perPage = $request->per_page ?? 10;
+        $users = $query->paginate($perPage);
+
+        return Inertia::render('users/index', [
+            'users' => $users->items(), // array user untuk frontend
+            'meta' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+            ],
+            'query' => [
+                'page' => $users->currentPage(),
+                'per_page' => $users->perPage(),
+                'q' => $request->q,
+            ],
+        ]);
+    }
     public function create()
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+        if (!$this->isAdmin()) {
+            return $this->forbiddenResponse();
         }
-        
+
         return Inertia::render('users/create');
     }
 
     public function store(Request $request)
     {
+        if (!$this->isAdmin()) {
+            return $this->forbiddenResponse();
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -69,17 +116,10 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+        if (!$this->isAdmin()) {
+            return $this->forbiddenResponse();
         }
-        
+
         return Inertia::render('users/edit', [
             'user' => $user->load('role')
         ]);
@@ -87,6 +127,10 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if (!$this->isAdmin()) {
+            return $this->forbiddenResponse();
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -99,9 +143,15 @@ class UserController extends Controller
         ]);
 
         if (array_key_exists('role', $validated) && $validated['role'] !== null && $validated['role'] !== '') {
-            $user->role()->update([
-                'role' => $validated['role']
-            ]);
+            if ($user->role) {
+                $user->role()->update([
+                    'role' => $validated['role']
+                ]);
+            } else {
+                $user->role()->create([
+                    'role' => $validated['role']
+                ]);
+            }
         }
 
         return redirect()->route('users.index');
@@ -109,21 +159,17 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
+        if (!$this->isAdmin()) {
+            return $this->forbiddenResponse();
         }
+
         // Delete profile photo from storage if exists
         if ($user->photo && Storage::disk('public')->exists($user->photo)) {
             Storage::disk('public')->delete($user->photo);
         }
-        $user->role()->delete();
+        if ($user->role) {
+            $user->role()->delete();
+        }
         $user->delete();
         return redirect()->route('users.index');
     }

@@ -2,7 +2,8 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { echo } from '@/echo';
 
 interface User {
   id: number;
@@ -12,8 +13,21 @@ interface User {
   role?: { role: string };
 }
 
+interface Meta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
 interface Props {
   users: User[];
+  meta: Meta;
+  query: {
+    page?: number;
+    per_page?: number;
+    q?: string;
+  };
 }
 
 const props = defineProps<Props>();
@@ -22,17 +36,84 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Users', href: route('users.index') },
 ];
 
-const searchQuery = ref('');
+const searchQuery = ref(props.query.q || '');
 const showDeleteModal = ref(false);
 const userToDelete = ref<User | null>(null);
 
-const filteredUsers = computed(() => {
-  const query = searchQuery.value.toLowerCase().trim();
-  return props.users.filter(user => 
-    user.name.toLowerCase().includes(query) ||
-    user.email.toLowerCase().includes(query)
-  );
+// Notifikasi state (dummy, bisa dikembangkan)
+const showNotification = ref(false);
+const notificationCount = ref(3); // contoh badge
+
+function openNotification() {
+  showNotification.value = !showNotification.value;
+}
+
+// Pagination states
+const currentPage = ref(props.meta.current_page || 1);
+const perPage = ref(props.meta.per_page || 10);
+
+const totalPages = computed(() => props.meta.last_page || 1);
+
+// Local users state for client-side pagination
+const allUsers = ref<User[]>(props.users);
+
+// If you want to keep server-side search, update allUsers when props.users changes
+watch(
+  () => props.users,
+  (val) => {
+    allUsers.value = val;
+  }
+);
+
+const paginatedUsers = computed(() => {
+  // If using server-side search, just return allUsers (which is props.users)
+  // If you want client-side search, filter here
+  return allUsers.value;
 });
+
+// Debounce for search
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+watch(searchQuery, (val) => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    goToPage(1, true);
+  }, 400);
+});
+
+// Watch perPage
+watch(perPage, (val) => {
+  goToPage(1, true);
+});
+
+// Update currentPage when props.meta.current_page changes (for Inertia navigation)
+watch(
+  () => props.meta.current_page,
+  (val) => {
+    currentPage.value = val;
+  }
+);
+
+const goToPage = (page: number, replace = false) => {
+  // Clamp page
+  if (page < 1) page = 1;
+  if (page > totalPages.value) page = totalPages.value;
+  // Update currentPage immediately for UI responsiveness
+  currentPage.value = page;
+  router.get(
+    route('users.index'),
+    {
+      page,
+      per_page: perPage.value,
+      q: searchQuery.value || undefined,
+    },
+    {
+      preserveState: true,
+      preserveScroll: true,
+      replace,
+      only: ['users', 'meta'], // Only update users and meta, not full reload
+    }
+  );
+};
 
 const confirmDelete = (user: User) => {
   userToDelete.value = user;
@@ -53,6 +134,40 @@ const destroy = () => {
     });
   }
 };
+
+// Slide pagination logic
+const slideRange = 2;
+const slidePages = computed(() => {
+  const pages = [];
+  let start = Math.max(1, currentPage.value - slideRange);
+  let end = Math.min(totalPages.value, currentPage.value + slideRange);
+
+  // Adjust if at the start or end
+  if (currentPage.value <= slideRange) {
+    end = Math.min(totalPages.value, 1 + slideRange * 2);
+  }
+  if (currentPage.value + slideRange > totalPages.value) {
+    start = Math.max(1, totalPages.value - slideRange * 2);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  return pages;
+});
+
+// Listen to Echo channel for user updates
+onMounted(() => {
+  echo.channel('users')
+    .listen('UserUpdated', (e: any) => {
+      // Lakukan fetch ulang data user, atau update state users
+      goToPage(currentPage.value, true); // atau panggil method fetch data
+    });
+});
+
+onUnmounted(() => {
+  echo.leave('users');
+});
 </script>
 
 <template>
@@ -65,15 +180,47 @@ const destroy = () => {
           <h1 class="text-2xl font-bold text-gray-800 mb-1">Daftar Pengguna</h1>
           <p class="text-gray-500 text-sm">Kelola data user aplikasi dengan mudah dan nyaman.</p>
         </div>
-        <Link
-          :href="route('users.create')"
-          class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-          Tambah User
-        </Link>
+        <div class="flex items-center gap-2">
+          <!-- Tombol Notifikasi -->
+          <button
+            @click="openNotification"
+            class="relative inline-flex items-center justify-center w-11 h-11 rounded-lg bg-white border border-gray-200 shadow hover:bg-blue-50 transition focus:outline-none"
+            aria-label="Notifikasi"
+            type="button"
+          >
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span v-if="notificationCount > 0" class="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+              {{ notificationCount }}
+            </span>
+          </button>
+          <!-- Dropdown notifikasi sederhana -->
+          <div
+            v-if="showNotification"
+            class="absolute right-0 mt-14 z-50 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-4"
+          >
+            <div class="font-semibold text-gray-700 mb-2">Notifikasi</div>
+            <ul class="space-y-2">
+              <li class="text-sm text-gray-600">Notifikasi 1 (contoh)</li>
+              <li class="text-sm text-gray-600">Notifikasi 2 (contoh)</li>
+              <li class="text-sm text-gray-600">Notifikasi 3 (contoh)</li>
+            </ul>
+            <div class="mt-3 text-right">
+              <button @click="showNotification = false" class="text-blue-600 text-xs hover:underline">Tutup</button>
+            </div>
+          </div>
+          <!-- Tombol Tambah User -->
+          <Link
+            :href="route('users.create')"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Tambah User
+          </Link>
+        </div>
       </div>
 
       <!-- Search Bar -->
@@ -93,6 +240,82 @@ const destroy = () => {
         </div>
       </div>
 
+      <!-- Pagination Controls (top) -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
+        <div>
+          <label class="text-sm text-gray-600 mr-2">Tampilkan</label>
+          <select v-model.number="perPage" class="border rounded px-2 py-1 text-sm">
+            <option :value="5">5</option>
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+          </select>
+          <span class="text-sm text-gray-600 ml-2">per halaman</span>
+        </div>
+        <div v-if="totalPages > 1" class="flex items-center gap-2 justify-end">
+          <!-- Prev Button -->
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-2 py-1 rounded border text-sm"
+            :class="currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'"
+            tabindex="0"
+            aria-label="Halaman sebelumnya"
+          >
+            &laquo; Prev
+          </button>
+          <!-- First page and dots -->
+          <template v-if="slidePages[0] > 1">
+            <button
+              @click="goToPage(1)"
+              :disabled="currentPage === 1"
+              class="px-2 py-1 rounded border text-sm bg-white hover:bg-gray-50 text-gray-700"
+              tabindex="0"
+              aria-label="Halaman 1"
+            >1</button>
+            <span class="text-gray-400 px-1">...</span>
+          </template>
+          <!-- Numbered page buttons -->
+          <button
+            v-for="page in slidePages"
+            :key="page"
+            @click="goToPage(page)"
+            :class="[
+              'px-2 py-1 rounded border text-sm',
+              page === currentPage ? 'bg-blue-600 text-white border-blue-600 cursor-default' : 'bg-white hover:bg-gray-50 text-gray-700 cursor-pointer'
+            ]"
+            :disabled="page === currentPage"
+            :aria-current="page === currentPage ? 'page' : undefined"
+            tabindex="0"
+            :aria-label="`Halaman ${page}`"
+          >
+            {{ page }}
+          </button>
+          <!-- Last page and dots -->
+          <template v-if="slidePages[slidePages.length-1] < totalPages">
+            <span class="text-gray-400 px-1">...</span>
+            <button
+              @click="goToPage(totalPages)"
+              :disabled="currentPage === totalPages"
+              class="px-2 py-1 rounded border text-sm bg-white hover:bg-gray-50 text-gray-700"
+              tabindex="0"
+              :aria-label="`Halaman ${totalPages}`"
+            >{{ totalPages }}</button>
+          </template>
+          <!-- Next Button -->
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-2 py-1 rounded border text-sm"
+            :class="currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'"
+            tabindex="0"
+            aria-label="Halaman berikutnya"
+          >
+            Next &raquo;
+          </button>
+        </div>
+      </div>
+
       <div class="relative rounded-2xl border border-gray-100 bg-white shadow-lg overflow-x-auto">
         <!-- Tabel untuk layar medium ke atas -->
         <table class="w-full min-w-[950px] hidden md:table">
@@ -106,18 +329,18 @@ const destroy = () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-if="filteredUsers.length === 0">
+            <tr v-if="paginatedUsers.length === 0">
               <td colspan="5" class="px-8 py-6 text-center text-gray-400 text-base">
                 <span v-if="searchQuery">Tidak ada hasil pencarian</span>
                 <span v-else>Tidak ada user ditemukan</span>
               </td>
             </tr>
             <tr
-              v-for="(user, idx) in filteredUsers"
+              v-for="(user, idx) in paginatedUsers"
               :key="user.id"
               class="border-b last:border-b-0 border-gray-100 hover:bg-blue-50/40 transition"
             >
-              <td class="px-8 py-4 text-gray-500 text-sm">{{ idx + 1 }}</td>
+              <td class="px-8 py-4 text-gray-500 text-sm">{{ (props.meta.per_page * (props.meta.current_page - 1)) + idx + 1 }}</td>
               <td class="px-8 py-4 text-gray-800 font-medium flex items-center gap-3">
                  <!-- User photo profile like in UserMenuContent -->
                  <template v-if="user && user.photo">
@@ -182,14 +405,14 @@ const destroy = () => {
         </table>
 
         <!-- Card list untuk layar kecil -->
-        <div v-if="filteredUsers.length === 0" class="md:hidden text-center text-gray-400 py-10 text-base">
+        <div v-if="paginatedUsers.length === 0" class="md:hidden text-center text-gray-400 py-10 text-base">
           <span v-if="searchQuery">Tidak ada hasil pencarian</span>
           <span v-else>Tidak ada user ditemukan</span>
         </div>
 
         <div class="space-y-5 md:hidden p-4">
           <div
-            v-for="user in filteredUsers"
+            v-for="user in paginatedUsers"
             :key="user.id"
             class="border border-gray-100 rounded-xl p-6 shadow bg-white flex flex-col gap-3"
           >
@@ -229,6 +452,82 @@ const destroy = () => {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Pagination Controls (bottom) -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-4 gap-2">
+        <div>
+          <label class="text-sm text-gray-600 mr-2">Tampilkan</label>
+          <select v-model.number="perPage" class="border rounded px-2 py-1 text-sm">
+            <option :value="5">5</option>
+            <option :value="10">10</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+          </select>
+          <span class="text-sm text-gray-600 ml-2">per halaman</span>
+        </div>
+        <div v-if="totalPages > 1" class="flex items-center gap-2 justify-end">
+          <!-- Prev Button -->
+          <button
+            @click="goToPage(currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-2 py-1 rounded border text-sm"
+            :class="currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'"
+            tabindex="0"
+            aria-label="Halaman sebelumnya"
+          >
+            &laquo; Prev
+          </button>
+          <!-- First page and dots -->
+          <template v-if="slidePages[0] > 1">
+            <button
+              @click="goToPage(1)"
+              :disabled="currentPage === 1"
+              class="px-2 py-1 rounded border text-sm bg-white hover:bg-gray-50 text-gray-700"
+              tabindex="0"
+              aria-label="Halaman 1"
+            >1</button>
+            <span class="text-gray-400 px-1">...</span>
+          </template>
+          <!-- Numbered page buttons -->
+          <button
+            v-for="page in slidePages"
+            :key="page"
+            @click="goToPage(page)"
+            :class="[
+              'px-2 py-1 rounded border text-sm',
+              page === currentPage ? 'bg-blue-600 text-white border-blue-600 cursor-default' : 'bg-white hover:bg-gray-50 text-gray-700 cursor-pointer'
+            ]"
+            :disabled="page === currentPage"
+            :aria-current="page === currentPage ? 'page' : undefined"
+            tabindex="0"
+            :aria-label="`Halaman ${page}`"
+          >
+            {{ page }}
+          </button>
+          <!-- Last page and dots -->
+          <template v-if="slidePages[slidePages.length-1] < totalPages">
+            <span class="text-gray-400 px-1">...</span>
+            <button
+              @click="goToPage(totalPages)"
+              :disabled="currentPage === totalPages"
+              class="px-2 py-1 rounded border text-sm bg-white hover:bg-gray-50 text-gray-700"
+              tabindex="0"
+              :aria-label="`Halaman ${totalPages}`"
+            >{{ totalPages }}</button>
+          </template>
+          <!-- Next Button -->
+          <button
+            @click="goToPage(currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-2 py-1 rounded border text-sm"
+            :class="currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-gray-700'"
+            tabindex="0"
+            aria-label="Halaman berikutnya"
+          >
+            Next &raquo;
+          </button>
         </div>
       </div>
     </div>
