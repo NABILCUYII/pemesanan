@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Box } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Search, Eye, ArrowLeft, Box, LayoutGrid, Table as TableIcon } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
@@ -30,6 +30,12 @@ const props = defineProps<{
 
 const searchQuery = ref('');
 
+// Mode tampilan: 'card' atau 'table'
+const viewMode = ref<'card' | 'table'>('card');
+function setViewMode(mode: 'card' | 'table') {
+    viewMode.value = mode;
+}
+
 // Filter only consumable items (permintaan category)
 const consumableItems = computed(() => {
     return props.barang.filter(item => item.kategori === 'permintaan');
@@ -47,6 +53,19 @@ const deleteBarang = (id: number) => {
         router.delete(route('barang.destroy', id));
     }
 };
+
+// Dialog state for detail
+const showDetailDialog = ref(false);
+const selectedBarang = ref<typeof props.barang[0] | null>(null);
+
+function openDetail(item: typeof props.barang[0]) {
+    selectedBarang.value = item;
+    showDetailDialog.value = true;
+}
+function closeDetail() {
+    showDetailDialog.value = false;
+    selectedBarang.value = null;
+}
 </script>
 
 <template>
@@ -123,6 +142,16 @@ const deleteBarang = (id: number) => {
                 </div>
             </div>
 
+            <!-- Switch View Mode -->
+            <div class="flex justify-end mb-2 gap-2">
+                <Button :variant="viewMode === 'card' ? 'default' : 'outline'" @click="setViewMode('card')">
+                    <LayoutGrid class="w-4 h-4 mr-1" /> Card
+                </Button>
+                <Button :variant="viewMode === 'table' ? 'default' : 'outline'" @click="setViewMode('table')">
+                    <TableIcon class="w-4 h-4 mr-1" /> Table
+                </Button>
+            </div>
+
             <!-- Search -->
             <div class="relative">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -134,8 +163,8 @@ const deleteBarang = (id: number) => {
                 />
             </div>
 
-            <!-- Consumable Grid -->
-            <div class="space-y-6">
+            <!-- Card Mode -->
+            <div v-if="viewMode === 'card'" class="space-y-6">
                 <div v-if="filteredBarang.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     <div
                         v-for="item in filteredBarang"
@@ -241,6 +270,126 @@ const deleteBarang = (id: number) => {
                         </Button>
                     </Link>
                 </div>
+            </div>
+
+            <!-- Table Mode -->
+            <div v-if="viewMode === 'table'" class="bg-white rounded-lg border overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-green-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Nama Barang</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Kode</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Stok</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Satuan</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Lokasi</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="filteredBarang.length === 0">
+                            <td colspan="7" class="text-center py-8 text-gray-500">
+                                <Box class="w-12 h-12 mx-auto text-gray-300 mb-2" />
+                                <div class="mb-2">Tidak ada barang permintaan ditemukan</div>
+                                <div class="mb-2">
+                                    {{ searchQuery ? 'Coba ubah kata kunci pencarian Anda.' : 'Belum ada barang permintaan yang ditambahkan.' }}
+                                </div>
+                                <Link :href="route('barang.create')">
+                                    <Button>
+                                        <Plus class="w-4 h-4 mr-2" />
+                                        Tambah Barang Permintaan Pertama
+                                    </Button>
+                                </Link>
+                            </td>
+                        </tr>
+                        <tr v-for="(item, idx) in filteredBarang" :key="item.id" class="hover:bg-green-50 transition">
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ idx + 1 }}</td>
+                            <td class="px-4 py-3 text-sm font-semibold text-gray-800">
+                                <span class="flex items-center gap-2">
+                                    <Box class="w-4 h-4 text-green-600" />
+                                    {{ item.nama_barang }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ item.kode_barang }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span :class="item.stok > 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'">
+                                    {{ item.stok }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ item.satuan || '-' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ item.lokasi || '-' }}</td>
+                            <td class="px-4 py-3 text-sm flex flex-wrap gap-2">
+                                <Dialog>
+                                    <DialogTrigger as-child>
+                                        <Button size="sm" variant="outline">
+                                            <Eye class="w-4 h-4 mr-1" /> Detail
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent class="sm:max-w-lg">
+                                        <DialogHeader>
+                                            <DialogTitle class="flex items-center gap-2">
+                                                <Box class="w-5 h-5 text-green-600" />
+                                                {{ item.nama_barang }}
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                Detail lengkap barang permintaan. Klik tombol aksi di bawah jika diperlukan.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div class="space-y-3 py-4 text-sm">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="font-semibold text-gray-700">Kode Barang:</p>
+                                                    <p class="text-gray-600">{{ item.kode_barang }}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="font-semibold text-gray-700">Kategori:</p>
+                                                    <p class="text-green-600 font-medium">Permintaan</p>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="font-semibold text-gray-700">Stok Tersedia:</p>
+                                                    <p :class="[
+                                                        'font-bold text-lg',
+                                                        item.stok > 0 ? 'text-green-600' : 'text-red-600'
+                                                    ]">
+                                                        {{ item.stok }} <span v-if="item.satuan"> {{ item.satuan }}</span>
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p class="font-semibold text-gray-700">Lokasi:</p>
+                                                    <p class="text-gray-600">{{ item.lokasi || 'Tidak ditentukan' }}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p class="font-semibold text-gray-700">Deskripsi:</p>
+                                                <p class="text-gray-600">{{ item.deskripsi || 'Tidak ada deskripsi.' }}</p>
+                                            </div>
+                                        </div>
+                                        <DialogFooter class="flex flex-col sm:flex-row gap-2 mt-4">
+                                            <Link :href="route('barang.edit', item.id)" class="w-full sm:w-auto">
+                                                <Button variant="outline" class="w-full">
+                                                    <Pencil class="w-4 h-4 mr-2" /> Edit
+                                                </Button>
+                                            </Link>
+                                            <Button variant="destructive" @click="deleteBarang(item.id)" class="w-full sm:w-auto">
+                                                <Trash2 class="w-4 h-4 mr-2" /> Hapus
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                                <Link :href="route('barang.edit', item.id)">
+                                    <Button size="sm" variant="outline">
+                                        <Pencil class="w-4 h-4 mr-1" /> Edit
+                                    </Button>
+                                </Link>
+                                <Button size="sm" variant="destructive" @click="deleteBarang(item.id)">
+                                    <Trash2 class="w-4 h-4 mr-1" /> Hapus
+                                </Button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </AppLayout>

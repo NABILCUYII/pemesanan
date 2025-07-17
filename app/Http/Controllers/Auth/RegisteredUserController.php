@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Events\NewUserRegistered;
 
 class RegisteredUserController extends Controller
 {
@@ -43,15 +44,18 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Create role record for the new user with 'user' role
+        // Create role record for the new user with 'newUser' role
         $user->role()->create([
-            'role' => 'user'
+            'role' => 'newUser'
         ]);
+
+        // Broadcast event ke admin
+        event(new NewUserRegistered($user));
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return to_route('dashboard');
+        return to_route('selamat-datang.index');
     }
 }

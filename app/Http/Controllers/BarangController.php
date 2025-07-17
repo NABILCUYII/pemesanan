@@ -10,17 +10,10 @@ class BarangController extends Controller
 {
     public function index()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
-        // Check if user is admin
-       // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
+        
         
         $barang = Barang::latest()->get();
         return Inertia::render('Barang/index', [
@@ -30,6 +23,8 @@ class BarangController extends Controller
 
     public function aset()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -50,6 +45,8 @@ class BarangController extends Controller
 
     public function permintaan()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -70,6 +67,8 @@ class BarangController extends Controller
 
     public function create()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -86,6 +85,9 @@ class BarangController extends Controller
     }
     public function store(Request $request)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $request->validate([
             'kode_barang' => 'required|string|max:255|unique:barang',
             'nama_barang' => 'required|string|max:255',
@@ -114,6 +116,8 @@ class BarangController extends Controller
 
     public function edit(Barang $barang)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -133,6 +137,9 @@ class BarangController extends Controller
 
     public function update(Request $request, Barang $barang)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $request->validate([
             'kode_barang' => 'required|string|max:255|unique:barang,kode_barang,' . $barang->id,
             'nama_barang' => 'required|string|max:255',
@@ -160,6 +167,8 @@ class BarangController extends Controller
 
     public function destroy(Barang $barang)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -183,6 +192,8 @@ class BarangController extends Controller
 
     public function stok()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -203,6 +214,8 @@ class BarangController extends Controller
 
     public function addStok(Request $request, Barang $barang)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -230,6 +243,8 @@ class BarangController extends Controller
     // Endpoint notifikasi stok menipis
     public function stokMenipisCount()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin
@@ -249,6 +264,8 @@ class BarangController extends Controller
     // Endpoint notifikasi stok habis
     public function stokHabisCount()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
        // Check if user is admin

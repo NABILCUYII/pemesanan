@@ -30,7 +30,7 @@ defineProps<Props>();
                                     :src="user.photo.startsWith('http') ? user.photo : `/storage/${user.photo}`"
                                     alt="User avatar"
                                     class="w-full h-full object-cover"
-                                    @error="(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML = `<span class='text-gray-600 font-semibold'>${user?.name?.charAt(0) || '?'}</span>` }"
+                                   
                                 />
                             </span>
             </template>

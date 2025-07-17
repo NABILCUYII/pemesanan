@@ -39,8 +39,8 @@ const submit = () => {
 
             <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">Create Account</h1>
-                    <p class="text-white/80">Join us and start your journey</p>
+                    <h1 class="text-3xl font-bold text-black mb-2">Create Account</h1>
+                    <p class="text-black/80">Join us and start your journey</p>
                 </div>
 
                 <form @submit.prevent="submit" class="space-y-6">
@@ -50,7 +50,7 @@ const submit = () => {
                         
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <User class="h-5 w-5 text-white/60" />
+                                <User class="h-5 w-5 text-black/60" />
                             </div>
                             <Input
                                 id="name"
@@ -61,14 +61,14 @@ const submit = () => {
                                 autocomplete="name"
                                 v-model="form.name"
                                 placeholder="Full name"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                class="pl-10 bg-white/10 border-black/20 text-black placeholder:text-black/60 focus:border-black/40"
                             />
                             <InputError :message="form.errors.name" />
                         </div>
 
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail class="h-5 w-5 text-white/60" />
+                                <Mail class="h-5 w-5 text-black/60" />
                             </div>
                             <Input
                                 id="email"
@@ -78,14 +78,14 @@ const submit = () => {
                                 autocomplete="email"
                                 v-model="form.email"
                                 placeholder="Email address"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                class="pl-10 bg-white/10 border-black/20 text-black placeholder:text-black/60 focus:border-black/40"
                             />
                             <InputError :message="form.errors.email" />
                         </div>
 
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Lock class="h-5 w-5 text-white/60" />
+                                <Lock class="h-5 w-5 text-black/60" />
                             </div>
                             <Input
                                 id="password"
@@ -95,14 +95,14 @@ const submit = () => {
                                 autocomplete="new-password"
                                 v-model="form.password"
                                 placeholder="Password"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                class="pl-10 bg-white/10 border-black/20 text-black placeholder:text-black/60 focus:border-black/40"
                             />
                             <InputError :message="form.errors.password" />
                         </div>
 
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Lock class="h-5 w-5 text-white/60" />
+                                <Lock class="h-5 w-5 text-black/60" />
                             </div>
                             <Input
                                 id="password_confirmation"
@@ -112,14 +112,14 @@ const submit = () => {
                                 autocomplete="new-password"
                                 v-model="form.password_confirmation"
                                 placeholder="Confirm password"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                class="pl-10 bg-white/10 border-black/20 text-black placeholder:text-black/60 focus:border-black/40"
                             />
                             <InputError :message="form.errors.password_confirmation" />
                         </div>
 
                         <Button 
                             type="submit" 
-                            class="w-full bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]"
+                            class="w-full bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-black font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]"
                             :disabled="form.processing"
                         >
                             <UserPlus v-if="!form.processing" class="h-5 w-5 mr-2" />
@@ -128,9 +128,9 @@ const submit = () => {
                         </Button>
                     </div>
 
-                    <div class="text-center text-sm text-white/80">
+                    <div class="text-center text-sm text-black/80">
                         Already have an account?
-                        <TextLink :href="route('login')" class="text-white font-semibold hover:text-white/90 transition-colors" :tabindex="6">
+                        <TextLink :href="route('login')" class="text-black font-semibold hover:text-black/90 transition-colors" :tabindex="6">
                             Log in
                         </TextLink>
                     </div>

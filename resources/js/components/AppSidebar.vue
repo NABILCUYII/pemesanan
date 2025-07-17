@@ -119,26 +119,26 @@ const mainNavItems = computed(() => [
     {
         title: 'Barang',
         icon: Package,
-        adminOnly: true,
+       
         isDropdown: true,
         dropdownItems: [
             {
                 title: 'Daftar Semua Barang',
                 href: route('barang.index'),
                 icon: Package,
-                adminOnly: true,
+                
             },
             {
                 title: 'Aset',
                 href: route('barang.aset'),
                 icon: Package,
-                adminOnly: true,
+              
             },
             {
                 title: 'Barang Permintaan',
                 href: route('barang.permintaan'),
                 icon: Package,
-                adminOnly: true,
+               
             },
 
             {

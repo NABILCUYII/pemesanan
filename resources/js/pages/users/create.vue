@@ -158,6 +158,30 @@ const goBack = () => {
                   </div>
                 </div>
               </div>
+
+              <div 
+                @click="form.role = 'newUser'"
+                :class="[
+                  'relative p-4 border-2 rounded-lg cursor-pointer transition-all duration-200',
+                  form.role === 'newUser' 
+                    ? 'border-indigo-500 bg-indigo-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                ]"
+              >
+                <div class="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    id="newUser"
+                    value="newUser"
+                    v-model="form.role"
+                    class="h-4 w-4 border-primary text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <label for="newUser" class="font-medium text-gray-900 cursor-pointer">New User</label>
+                    <p class="text-sm text-gray-500">Pengguna baru, akses terbatas</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div v-if="form.errors.role" class="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded-md">
               {{ form.errors.role }}

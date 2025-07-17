@@ -50,6 +50,8 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
         if (!$this->isAdmin()) {
             return $this->forbiddenResponse();
         }
@@ -81,6 +83,8 @@ class UserController extends Controller
     }
     public function create()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
         if (!$this->isAdmin()) {
             return $this->forbiddenResponse();
         }
@@ -90,6 +94,8 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
         if (!$this->isAdmin()) {
             return $this->forbiddenResponse();
         }
@@ -116,6 +122,8 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
         if (!$this->isAdmin()) {
             return $this->forbiddenResponse();
         }
@@ -127,6 +135,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
         if (!$this->isAdmin()) {
             return $this->forbiddenResponse();
         }
@@ -159,10 +169,31 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
         if (!$this->isAdmin()) {
             return $this->forbiddenResponse();
         }
 
+        // Hapus semua permintaan yang dibuat user
+        $user->permintaan()->delete();
+        // Hapus semua peminjaman yang dibuat user
+        $user->peminjaman()->delete();
+        // Hapus semua inventaris yang dibuat user
+        if (method_exists($user, 'inventaris')) {
+            $user->inventaris()->delete();
+        } else {
+            \App\Models\Inventaris::where('user_id', $user->id)->delete();
+        }
+        // Hapus semua peminjaman di mana user menjadi approved_by, returned_by, started_by
+        \App\Models\Peminjaman::where('approved_by', $user->id)->delete();
+        \App\Models\Peminjaman::where('returned_by', $user->id)->delete();
+        \App\Models\Peminjaman::where('started_by', $user->id)->delete();
+        // Hapus semua inventaris di mana user menjadi approved_by, returned_by, started_by
+        \App\Models\Inventaris::where('approved_by', $user->id)->delete();
+        \App\Models\Inventaris::where('returned_by', $user->id)->delete();
+        \App\Models\Inventaris::where('started_by', $user->id)->delete();
+        // Setelah semua riwayat terkait dihapus, hapus user
         // Delete profile photo from storage if exists
         if ($user->photo && Storage::disk('public')->exists($user->photo)) {
             Storage::disk('public')->delete($user->photo);

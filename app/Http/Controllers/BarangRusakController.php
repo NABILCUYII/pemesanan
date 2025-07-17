@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class BarangRusakController extends Controller
 {
     public function index()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
         
@@ -27,9 +30,11 @@ class BarangRusakController extends Controller
 
     public function create()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
         
@@ -44,6 +49,9 @@ class BarangRusakController extends Controller
 
     public function createHilang()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $barangList = Barang::where('status', 'baik')
             ->orderBy('nama_barang', 'asc')
             ->get(['id', 'kode_barang', 'nama_barang', 'stok']);
@@ -55,6 +63,9 @@ class BarangRusakController extends Controller
 
     public function store(Request $request)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $request->validate([
             'barang_id' => 'required|exists:barang,id',
             'jumlah_rusak' => 'required|integer|min:1',
@@ -81,6 +92,9 @@ class BarangRusakController extends Controller
 
     public function storeHilang(Request $request)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $request->validate([
             'barang_id' => 'required|exists:barang,id',
             'jumlah_hilang' => 'required|integer|min:1',
@@ -107,6 +121,9 @@ class BarangRusakController extends Controller
 
     public function updateStatus(Request $request, Barang $barang)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $request->validate([
             'status' => 'required|in:baik,rusak,hilang'
         ]);

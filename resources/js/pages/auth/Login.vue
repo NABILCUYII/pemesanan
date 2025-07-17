@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle, Mail, Lock, LogIn } from 'lucide-vue-next';
+import { LoaderCircle, Mail, Lock, LogIn, AlertTriangle } from 'lucide-vue-next';
 
 defineProps<{
     status?: string;
@@ -20,10 +21,22 @@ const form = useForm({
     remember: false,
 });
 
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
+        onError: (errors) => {
+            // Always show the modal with the requested message for login credential errors
+            showErrorModal.value = true;
+        }
     });
+};
+
+const closeModal = () => {
+    showErrorModal.value = false;
+    errorMessage.value = '';
 };
 </script>
 
@@ -117,6 +130,23 @@ const submit = () => {
                 </form>
             </div>
         </div>
+
+        <!-- Modal Error: Kredensial tidak cocok -->
+        <transition name="fade">
+            <div v-if="showErrorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full border border-red-200 relative">
+                    <button @click="closeModal" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-xl font-bold focus:outline-none" aria-label="Tutup">&times;</button>
+                    <div class="flex flex-col items-center">
+                        <AlertTriangle class="h-10 w-10 text-red-500 mb-2" />
+                        <h2 class="text-lg font-semibold text-red-600 mb-1">Login Gagal</h2>
+                        <p class="text-gray-700 text-center mb-3">
+                            Email atau password salah.
+                        </p>
+                        <Button @click="closeModal" class="bg-red-500 hover:bg-red-600 text-white w-full mt-2">Tutup</Button>
+                    </div>
+                </div>
+            </div>
+        </transition>
     </div>
 </template>
 
@@ -146,5 +176,12 @@ const submit = () => {
     100% {
         transform: translate(0px, 0px) scale(1);
     }
+}
+
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.2s;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
 }
 </style>

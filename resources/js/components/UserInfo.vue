@@ -10,7 +10,7 @@ interface Props {
     showEmail?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), { 
     showEmail: false,
 });
 

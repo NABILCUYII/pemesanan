@@ -3,7 +3,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { echo } from '@/echo';
+// Hapus import echo
+// import { echo } from '@/echo';
 
 interface User {
   id: number;
@@ -40,9 +41,12 @@ const searchQuery = ref(props.query.q || '');
 const showDeleteModal = ref(false);
 const userToDelete = ref<User | null>(null);
 
-// Notifikasi state (dummy, bisa dikembangkan)
+// Notifikasi state
 const showNotification = ref(false);
-const notificationCount = ref(3); // contoh badge
+const notificationCount = ref(
+  props.users.filter(user => user.role && user.role.role === 'newUser').length
+); // jumlah user dengan role newUser
+const newUserNotification = ref<{ name: string; email: string } | null>(null);
 
 function openNotification() {
   showNotification.value = !showNotification.value;
@@ -156,17 +160,16 @@ const slidePages = computed(() => {
   return pages;
 });
 
-// Listen to Echo channel for user updates
-onMounted(() => {
-  echo.channel('users')
-    .listen('UserUpdated', (e: any) => {
-      // Lakukan fetch ulang data user, atau update state users
-      goToPage(currentPage.value, true); // atau panggil method fetch data
-    });
-});
+// Hapus listener echo.channel('users')
+// onMounted(() => {
+//   echo.channel('users')
+//     .listen('UserUpdated', (e: any) => {
+//       goToPage(currentPage.value, true);
+//     });
+// });
 
 onUnmounted(() => {
-  echo.leave('users');
+//   echo.leave('users');
 });
 </script>
 
@@ -174,19 +177,47 @@ onUnmounted(() => {
   <Head title="Users" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
-    <div class="mx-auto max-w-7xl py-8 px-4">
+    <!-- Layout lebih ke kiri: hilangkan mx-auto, gunakan margin kiri -->
+    <div class="max-w-7xl py-8 px-4 ml-0 md:ml-8">
+      <!-- Notifikasi User Baru -->
+      <transition name="fade">
+        <div
+          v-if="newUserNotification"
+          class="fixed top-6 right-6 z-50 bg-green-100 border border-green-300 text-green-800 px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 animate-fade-in"
+          style="min-width: 280px;"
+        >
+          <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c0-1.104.896-2 2-2s2 .896 2 2-.896 2-2 2-2-.896-2-2zm0 0V7m0 4v4m0 0h4m-4 0H8" />
+          </svg>
+          <div>
+            <div class="font-semibold">User Baru Ditambahkan!</div>
+            <div class="text-sm">
+              <span class="font-bold">{{ newUserNotification.name }}</span>
+              <span v-if="newUserNotification.email">({{ newUserNotification.email }})</span>
+            </div>
+          </div>
+          <button
+            class="ml-auto text-green-700 hover:text-green-900 transition"
+            @click="newUserNotification = null"
+            aria-label="Tutup notifikasi"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </transition>
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 class="text-2xl font-bold text-gray-800 mb-1">Daftar Pengguna</h1>
           <p class="text-gray-500 text-sm">Kelola data user aplikasi dengan mudah dan nyaman.</p>
         </div>
         <div class="flex items-center gap-2">
-          <!-- Tombol Notifikasi -->
-          <button
-            @click="openNotification"
+          <!-- Tombol Notifikasi diarahkan ke halaman notifikasi.vue -->
+          <Link
+            :href="route('notifications')"
             class="relative inline-flex items-center justify-center w-11 h-11 rounded-lg bg-white border border-gray-200 shadow hover:bg-blue-50 transition focus:outline-none"
             aria-label="Notifikasi"
-            type="button"
           >
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -194,22 +225,7 @@ onUnmounted(() => {
             <span v-if="notificationCount > 0" class="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
               {{ notificationCount }}
             </span>
-          </button>
-          <!-- Dropdown notifikasi sederhana -->
-          <div
-            v-if="showNotification"
-            class="absolute right-0 mt-14 z-50 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-4"
-          >
-            <div class="font-semibold text-gray-700 mb-2">Notifikasi</div>
-            <ul class="space-y-2">
-              <li class="text-sm text-gray-600">Notifikasi 1 (contoh)</li>
-              <li class="text-sm text-gray-600">Notifikasi 2 (contoh)</li>
-              <li class="text-sm text-gray-600">Notifikasi 3 (contoh)</li>
-            </ul>
-            <div class="mt-3 text-right">
-              <button @click="showNotification = false" class="text-blue-600 text-xs hover:underline">Tutup</button>
-            </div>
-          </div>
+          </Link>
           <!-- Tombol Tambah User -->
           <Link
             :href="route('users.create')"
@@ -225,7 +241,7 @@ onUnmounted(() => {
 
       <!-- Search Bar -->
       <div class="mb-6">
-        <div class="relative max-w-md mx-auto">
+        <div class="relative max-w-md ml-0">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

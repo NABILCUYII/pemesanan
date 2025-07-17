@@ -28,10 +28,11 @@ class ErrorController extends Controller
      */
     public function forbidden()
     {
+        $user = auth()->user();
         return Inertia::render('Forbidden', [
-            'user' => auth()->user() ? [
-                'name' => auth()->user()->name,
-                'role' => auth()->user()->role ?? 'User'
+            'user' => $user ? [
+                'name' => $user->name,
+                'role' => $user->role ?? 'User'
             ] : null
         ]);
     }
@@ -50,5 +51,20 @@ class ErrorController extends Controller
     public function loading()
     {
         return Inertia::render('Loading');
+    }
+
+    /**
+     * Menampilkan halaman No Permission - Anda belum memiliki izin masuk
+     */
+    public function noPermission()
+    {
+        $user = auth()->user();
+        return Inertia::render('NoPermission', [
+            'user' => $user ? [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role ?? 'User'
+            ] : null
+        ]);
     }
 } 

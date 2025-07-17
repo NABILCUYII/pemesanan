@@ -5,13 +5,17 @@ import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, User, Mail, Shield } from 'lucide-vue-next';
+import { User as UserIcon } from 'lucide-vue-next';
+import { getInitials } from '@/composables/useInitials';
+import { computed } from 'vue';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface User {
     id: number;
     name: string;
     email: string;
     role: string | { role: string };
+    photo?: string; // gunakan photo, bukan photo_url
 }
 
 interface Props {
@@ -19,6 +23,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const user = props.user;
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Users', href: route('users.index') },
@@ -38,6 +43,10 @@ const submit = () => {
 const goBack = () => {
     router.visit(route('users.index'));
 };
+
+// Ensure AvatarImage always receives a string (not undefined)
+const avatarSrc = computed(() => user.photo ?? '');
+const showAvatar = computed(() => !!user.photo && user.photo!== '');
 </script>
 
 <template>
@@ -45,17 +54,24 @@ const goBack = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto max-w-2xl py-10">
-            <div class="mb-8 flex items-center gap-3">
-                <div class="bg-indigo-100 text-indigo-600 rounded-full p-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Edit User</h1>
-                    <p class="text-gray-500 text-sm">Update user information and role below.</p>
-                </div>
+            <!-- FOTO PROFIL -->
+            <div class="flex flex-col items-center">
+                <template v-if="user?.photo">
+                    <span class="inline-flex items-center justify-center w-56 h-56 rounded-full bg-gray-200 overflow-hidden shadow-lg border-2 border-gray-200 mb-8">
+                        <img
+                            :src="user.photo.startsWith('http') ? user.photo : `/storage/${user.photo}`"
+                            alt="User avatar"
+                            class="w-full h-full object-cover"
+                        />
+                    </span>
+                </template>
+                <template v-else>
+                    <div class="w-56 h-56 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-8xl shadow-lg border-2 border-gray-200 mb-8">
+                        {{ user?.name?.charAt(0) || '?' }}
+                    </div>
+                </template>
             </div>
+            <!-- FORM EDIT USER -->
             <form @submit.prevent="submit" class="space-y-8 bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
                 <div>
                     <Label for="name" class="block text-sm font-semibold text-gray-700 mb-1">Name</Label>
@@ -102,6 +118,7 @@ const goBack = () => {
                     >
                         <option value="admin">Admin</option>
                         <option value="user">User</option>
+                        <option value="newUser">New User</option>
                     </select>
                     <div v-if="form.errors.role" class="mt-1 text-xs text-red-600">
                         {{ form.errors.role }}

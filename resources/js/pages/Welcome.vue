@@ -96,7 +96,7 @@ onMounted(async () => {
                         <!-- Show single "Masuk" button if authenticated -->
                         <template v-else>
                             <Link
-                                :href="route('dashboard')"
+                                :href="route('selamat-datang.index')"
                                 class="group relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-medium transition duration-300 ease-out rounded-full shadow-md bg-gradient-to-r from-[#20B2AA] to-[#98FB98] text-white hover:from-[#1A9A94] hover:to-[#90EE90] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#20B2AA]"
                             >
                                 <span class="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full bg-gradient-to-r from-[#98FB98] to-[#20B2AA] group-hover:translate-x-0 ease">

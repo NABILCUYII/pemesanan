@@ -62,6 +62,20 @@
           </button>
         </div>
 
+        <!-- Test No Permission Page -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">No Permission</h3>
+          <p class="text-gray-600 mb-4">
+            Anda belum memiliki izin masuk
+          </p>
+          <button 
+            @click="testNoPermission"
+            class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+          >
+            Test No Permission
+          </button>
+        </div>
+
         <!-- Test 500 Page -->
         <div class="bg-white rounded-lg shadow-md p-6">
           <h3 class="text-lg font-semibold text-gray-800 mb-4">500 Server Error</h3>
@@ -103,6 +117,20 @@
             Test Route 404
           </button>
         </div>
+
+        <!-- Test NewUser Restriction -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Test NewUser Restriction</h3>
+          <p class="text-gray-600 mb-4">
+            Test pembatasan akses user newUser
+          </p>
+          <button 
+            @click="testNewUserRestriction"
+            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+          >
+            Test NewUser Restriction
+          </button>
+        </div>
       </div>
 
       <!-- Instructions -->
@@ -112,6 +140,9 @@
           <li>• <strong>Loading:</strong> Untuk menampilkan halaman loading penuh</li>
           <li>• <strong>404:</strong> Untuk halaman yang tidak ditemukan</li>
           <li>• <strong>403:</strong> Untuk akses yang ditolak</li>
+          <li>• <strong>Forbidden:</strong> Untuk akses yang dilarang</li>
+          <li>• <strong>No Permission:</strong> Untuk user yang belum memiliki izin masuk</li>
+          <li>• <strong>NewUser Restriction:</strong> Test pembatasan akses user newUser</li>
           <li>• <strong>500:</strong> Untuk kesalahan server</li>
           <li>• <strong>Spinner:</strong> Komponen loading yang dapat digunakan di mana saja</li>
         </ul>
@@ -149,6 +180,14 @@ const test403 = () => {
 
 const testForbidden = () => {
   router.visit('/forbidden')
+}
+
+const testNoPermission = () => {
+  router.visit('/test-no-permission')
+}
+
+const testNewUserRestriction = () => {
+  router.visit('/test-newuser-restriction')
 }
 
 const test500 = () => {

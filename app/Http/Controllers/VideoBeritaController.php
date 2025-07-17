@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\VideoBerita;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class VideoBeritaController extends Controller
 {
@@ -13,7 +14,8 @@ class VideoBeritaController extends Controller
      */
     public function index()
     {
-     
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
 
         $videoBeritas = VideoBerita::ordered()->get()->map(function ($video) {
             return [
@@ -45,12 +47,15 @@ class VideoBeritaController extends Controller
      */
     public function create()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => Auth::user() ? [
+                    'name' => Auth::user()->name,
+                    'role' => Auth::user()->role ?? 'User'
                 ] : null
             ]);
         }
@@ -63,12 +68,15 @@ class VideoBeritaController extends Controller
      */
     public function store(Request $request)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => Auth::user() ? [
+                    'name' => Auth::user()->name,
+                    'role' => Auth::user()->role ?? 'User'
                 ] : null
             ]);
         }
@@ -95,6 +103,9 @@ class VideoBeritaController extends Controller
      */
     public function show(VideoBerita $videoBerita)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $videoData = [
             'id' => $videoBerita->id,
             'judul' => $videoBerita->judul,
@@ -123,12 +134,15 @@ class VideoBeritaController extends Controller
      */
     public function edit(VideoBerita $videoBerita)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => Auth::user() ? [
+                    'name' => Auth::user()->name,
+                    'role' => Auth::user()->role ?? 'User'
                 ] : null
             ]);
         }
@@ -161,12 +175,15 @@ class VideoBeritaController extends Controller
      */
     public function update(Request $request, VideoBerita $videoBerita)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => Auth::user() ? [
+                    'name' => Auth::user()->name,
+                    'role' => Auth::user()->role ?? 'User'
                 ] : null
             ]);
         }
@@ -193,12 +210,15 @@ class VideoBeritaController extends Controller
      */
     public function destroy(VideoBerita $videoBerita)
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!(Auth::user() instanceof \App\Models\User) || !Auth::user()->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => Auth::user() ? [
+                    'name' => Auth::user()->name,
+                    'role' => Auth::user()->role ?? 'User'
                 ] : null
             ]);
         }
@@ -214,6 +234,9 @@ class VideoBeritaController extends Controller
      */
     public function getActiveVideos()
     {
+        $block = $this->checkNewUserBlock();
+        if ($block) return $block;
+
         $videos = VideoBerita::active()->ordered()->take(3)->get()->map(function ($video) {
             return [
                 'id' => $video->id,
