@@ -201,13 +201,14 @@ interface VideoBerita {
   tanggal_publish: string;
   is_active: boolean;
   urutan: number;
+  youtube_id?: string;
+  embed_url?: string;
+  youtube_thumbnail?: string;
 }
 
-interface Props {
+const props = defineProps<{
   videoBerita: VideoBerita;
-}
-
-const props = defineProps<Props>();
+}>();
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -232,7 +233,7 @@ const form = useForm({
   sumber: props.videoBerita.sumber || '',
   tanggal_publish: props.videoBerita.tanggal_publish,
   is_active: props.videoBerita.is_active,
-  urutan: props.videoBerita.urutan,
+  urutan: props.videoBerita.urutan as number,
 });
 
 const submit = () => {

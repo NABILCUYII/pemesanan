@@ -89,25 +89,27 @@ class DashboardController extends Controller
         $chartData = $this->getChartData();
 
         // Get active video berita with computed attributes
-        $videoBeritas = VideoBerita::active()->ordered()->take(3)->get()->map(function ($video) {
-            return [
-                'id' => $video->id,
-                'judul' => $video->judul,
-                'deskripsi' => $video->deskripsi,
-                'video_url' => $video->video_url,
-                'thumbnail_url' => $video->thumbnail_url,
-                'sumber' => $video->sumber,
-                'tanggal_publish' => $video->tanggal_publish,
-                'is_active' => $video->is_active,
-                'urutan' => $video->urutan,
-                'youtube_id' => $video->youtube_id,
-                'google_drive_id' => $video->google_drive_id,
-                'video_type' => $video->video_type,
-                'embed_url' => $video->embed_url,
-                'youtube_thumbnail' => $video->youtube_thumbnail,
-                'video_source_name' => $video->video_source_name,
-            ];
-        });
+        $videoBeritas = VideoBerita::where('is_active', true)
+            ->orderBy('urutan', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->take(6)
+            ->get()
+            ->map(function ($video) {
+                return [
+                    'id' => $video->id,
+                    'judul' => $video->judul,
+                    'deskripsi' => $video->deskripsi,
+                    'video_url' => $video->video_url,
+                    'thumbnail_url' => $video->thumbnail_url,
+                    'sumber' => $video->sumber,
+                    'tanggal_publish' => $video->tanggal_publish,
+                    'is_active' => $video->is_active,
+                    'urutan' => $video->urutan,
+                    'youtube_id' => $video->youtube_id,
+                    'embed_url' => $video->embed_url,
+                    'youtube_thumbnail' => $video->youtube_thumbnail,
+                ];
+            });
 
         // Get recent activities
         $recentActivities = collect();

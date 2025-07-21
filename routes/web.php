@@ -151,6 +151,36 @@ Route::middleware(['auth'])->group(function () {
     Route::get('api/video-berita/active', [VideoBeritaController::class, 'getActiveVideos'])->name('video-berita.active');
 });
 
+// Video Berita Routes (2024)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/video-berita', [VideoBeritaController::class, 'index'])->name('video-berita.index');
+    Route::get('/video-berita/create', [VideoBeritaController::class, 'create'])->name('video-berita.create');
+    Route::post('/video-berita', [VideoBeritaController::class, 'store'])->name('video-berita.store');
+    Route::get('/video-berita/{videoBerita}/edit', [VideoBeritaController::class, 'edit'])->name('video-berita.edit');
+    Route::put('/video-berita/{videoBerita}', [VideoBeritaController::class, 'update'])->name('video-berita.update');
+    Route::delete('/video-berita/{videoBerita}', [VideoBeritaController::class, 'destroy'])->name('video-berita.destroy');
+    Route::patch('/video-berita/{videoBerita}/toggle-status', [VideoBeritaController::class, 'toggleStatus'])->name('video-berita.toggle-status');
+});
+
+// Footer Pages Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/privacy', function () {
+        return Inertia::render('Privacy');
+    })->name('privacy');
+    
+    Route::get('/terms', function () {
+        return Inertia::render('Terms');
+    })->name('terms');
+    
+    Route::get('/help', function () {
+        return Inertia::render('Help');
+    })->name('help');
+    
+    Route::get('/contact', function () {
+        return Inertia::render('Contact');
+    })->name('contact');
+});
+
 // Rute Halaman Informasi
 Route::middleware(['auth'])->group(function () {
     Route::get('tentang', function () {

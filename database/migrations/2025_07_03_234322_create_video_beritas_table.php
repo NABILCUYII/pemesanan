@@ -21,7 +21,10 @@ return new class extends Migration
             $table->date('tanggal_publish');
             $table->boolean('is_active')->default(true);
             $table->integer('urutan')->default(0);
-            $table->timestamps(); 
+            $table->string('youtube_id')->nullable();
+            $table->string('embed_url')->nullable();
+            $table->string('youtube_thumbnail')->nullable();
+            $table->timestamps();
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\VideoBerita;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 class VideoBeritaController extends Controller
 {
@@ -13,30 +14,12 @@ class VideoBeritaController extends Controller
      */
     public function index()
     {
-     
+        $videoBeritas = VideoBerita::orderBy('urutan', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
 
-        $videoBeritas = VideoBerita::ordered()->get()->map(function ($video) {
-            return [
-                'id' => $video->id,
-                'judul' => $video->judul,
-                'deskripsi' => $video->deskripsi,
-                'video_url' => $video->video_url,
-                'thumbnail_url' => $video->thumbnail_url,
-                'sumber' => $video->sumber,
-                'tanggal_publish' => $video->tanggal_publish,
-                'is_active' => $video->is_active,
-                'urutan' => $video->urutan,
-                'youtube_id' => $video->youtube_id,
-                'google_drive_id' => $video->google_drive_id,
-                'video_type' => $video->video_type,
-                'embed_url' => $video->embed_url,
-                'youtube_thumbnail' => $video->youtube_thumbnail,
-                'video_source_name' => $video->video_source_name,
-            ];
-        });
-        
         return Inertia::render('VideoBerita/index', [
-            'videoBeritas' => $videoBeritas
+            'videoBeritas' => $videoBeritas,
         ]);
     }
 
@@ -45,16 +28,6 @@ class VideoBeritaController extends Controller
      */
     public function create()
     {
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-
         return Inertia::render('VideoBerita/create');
     }
 
@@ -63,31 +36,38 @@ class VideoBeritaController extends Controller
      */
     public function store(Request $request)
     {
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-
-        $request->validate([
+        $validated = $request->validate([
             'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
+            'deskripsi' => 'nullable|string|max:1000',
             'video_url' => 'required|url',
             'thumbnail_url' => 'nullable|url',
             'sumber' => 'nullable|string|max:255',
             'tanggal_publish' => 'required|date',
             'is_active' => 'boolean',
-            'urutan' => 'integer|min:0'
+            'urutan' => 'nullable|integer|min:0',
         ]);
 
-        VideoBerita::create($request->all());
+        // Extract YouTube ID from URL
+        $youtubeId = $this->extractYoutubeId($validated['video_url']);
+        $embedUrl = $youtubeId ? "https://www.youtube.com/embed/{$youtubeId}" : null;
+        $youtubeThumbnail = $youtubeId ? "https://img.youtube.com/vi/{$youtubeId}/maxresdefault.jpg" : null;
+
+        VideoBerita::create([
+            'judul' => $validated['judul'],
+            'deskripsi' => $validated['deskripsi'],
+            'video_url' => $validated['video_url'],
+            'thumbnail_url' => $validated['thumbnail_url'],
+            'sumber' => $validated['sumber'],
+            'tanggal_publish' => $validated['tanggal_publish'],
+            'is_active' => $validated['is_active'],
+            'urutan' => $validated['urutan'],
+            'youtube_id' => $youtubeId,
+            'embed_url' => $embedUrl,
+            'youtube_thumbnail' => $youtubeThumbnail,
+        ]);
 
         return redirect()->route('video-berita.index')
-            ->with('success', 'Video berita berhasil ditambahkan');
+            ->with('success', 'Video berita berhasil ditambahkan!');
     }
 
     /**
@@ -95,26 +75,8 @@ class VideoBeritaController extends Controller
      */
     public function show(VideoBerita $videoBerita)
     {
-        $videoData = [
-            'id' => $videoBerita->id,
-            'judul' => $videoBerita->judul,
-            'deskripsi' => $videoBerita->deskripsi,
-            'video_url' => $videoBerita->video_url,
-            'thumbnail_url' => $videoBerita->thumbnail_url,
-            'sumber' => $videoBerita->sumber,
-            'tanggal_publish' => $videoBerita->tanggal_publish,
-            'is_active' => $videoBerita->is_active,
-            'urutan' => $videoBerita->urutan,
-            'youtube_id' => $videoBerita->youtube_id,
-            'google_drive_id' => $videoBerita->google_drive_id,
-            'video_type' => $videoBerita->video_type,
-            'embed_url' => $videoBerita->embed_url,
-            'youtube_thumbnail' => $videoBerita->youtube_thumbnail,
-            'video_source_name' => $videoBerita->video_source_name,
-        ];
-        
         return Inertia::render('VideoBerita/show', [
-            'videoBerita' => $videoData
+            'videoBerita' => $videoBerita,
         ]);
     }
 
@@ -123,36 +85,8 @@ class VideoBeritaController extends Controller
      */
     public function edit(VideoBerita $videoBerita)
     {
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-
-        $videoData = [
-            'id' => $videoBerita->id,
-            'judul' => $videoBerita->judul,
-            'deskripsi' => $videoBerita->deskripsi,
-            'video_url' => $videoBerita->video_url,
-            'thumbnail_url' => $videoBerita->thumbnail_url,
-            'sumber' => $videoBerita->sumber,
-            'tanggal_publish' => $videoBerita->tanggal_publish,
-            'is_active' => $videoBerita->is_active,
-            'urutan' => $videoBerita->urutan,
-            'youtube_id' => $videoBerita->youtube_id,
-            'google_drive_id' => $videoBerita->google_drive_id,
-            'video_type' => $videoBerita->video_type,
-            'embed_url' => $videoBerita->embed_url,
-            'youtube_thumbnail' => $videoBerita->youtube_thumbnail,
-            'video_source_name' => $videoBerita->video_source_name,
-        ];
-
         return Inertia::render('VideoBerita/edit', [
-            'videoBerita' => $videoData
+            'videoBerita' => $videoBerita,
         ]);
     }
 
@@ -161,31 +95,38 @@ class VideoBeritaController extends Controller
      */
     public function update(Request $request, VideoBerita $videoBerita)
     {
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-
-        $request->validate([
+        $validated = $request->validate([
             'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
+            'deskripsi' => 'nullable|string|max:1000',
             'video_url' => 'required|url',
             'thumbnail_url' => 'nullable|url',
             'sumber' => 'nullable|string|max:255',
             'tanggal_publish' => 'required|date',
             'is_active' => 'boolean',
-            'urutan' => 'integer|min:0'
+            'urutan' => 'nullable|integer|min:0',
         ]);
 
-        $videoBerita->update($request->all());
+        // Extract YouTube ID from URL
+        $youtubeId = $this->extractYoutubeId($validated['video_url']);
+        $embedUrl = $youtubeId ? "https://www.youtube.com/embed/{$youtubeId}" : null;
+        $youtubeThumbnail = $youtubeId ? "https://img.youtube.com/vi/{$youtubeId}/maxresdefault.jpg" : null;
+
+        $videoBerita->update([
+            'judul' => $validated['judul'],
+            'deskripsi' => $validated['deskripsi'],
+            'video_url' => $validated['video_url'],
+            'thumbnail_url' => $validated['thumbnail_url'],
+            'sumber' => $validated['sumber'],
+            'tanggal_publish' => $validated['tanggal_publish'],
+            'is_active' => $validated['is_active'],
+            'urutan' => $validated['urutan'],
+            'youtube_id' => $youtubeId,
+            'embed_url' => $embedUrl,
+            'youtube_thumbnail' => $youtubeThumbnail,
+        ]);
 
         return redirect()->route('video-berita.index')
-            ->with('success', 'Video berita berhasil diperbarui');
+            ->with('success', 'Video berita berhasil diperbarui!');
     }
 
     /**
@@ -193,47 +134,60 @@ class VideoBeritaController extends Controller
      */
     public function destroy(VideoBerita $videoBerita)
     {
-        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
-
         $videoBerita->delete();
 
         return redirect()->route('video-berita.index')
-            ->with('success', 'Video berita berhasil dihapus');
+            ->with('success', 'Video berita berhasil dihapus!');
     }
 
     /**
-     * Get active video berita for dashboard
+     * Toggle active status of video
+     */
+    public function toggleStatus(VideoBerita $videoBerita)
+    {
+        $videoBerita->update([
+            'is_active' => !$videoBerita->is_active
+        ]);
+
+        return back()->with('success', 
+            $videoBerita->is_active 
+                ? 'Video berita berhasil diaktifkan!' 
+                : 'Video berita berhasil dinonaktifkan!'
+        );
+    }
+
+    /**
+     * Get active videos for dashboard
      */
     public function getActiveVideos()
     {
-        $videos = VideoBerita::active()->ordered()->take(3)->get()->map(function ($video) {
-            return [
-                'id' => $video->id,
-                'judul' => $video->judul,
-                'deskripsi' => $video->deskripsi,
-                'video_url' => $video->video_url,
-                'thumbnail_url' => $video->thumbnail_url,
-                'sumber' => $video->sumber,
-                'tanggal_publish' => $video->tanggal_publish,
-                'is_active' => $video->is_active,
-                'urutan' => $video->urutan,
-                'youtube_id' => $video->youtube_id,
-                'google_drive_id' => $video->google_drive_id,
-                'video_type' => $video->video_type,
-                'embed_url' => $video->embed_url,
-                'youtube_thumbnail' => $video->youtube_thumbnail,
-                'video_source_name' => $video->video_source_name,
-            ];
-        });
-        
-        return response()->json($videos);
+        $activeVideos = VideoBerita::where('is_active', true)
+            ->orderBy('urutan', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->limit(6)
+            ->get();
+
+        return response()->json($activeVideos);
+    }
+
+    /**
+     * Extract YouTube ID from various YouTube URL formats
+     */
+    private function extractYoutubeId($url)
+    {
+        $patterns = [
+            '/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/',
+            '/youtu\.be\/([a-zA-Z0-9_-]+)/',
+            '/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/',
+            '/youtube\.com\/v\/([a-zA-Z0-9_-]+)/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $matches)) {
+                return $matches[1];
+            }
+        }
+
+        return null;
     }
 }

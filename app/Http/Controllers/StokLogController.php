@@ -6,18 +6,20 @@ use App\Models\StokLog;
 use App\Models\Barang;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class StokLogController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
 
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role->role ?? 'User'
                 ] : null
             ]);
         }
@@ -48,7 +50,7 @@ class StokLogController extends Controller
 
         // Transform the data to include user photo
         $stokLogs->getCollection()->transform(function ($stokLog) {
-            $stokLog->user_photo = $stokLog->user->photo;
+            $stokLog->user_photo = $stokLog->user ? $stokLog->user->photo : null;
             return $stokLog;
         });
 
@@ -63,13 +65,14 @@ class StokLogController extends Controller
 
     public function show($id)
     {
+        $user = Auth::user();
 
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role->role ?? 'User'
                 ] : null
             ]);
         }
@@ -83,12 +86,13 @@ class StokLogController extends Controller
 
     public function barang($barangId)
     {
+        $user = Auth::user();
 
-        if (!auth()->user()->isAdmin()) {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role->role ?? 'User'
                 ] : null
             ]);
         }
@@ -98,6 +102,12 @@ class StokLogController extends Controller
             ->with(['user'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // Tambahkan user_photo ke setiap stokLog
+        $stokLogs->getCollection()->transform(function ($stokLog) {
+            $stokLog->user_photo = $stokLog->user ? $stokLog->user->photo : null;
+            return $stokLog;
+        });
 
         return Inertia::render('stok-log/barang', [
             'barang' => $barang,

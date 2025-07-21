@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Clock, Users, AlertCircle, Sparkles, ArrowUpRight, Star, Database, FileText, Settings, Activity, TrendingUp, BarChart3, PieChart } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ChartComponent from '@/components/ChartComponent.vue';
-import VideoBeritaCard from '@/components/VideoBeritaCard.vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -83,7 +82,7 @@ const iconMap = {
 };
 
 const stats = computed<StatItem[]>(() => {
-  const pageStats = page.props.stats as StatItem[] || [];
+  const pageStats = (page.props.stats as StatItem[]) || [];
   return pageStats.map(stat => {
     if (stat.title === 'Total Kategori') {
       return {
@@ -100,7 +99,11 @@ const stats = computed<StatItem[]>(() => {
 });
 
 const recentActivities = computed<ActivityItem[]>(() => {
-  return page.props.recentActivities as ActivityItem[] || [
+  const activities = page.props.recentActivities as ActivityItem[] | undefined;
+  if (activities && activities.length > 0) {
+    return activities;
+  }
+  return [
     {
       title: 'Tidak ada aktivitas',
       description: 'Belum ada aktivitas terbaru.',
@@ -111,7 +114,6 @@ const recentActivities = computed<ActivityItem[]>(() => {
 
 const videoBeritas = computed<VideoBerita[]>(() => {
   const videos = page.props.videoBeritas as VideoBerita[] || [];
-  console.log('Dashboard - videoBeritas:', videos);
   return videos;
 });
 
@@ -120,7 +122,11 @@ const showVideoModal = ref(false);
 const selectedVideo = ref<VideoBerita | null>(null);
 
 function openVideoModal(video: VideoBerita) {
-  selectedVideo.value = video;
+  let embedUrl = video.embed_url;
+  if (embedUrl) {
+    embedUrl += embedUrl.includes('?') ? '&autoplay=1' : '?autoplay=1';
+  }
+  selectedVideo.value = { ...video, embed_url: embedUrl };
   showVideoModal.value = true;
 }
 
@@ -132,21 +138,21 @@ function closeVideoModal() {
 // Chart data for barang masuk (items in)
 const barangMasukChart = computed(() => {
   const chartData = (page.props.chartData as ChartData)?.barangMasuk || [];
-  
+
   // Create month labels for the last 12 months
   const monthLabels: string[] = [];
   const monthData: number[] = [];
-  
+
   for (let i = 11; i >= 0; i--) {
     const date = new Date();
     date.setMonth(date.getMonth() - i);
     const month = date.getMonth() + 1;
     const year = date.getFullYear();
-    
+
     monthLabels.push(`${month}/${year}`);
-    
+
     // Find data for this month
-    const monthDataItem = chartData.find((item: ChartDataItem) => 
+    const monthDataItem = chartData.find((item: ChartDataItem) =>
       item.month === month && item.year === year
     );
     monthData.push(monthDataItem ? monthDataItem.total : 0);
@@ -227,9 +233,9 @@ const barangMasukChart = computed(() => {
 // Chart data for frequently requested items
 const frequentlyRequestedChart = computed(() => {
   const chartData = (page.props.chartData as ChartData)?.seringDiminta || [];
-  
+
   // If no data, show empty state
-  if (chartData.length === 0) {
+  if (!chartData || chartData.length === 0) {
     return {
       type: 'bar' as const,
       data: {
@@ -255,7 +261,7 @@ const frequentlyRequestedChart = computed(() => {
       }
     };
   }
-  
+
   return {
     type: 'bar' as const,
     data: {
@@ -306,9 +312,9 @@ const frequentlyRequestedChart = computed(() => {
 // Chart data for frequently borrowed items
 const frequentlyBorrowedChart = computed(() => {
   const chartData = (page.props.chartData as ChartData)?.seringDipinjam || [];
-  
+
   // If no data, show empty state
-  if (chartData.length === 0) {
+  if (!chartData || chartData.length === 0) {
     return {
       type: 'doughnut' as const,
       data: {
@@ -323,7 +329,7 @@ const frequentlyBorrowedChart = computed(() => {
       options: {
         tooltips: {
           callbacks: {
-            label: function(tooltipItem: any, data: any) {
+            label: function() {
               return 'Belum ada data pinjaman';
             }
           }
@@ -331,7 +337,7 @@ const frequentlyBorrowedChart = computed(() => {
       }
     };
   }
-  
+
   return {
     type: 'doughnut' as const,
     data: {
@@ -363,8 +369,9 @@ const frequentlyBorrowedChart = computed(() => {
           label: function(tooltipItem: any, data: any) {
             const dataset = data.datasets[tooltipItem.datasetIndex];
             const total = dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = ((dataset.data[tooltipItem.index] / total) * 100).toFixed(1);
-            return data.labels[tooltipItem.index] + ': ' + dataset.data[tooltipItem.index] + ' pinjaman (' + percentage + '%)';
+            const value = dataset.data[tooltipItem.index];
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+            return data.labels[tooltipItem.index] + ': ' + value + ' pinjaman (' + percentage + '%)';
           }
         }
       }
@@ -378,7 +385,8 @@ const frequentlyBorrowedChart = computed(() => {
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="min-h-screen bg-gradient-to-br from-[#F0F8FF] via-[#E6F3FF] to-[#F0FFF0] py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
-      
+
+
       <!-- Welcome -->
       <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#20B2AA] via-[#87CEEB] to-[#98FB98] p-8 text-white shadow-2xl backdrop-blur-xl border border-[#B0C4DE] animate-gradient-x">
         <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/20 blur-3xl animate-pulse"></div>
@@ -436,9 +444,9 @@ const frequentlyBorrowedChart = computed(() => {
             </CardTitle>
           </CardHeader>
           <CardContent class="p-6">
-            <ChartComponent 
-              chartId="barangMasukChart" 
-              :chartData="barangMasukChart" 
+            <ChartComponent
+              chartId="barangMasukChart"
+              :chartData="barangMasukChart"
             />
           </CardContent>
         </Card>
@@ -452,9 +460,9 @@ const frequentlyBorrowedChart = computed(() => {
             </CardTitle>
           </CardHeader>
           <CardContent class="p-6">
-            <ChartComponent 
-              chartId="frequentlyRequestedChart" 
-              :chartData="frequentlyRequestedChart" 
+            <ChartComponent
+              chartId="frequentlyRequestedChart"
+              :chartData="frequentlyRequestedChart"
             />
           </CardContent>
         </Card>
@@ -468,9 +476,9 @@ const frequentlyBorrowedChart = computed(() => {
             </CardTitle>
           </CardHeader>
           <CardContent class="p-6">
-            <ChartComponent 
-              chartId="frequentlyBorrowedChart" 
-              :chartData="frequentlyBorrowedChart" 
+            <ChartComponent
+              chartId="frequentlyBorrowedChart"
+              :chartData="frequentlyBorrowedChart"
             />
           </CardContent>
         </Card>
@@ -494,7 +502,7 @@ const frequentlyBorrowedChart = computed(() => {
               class="cursor-pointer rounded-2xl overflow-hidden shadow-lg border border-[#B0C4DE] bg-white/90 hover:scale-105 transition-all duration-300"
               @click="openVideoModal(video)"
             >
-              <div class="relative aspect-video bg-black">
+              <div class="relative aspect-video bg-black overflow-hidden">
                 <img
                   v-if="video.thumbnail_url || video.youtube_thumbnail"
                   :src="video.thumbnail_url || video.youtube_thumbnail"

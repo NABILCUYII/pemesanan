@@ -13,27 +13,29 @@ class PeminjamanController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         // If user is admin, show all loans
         // If user is regular user, show only their loans
         $peminjaman = Peminjaman::with(['user', 'barang'])
-            ->when(!$user->isAdmin(), function ($query) use ($user) {
-                return $query->where('user_id', $user->id);
+            ->when(!$user || !$user->isAdmin(), function ($query) use ($user) {
+                return $query->where('user_id', $user ? $user->id : null);
             })
             ->latest()
             ->get();
-        
-        $grouped = $peminjaman->groupBy('user.name');
-        
-        $result = $grouped->map(function ($items, $userName) {
+
+        // Group by user id to avoid issues if user name is not unique or user is null
+        $grouped = $peminjaman->groupBy('user_id');
+
+        $result = $grouped->map(function ($items, $userId) {
             $firstItem = $items->first();
+            $user = $firstItem->user;
             return [
-                'user' => $userName,
-                'user_photo' => $firstItem->user->photo,
+                'user' => $user ? $user->name : 'Tidak diketahui',
+                'user_photo' => $user ? $user->photo : null,
                 'items' => $items->map(function ($item) {
                     return [
-                        'nama_barang' => $item->barang->nama_barang,
-                        'kode_barang' => $item->barang->kode_barang,
+                        'nama_barang' => $item->barang ? $item->barang->nama_barang : null,
+                        'kode_barang' => $item->barang ? $item->barang->kode_barang : null,
                         'jumlah' => $item->jumlah,
                         'status' => $item->status,
                         'id' => $item->id,
@@ -50,10 +52,10 @@ class PeminjamanController extends Controller
                 })->values()
             ];
         })->values();
-        
+
         return Inertia::render('peminjaman/index', [
             'peminjaman' => $result,
-            'isAdmin' => $user->isAdmin()
+            'isAdmin' => $user ? $user->isAdmin() : false
         ]);
     }
 
@@ -72,8 +74,9 @@ class PeminjamanController extends Controller
             'jumlah' => 'required|integer|min:1',
             'keterangan' => 'nullable|string|max:500',
             'due_date' => 'required|date|after_or_equal:today',
-            
         ]);
+
+        $user = auth()->user();
 
         Peminjaman::create([
             'barang_id' => $request->barang_id,
@@ -82,7 +85,7 @@ class PeminjamanController extends Controller
             'tanggal_peminjaman' => now(), // Tanggal peminjaman otomatis saat ini
             'tanggal_pengembalian' => $request->tanggal_pengembalian,
             'due_date' => $request->due_date,
-            'user_id' => auth()->id(),
+            'user_id' => $user ? $user->id : null,
             'status' => 'pending'
         ]);
 
@@ -92,12 +95,13 @@ class PeminjamanController extends Controller
 
     public function approve(Request $request)
     {
+        $user = auth()->user();
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!$user || !$user->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role ?? 'User'
                 ] : null
             ]);
         }
@@ -112,52 +116,52 @@ class PeminjamanController extends Controller
         DB::beginTransaction();
         try {
             $peminjaman = Peminjaman::findOrFail($request->peminjaman_id);
-            
+
             if ($request->action === 'approve') {
                 $barang = $peminjaman->barang;
-                
+
                 if ($barang->stok < $peminjaman->jumlah) {
                     throw new \Exception('Stok tidak mencukupi');
                 }
-                
+
                 $peminjaman->update([
                     'status' => 'approved',
                     'alasan_approval' => $request->alasan,
                     'catatan_approval' => $request->catatan,
-                    'approved_by' => auth()->id(),
+                    'approved_by' => $user->id,
                     'approved_at' => now()
                 ]);
-                
+
                 // Menggunakan sistem log stok
-                $keterangan = "Peminjaman disetujui oleh " . auth()->user()->name;
+                $keterangan = "Peminjaman disetujui oleh " . $user->name;
                 if ($request->catatan) {
                     $keterangan .= " - " . $request->catatan;
                 }
-                
+
                 $barang->addStokLog(
-                    'keluar', 
-                    $peminjaman->jumlah, 
+                    'keluar',
+                    $peminjaman->jumlah,
                     $keterangan,
                     "Peminjaman #" . $peminjaman->id,
                     $peminjaman->user_id
                 );
-                
+
                 $message = 'Peminjaman berhasil disetujui';
             } else {
                 $peminjaman->update([
                     'status' => 'rejected',
                     'alasan_approval' => $request->alasan,
                     'catatan_approval' => $request->catatan,
-                    'approved_by' => auth()->id(),
+                    'approved_by' => $user->id,
                     'approved_at' => now()
                 ]);
-                
+
                 $message = 'Peminjaman berhasil ditolak';
             }
-            
+
             DB::commit();
             return redirect()->back()->with('message', $message);
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', $e->getMessage());
@@ -166,12 +170,13 @@ class PeminjamanController extends Controller
 
     public function edit(Peminjaman $peminjaman)
     {
+        $user = auth()->user();
         // Check if user is authorized to edit this peminjaman
-        if (auth()->id() !== $peminjaman->user_id && !auth()->user()->isAdmin()) {
+        if ((!$user || $user->id !== $peminjaman->user_id) && (!$user || !$user->isAdmin())) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role ?? 'User'
                 ] : null
             ]);
         }
@@ -191,12 +196,13 @@ class PeminjamanController extends Controller
 
     public function update(Request $request, Peminjaman $peminjaman)
     {
+        $user = auth()->user();
         // Check if user is authorized to update this peminjaman
-        if (auth()->id() !== $peminjaman->user_id && !auth()->user()->isAdmin()) {
+        if ((!$user || $user->id !== $peminjaman->user_id) && (!$user || !$user->isAdmin())) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role ?? 'User'
                 ] : null
             ]);
         }
@@ -229,12 +235,13 @@ class PeminjamanController extends Controller
 
     public function destroy(Peminjaman $peminjaman)
     {
+        $user = auth()->user();
         // Check if user is authorized to delete this peminjaman
-        if (auth()->id() !== $peminjaman->user_id && !auth()->user()->isAdmin()) {
+        if ((!$user || $user->id !== $peminjaman->user_id) && (!$user || !$user->isAdmin())) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role ?? 'User'
                 ] : null
             ]);
         }
@@ -249,7 +256,7 @@ class PeminjamanController extends Controller
         try {
             $peminjaman->delete();
             DB::commit();
-            
+
             return redirect()->route('peminjaman.index')
                 ->with('message', 'Peminjaman berhasil dihapus');
         } catch (\Exception $e) {
@@ -260,12 +267,13 @@ class PeminjamanController extends Controller
 
     public function startProgress(Peminjaman $peminjaman)
     {
+        $user = auth()->user();
         // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
+        if (!$user || !$user->isAdmin()) {
             return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'role' => $user->role ?? 'User'
                 ] : null
             ]);
         }
@@ -280,15 +288,15 @@ class PeminjamanController extends Controller
             $peminjaman->update([
                 'status' => 'in_progress',
                 'started_at' => now(),
-                'started_by' => auth()->id()
+                'started_by' => $user->id
             ]);
 
             // Buat log stok untuk menandakan peminjaman dimulai
             $barang = $peminjaman->barang;
-            $keterangan = "Proses peminjaman dimulai oleh " . auth()->user()->name;
-            
+            $keterangan = "Proses peminjaman dimulai oleh " . $user->name;
+
             $barang->addStokLog(
-                'keluar', 
+                'keluar',
                 0, // Tidak ada perubahan stok, hanya log
                 $keterangan,
                 "Proses Peminjaman #" . $peminjaman->id,
@@ -297,7 +305,7 @@ class PeminjamanController extends Controller
 
             DB::commit();
             return redirect()->back()->with('success', 'Proses peminjaman berhasil dimulai!');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memulai proses peminjaman: ' . $e->getMessage());
@@ -322,6 +330,7 @@ class PeminjamanController extends Controller
 
     public function processReturn(Request $request, Peminjaman $peminjaman)
     {
+        $user = auth()->user();
         // Validasi input
         $request->validate([
             'tanggal_pengembalian' => 'required|date|after_or_equal:' . $peminjaman->tanggal_peminjaman,
@@ -345,7 +354,7 @@ class PeminjamanController extends Controller
             'catatan_pengembalian' => $request->catatan_pengembalian,
             'jumlah_dikembalikan' => $jumlahDikembalikan,
             'returned_at' => now(),
-            'returned_by' => auth()->id()
+            'returned_by' => $user ? $user->id : null
         ]);
 
         // Update stok barang dan buat log
@@ -354,7 +363,7 @@ class PeminjamanController extends Controller
         if ($request->catatan_pengembalian) {
             $keterangan .= " - " . $request->catatan_pengembalian;
         }
-        
+
         $barang->addStokLog(
             'masuk',
             $jumlahDikembalikan,
@@ -373,11 +382,12 @@ class PeminjamanController extends Controller
             ->orderBy('returned_at', 'desc')
             ->get()
             ->map(function ($peminjaman) {
+                $user = $peminjaman->user;
                 return [
                     'id' => $peminjaman->id,
-                    'nama_barang' => $peminjaman->barang->nama_barang,
-                    'kode_barang' => $peminjaman->barang->kode_barang,
-                    'nama_peminjam' => $peminjaman->user->name,
+                    'nama_barang' => $peminjaman->barang ? $peminjaman->barang->nama_barang : null,
+                    'kode_barang' => $peminjaman->barang ? $peminjaman->barang->kode_barang : null,
+                    'nama_peminjam' => $user ? $user->name : 'Tidak diketahui',
                     'jumlah' => $peminjaman->jumlah,
                     'jumlah_dikembalikan' => $peminjaman->jumlah_dikembalikan,
                     'kondisi_barang' => $peminjaman->kondisi_barang,
@@ -400,6 +410,6 @@ class PeminjamanController extends Controller
             return 0; // Tidak ada stok yang dikembalikan
         } else {
             return $peminjaman->jumlah; // 100% stok kembali
-        } 
+        }
     }
 }

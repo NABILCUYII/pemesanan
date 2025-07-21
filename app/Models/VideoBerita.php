@@ -9,8 +9,6 @@ class VideoBerita extends Model
 {
     use HasFactory;
 
-    protected $table = 'video_beritas';
-
     protected $fillable = [
         'judul',
         'deskripsi',
@@ -19,12 +17,16 @@ class VideoBerita extends Model
         'sumber',
         'tanggal_publish',
         'is_active',
-        'urutan'
+        'urutan',
+        'youtube_id',
+        'embed_url',
+        'youtube_thumbnail',
     ];
 
     protected $casts = [
         'tanggal_publish' => 'date',
         'is_active' => 'boolean',
+        'urutan' => 'integer',
     ];
 
     /**
@@ -40,127 +42,58 @@ class VideoBerita extends Model
      */
     public function scopeOrdered($query)
     {
-        return $query->orderBy('urutan', 'asc')->orderBy('tanggal_publish', 'desc');
+        return $query->orderBy('urutan', 'asc')->orderBy('created_at', 'desc');
     }
 
     /**
-     * Get video ID from YouTube URL
+     * Get formatted tanggal publish
      */
-    public function getYoutubeIdAttribute()
+    public function getFormattedTanggalPublishAttribute()
     {
-        $url = $this->video_url;
-        
-        // Handle different YouTube URL formats
-        if (preg_match('/youtube\.com\/watch\?v=([^&]+)/', $url, $matches)) {
-            return $matches[1];
+        return $this->tanggal_publish->format('d F Y');
+    }
+
+    /**
+     * Get YouTube embed URL
+     */
+    public function getEmbedUrlAttribute($value)
+    {
+        if ($value) {
+            return $value;
         }
-        
-        if (preg_match('/youtu\.be\/([^?]+)/', $url, $matches)) {
-            return $matches[1];
+
+        if ($this->youtube_id) {
+            return "https://www.youtube.com/embed/{$this->youtube_id}";
         }
-        
-        if (preg_match('/youtube\.com\/embed\/([^?]+)/', $url, $matches)) {
-            return $matches[1];
-        }
-        
+
         return null;
     }
 
     /**
-     * Get Google Drive file ID from URL
+     * Get YouTube thumbnail URL
      */
-    public function getGoogleDriveIdAttribute()
+    public function getYoutubeThumbnailAttribute($value)
     {
-        $url = $this->video_url;
-        
-        // Handle Google Drive sharing URLs
-        if (preg_match('/drive\.google\.com\/file\/d\/([^\/]+)/', $url, $matches)) {
-            return $matches[1];
+        if ($value) {
+            return $value;
         }
-        
-        if (preg_match('/drive\.google\.com\/open\?id=([^&]+)/', $url, $matches)) {
-            return $matches[1];
+
+        if ($this->youtube_id) {
+            return "https://img.youtube.com/vi/{$this->youtube_id}/maxresdefault.jpg";
         }
-        
-        if (preg_match('/docs\.google\.com\/uc\?id=([^&]+)/', $url, $matches)) {
-            return $matches[1];
-        }
-        
+
         return null;
     }
 
     /**
-     * Get video type (youtube, googledrive, or other)
+     * Get thumbnail URL (custom or YouTube)
      */
-    public function getVideoTypeAttribute()
+    public function getThumbnailUrlAttribute($value)
     {
-        $url = $this->video_url;
-        
-        if (strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false) {
-            return 'youtube';
+        if ($value) {
+            return $value;
         }
-        
-        if (strpos($url, 'drive.google.com') !== false || strpos($url, 'docs.google.com') !== false) {
-            return 'googledrive';
-        }
-        
-        return 'other';
-    }
 
-    /**
-     * Get embed URL for video
-     */
-    public function getEmbedUrlAttribute()
-    {
-        $videoType = $this->video_type;
-        
-        if ($videoType === 'youtube') {
-            $videoId = $this->youtube_id;
-            return $videoId ? "https://www.youtube.com/embed/{$videoId}" : null;
-        }
-        
-        if ($videoType === 'googledrive') {
-            $fileId = $this->google_drive_id;
-            return $fileId ? "https://drive.google.com/file/d/{$fileId}/preview" : null;
-        }
-        
-        return null;
-    }
-
-    /**
-     * Get thumbnail URL for video
-     */
-    public function getYoutubeThumbnailAttribute()
-    {
-        $videoType = $this->video_type;
-        
-        if ($videoType === 'youtube') {
-            $videoId = $this->youtube_id;
-            return $videoId ? "https://img.youtube.com/vi/{$videoId}/maxresdefault.jpg" : null;
-        }
-        
-        if ($videoType === 'googledrive') {
-            // Google Drive doesn't provide direct thumbnail URLs, so we'll use a default
-            return '/images/google-drive-thumbnail.jpg';
-        }
-        
-        return null;
-    }
-
-    /**
-     * Get video source name for display
-     */
-    public function getVideoSourceNameAttribute()
-    {
-        $videoType = $this->video_type;
-        
-        switch ($videoType) {
-            case 'youtube':
-                return 'YouTube';
-            case 'googledrive':
-                return 'Google Drive';
-            default:
-                return 'Video';
-        }
+        return $this->youtube_thumbnail;
     }
 }

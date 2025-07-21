@@ -28,11 +28,10 @@ const props = withDefaults(defineProps<Props>(), {
 const page = usePage();
 const auth = computed(() => page.props.auth);
 
-const isCurrentRoute = computed(() => (url: string) => page.url === url);
+const isCurrentRoute = (url: string) => page.url === url;
 
-const activeItemStyles = computed(
-    () => (url: string) => (isCurrentRoute.value(url) ? 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100' : ''),
-);
+const activeItemStyles = (url: string) =>
+    isCurrentRoute(url) ? 'text-primary font-semibold dark:bg-neutral-800 dark:text-primary' : '';
 
 const mainNavItems: NavItem[] = [
     {
@@ -62,7 +61,7 @@ const rightNavItems: NavItem[] = [
 </script>
 
 <template>
-    <div>
+    <header class="bg-white/80 dark:bg-neutral-950/80 backdrop-blur sticky top-0 z-30 shadow-sm">
         <div class="border-b border-sidebar-border/80">
             <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                 <!-- Mobile Menu -->
@@ -83,9 +82,9 @@ const rightNavItems: NavItem[] = [
                                     <Link
                                         v-for="item in mainNavItems"
                                         :key="item.title"
-                                        :href="item.href"
-                                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
-                                        :class="activeItemStyles(item.href)"
+                                        :href="item.href!"
+                                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition"
+                                        :class="activeItemStyles(item.href!)"
                                     >
                                         <component v-if="item.icon" :is="item.icon" class="h-5 w-5" />
                                         {{ item.title }}
@@ -98,7 +97,7 @@ const rightNavItems: NavItem[] = [
                                         :href="item.href"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        class="flex items-center space-x-2 text-sm font-medium"
+                                        class="flex items-center space-x-2 text-sm font-medium hover:text-primary transition"
                                     >
                                         <component v-if="item.icon" :is="item.icon" class="h-5 w-5" />
                                         <span>{{ item.title }}</span>
@@ -114,25 +113,29 @@ const rightNavItems: NavItem[] = [
                 </Link>
 
                 <!-- Desktop Menu -->
-                <div class="hidden h-full lg:flex lg:flex-1">
+                <nav class="hidden h-full lg:flex lg:flex-1">
                     <NavigationMenu class="ml-10 flex h-full items-stretch">
                         <NavigationMenuList class="flex h-full items-stretch space-x-2">
-                            <NavigationMenuItem v-for="(item, index) in mainNavItems" :key="index" class="relative flex h-full items-center">
+                            <NavigationMenuItem
+                                v-for="(item, index) in mainNavItems"
+                                :key="index"
+                                class="relative flex h-full items-center"
+                            >
                                 <Link
-                                    :class="[navigationMenuTriggerStyle(), activeItemStyles(item.href), 'h-9 cursor-pointer px-3']"
-                                    :href="item.href"
+                                    :class="[navigationMenuTriggerStyle(), activeItemStyles(item.href!), 'h-9 cursor-pointer px-3 transition']"
+                                    :href="item.href!"
                                 >
                                     <component v-if="item.icon" :is="item.icon" class="mr-2 h-4 w-4" />
                                     {{ item.title }}
                                 </Link>
                                 <div
-                                    v-if="isCurrentRoute(item.href)"
-                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
+                                    v-if="isCurrentRoute(item.href!)"
+                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-primary dark:bg-primary"
                                 ></div>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
-                </div>
+                </nav>
 
                 <div class="ml-auto flex items-center space-x-2">
                     <div class="relative flex items-center space-x-1">
@@ -184,11 +187,55 @@ const rightNavItems: NavItem[] = [
             </div>
         </div>
 
-        <div v-if="props.breadcrumbs.length > 1" class="flex w-full border-b border-sidebar-border/70">
-            <div class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
+        <transition name="fade">
+            <div
+                v-if="props.breadcrumbs.length > 1"
+                class="flex w-full border-b border-sidebar-border/70 bg-white/70 dark:bg-neutral-950/70 backdrop-blur"
+            >
+                <div class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
+                    <Breadcrumbs :breadcrumbs="breadcrumbs" />
+                </div>
             </div>
+        </transition>
+
+        <div class="header-clock">
+            <DateTimeInfo />
         </div>
-    </div>
+    </header>
 </template>
 
+<style scoped>
+.header-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: auto;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+.clock-time {
+  font-size: 1.2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.clock-date {
+  font-size: 0.95rem;
+  color: #666;
+}
+@media (max-width: 600px) {
+  .header-clock {
+    font-size: 0.85rem;
+  }
+  .clock-time {
+    font-size: 1rem;
+  }
+}
+/* Fade transition for breadcrumbs */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.25s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style>

@@ -12,9 +12,8 @@
             <p class="text-[#708090]">Kelola video berita untuk ditampilkan di dashboard</p>
           </div>
           <Link
-            v-if="user?.role === 'admin'"
             :href="route('video-berita.create')"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] text-white rounded-lg hover:from-[#FF5252] hover:to-[#26A69A] transition-all duration-300"
           >
             <Plus class="h-4 w-4" />
             Tambah Video
@@ -23,41 +22,34 @@
       </div>
 
       <!-- Video Grid -->
-      <div v-if="videoBeritas.length === 0" class="text-center py-16">
-        <div class="text-gray-500 mb-4">
-          <Play class="h-16 w-16 mx-auto opacity-50" />
-        </div>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Belum ada video berita</h3>
-        <p class="text-gray-600 mb-6">Mulai dengan menambahkan video berita pertama Anda</p>
-        <Link
-          v-if="user?.role === 'admin'"
-          :href="route('video-berita.create')"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] text-white rounded-lg hover:shadow-lg transition-all duration-300"
-        >
-          <Plus class="h-4 w-4" />
-          Tambah Video Pertama
-        </Link>
-      </div>
-
-      <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card
-          v-for="video in videoBeritas"
+          v-for="video in videoBeritas.data"
           :key="video.id"
-          class="group relative overflow-hidden rounded-2xl border border-[#B0C4DE] bg-white/80 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+          class="group relative overflow-hidden rounded-2xl border border-[#B0C4DE] bg-white/80 shadow-lg backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-xl"
         >
-          <!-- Video Thumbnail -->
-          <div class="relative aspect-video overflow-hidden">
-            <img 
-              :src="video.thumbnail_url || video.youtube_thumbnail" 
+          <!-- Thumbnail -->
+          <div class="relative aspect-video bg-black overflow-hidden">
+            <img
+              v-if="video.thumbnail_url || video.youtube_thumbnail"
+              :src="video.thumbnail_url || video.youtube_thumbnail"
               :alt="video.judul"
-              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              @error="handleImageError"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
-            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
+            <div v-else class="w-full h-full bg-gradient-to-br from-[#20B2AA] to-[#87CEEB] flex items-center justify-center">
+              <Play class="w-16 h-16 text-white/80" />
+            </div>
             
+            <!-- Play Button Overlay -->
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div class="bg-black/50 rounded-full p-4">
+                <Play class="w-8 h-8 text-white" />
+              </div>
+            </div>
+
             <!-- Status Badge -->
-            <div class="absolute top-2 left-2">
-              <span 
+            <div class="absolute top-2 right-2">
+              <span
                 :class="[
                   'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
                   video.is_active 
@@ -68,101 +60,150 @@
                 {{ video.is_active ? 'Aktif' : 'Nonaktif' }}
               </span>
             </div>
-            
-            <!-- Order Badge -->
-            <div class="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-              Urutan: {{ video.urutan }}
-            </div>
           </div>
-          
-          <!-- Video Info -->
+
+          <!-- Content -->
           <CardContent class="p-6">
-            <h3 class="font-semibold text-[#2F4F4F] text-lg mb-2 line-clamp-2 group-hover:text-[#20B2AA] transition-colors duration-300">
-              {{ video.judul }}
-            </h3>
+            <h3 class="text-lg font-bold text-[#2F4F4F] mb-2 line-clamp-2">{{ video.judul }}</h3>
+            <p v-if="video.deskripsi" class="text-sm text-[#708090] mb-3 line-clamp-2">{{ video.deskripsi }}</p>
             
-            <p v-if="video.deskripsi" class="text-sm text-[#708090] line-clamp-3 mb-4">
-              {{ video.deskripsi }}
-            </p>
-            
+            <!-- Meta Info -->
             <div class="space-y-2 mb-4">
               <div class="flex items-center gap-2 text-xs text-[#B0C4DE]">
-                <span v-if="video.sumber">Sumber: {{ video.sumber }}</span>
+                <Calendar class="w-3 h-3" />
+                <span>{{ formatDate(video.tanggal_publish) }}</span>
+              </div>
+              <div v-if="video.sumber" class="flex items-center gap-2 text-xs text-[#B0C4DE]">
+                <User class="w-3 h-3" />
+                <span>{{ video.sumber }}</span>
               </div>
               <div class="flex items-center gap-2 text-xs text-[#B0C4DE]">
-                <span>Publish: {{ formatDate(video.tanggal_publish) }}</span>
+                <Hash class="w-3 h-3" />
+                <span>Urutan: {{ video.urutan }}</span>
               </div>
             </div>
-            
-            <!-- Action Buttons -->
+
+            <!-- Actions -->
             <div class="flex items-center gap-2">
-              <button 
-                @click="playVideo(video)"
-                class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] text-white rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-105"
+              <Button
+                @click="openVideoModal(video)"
+                variant="outline"
+                size="sm"
+                class="flex-1"
               >
-                <Play class="h-4 w-4" />
-                Putar
-              </button>
+                <Eye class="h-3 w-3 mr-1" />
+                Tonton
+              </Button>
               
-              <Link
-                v-if="user?.role === 'admin'"
-                :href="route('video-berita.edit', video.id)"
-                class="inline-flex items-center justify-center p-2 bg-[#98FB98] text-[#2F4F4F] rounded-lg hover:bg-[#90EE90] transition-colors duration-300"
-              >
-                <Edit class="h-4 w-4" />
-              </Link>
-              
-              <button 
-                v-if="user?.role === 'admin'"
-                @click="deleteVideo(video)"
-                class="inline-flex items-center justify-center p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors duration-300"
-              >
-                <Trash2 class="h-4 w-4" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical class="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem @click="openVideoModal(video)">
+                    <Eye class="h-3 w-3 mr-2" />
+                    Tonton Video
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="editVideo(video)">
+                    <Edit class="h-3 w-3 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="toggleStatus(video)">
+                    <ToggleLeft class="h-3 w-3 mr-2" />
+                    {{ video.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem @click="deleteVideo(video)" class="text-red-600">
+                    <Trash2 class="h-3 w-3 mr-2" />
+                    Hapus
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardContent>
         </Card>
       </div>
-      
-      <!-- Video Modal -->
-      <Dialog :open="showVideoModal" @update:open="showVideoModal = false">
-        <DialogContent class="max-w-6xl sm:max-w-5xl w-full">
-          <DialogHeader>
-            <DialogTitle class="text-2xl">{{ selectedVideo?.judul }}</DialogTitle>
-            <DialogDescription v-if="selectedVideo?.deskripsi" class="text-base">
-              {{ selectedVideo.deskripsi }}
-            </DialogDescription>
-          </DialogHeader>
-          <div class="space-y-6">
-            <div class="aspect-video">
-              <iframe
-                v-if="selectedVideo?.embed_url"
-                :src="selectedVideo.embed_url"
-                class="w-full h-full rounded-xl"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-              ></iframe>
-            </div>
 
-            <div class="flex items-center justify-between text-sm text-gray-500">
-              <span v-if="selectedVideo?.sumber">Sumber: {{ selectedVideo.sumber }}</span>
-              <span>{{ formatDate(selectedVideo?.tanggal_publish) }}</span>
+      <!-- Pagination -->
+      <div v-if="videoBeritas.links && videoBeritas.links.length > 3" class="mt-8 flex justify-center">
+        <nav class="flex items-center gap-1">
+          <Link
+            v-for="link in videoBeritas.links"
+            :key="link.label"
+            :href="link.url"
+            :class="[
+              'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              link.active
+                ? 'bg-[#20B2AA] text-white'
+                : 'text-[#2F4F4F] hover:bg-[#F0F8FF]'
+            ]"
+            v-html="link.label"
+          />
+        </nav>
+      </div>
+
+      <!-- Video Modal -->
+      <transition name="fade">
+        <div
+          v-if="showVideoModal"
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          @click.self="closeVideoModal"
+        >
+          <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 p-0 overflow-hidden relative">
+            <button
+              class="absolute top-4 right-4 z-10 bg-[#20B2AA] text-white rounded-full p-2 hover:bg-[#178d87] transition"
+              @click="closeVideoModal"
+            >
+              <X class="h-6 w-6" />
+            </button>
+            <div class="w-full aspect-video bg-black flex items-center justify-center">
+              <template v-if="selectedVideo">
+                <iframe
+                  v-if="selectedVideo.embed_url"
+                  :src="selectedVideo.embed_url"
+                  frameborder="0"
+                  allowfullscreen
+                  class="w-full h-full"
+                ></iframe>
+                <video
+                  v-else
+                  :src="selectedVideo.video_url"
+                  controls
+                  class="w-full h-full"
+                ></video>
+              </template>
+            </div>
+            <div class="p-6">
+              <h3 class="text-2xl font-bold text-[#2F4F4F] mb-2">{{ selectedVideo?.judul }}</h3>
+              <p class="text-base text-[#708090] mb-2">{{ selectedVideo?.deskripsi }}</p>
+              <div class="flex items-center justify-between text-xs text-[#B0C4DE]">
+                <span>{{ formatDate(selectedVideo?.tanggal_publish) }}</span>
+                <span v-if="selectedVideo?.sumber">Sumber: {{ selectedVideo?.sumber }}</span>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </transition>
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Play, Plus, Edit, Trash2 } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Plus, Play, Eye, Edit, Trash2, MoreVertical, Calendar, User, Hash, ToggleLeft, X } from 'lucide-vue-next';
 import { type BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -191,43 +232,66 @@ interface VideoBerita {
   youtube_thumbnail?: string;
 }
 
-interface Props {
-  videoBeritas: VideoBerita[];
+interface PaginatedData {
+  data: VideoBerita[];
+  links: any[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
 }
 
-const props = defineProps<Props>();
+const props = defineProps<{
+  videoBeritas: PaginatedData;
+}>();
 
-const page = usePage();
-const user = computed(() => page.props.auth?.user);
-
+// Modal logic
 const showVideoModal = ref(false);
 const selectedVideo = ref<VideoBerita | null>(null);
 
-const playVideo = (video: VideoBerita) => {
+function openVideoModal(video: VideoBerita) {
   selectedVideo.value = video;
   showVideoModal.value = true;
-};
+}
 
-const deleteVideo = (video: VideoBerita) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus video "${video.judul}"?`)) {
-    router.delete(route('video-berita.destroy', video.id));
+function closeVideoModal() {
+  showVideoModal.value = false;
+  selectedVideo.value = null;
+}
+
+function editVideo(video: VideoBerita) {
+  router.visit(route('video-berita.edit', video.id));
+}
+
+function toggleStatus(video: VideoBerita) {
+  router.patch(route('video-berita.toggle-status', video.id), {}, {
+    onSuccess: () => {
+      // Refresh the page to update the status
+      router.reload();
+    },
+  });
+}
+
+function deleteVideo(video: VideoBerita) {
+  if (confirm('Apakah Anda yakin ingin menghapus video ini?')) {
+    router.delete(route('video-berita.destroy', video.id), {
+      onSuccess: () => {
+        // Refresh the page to update the list
+        router.reload();
+      },
+    });
   }
-};
+}
 
-const formatDate = (dateString: string | undefined) => {
+function formatDate(dateString: string) {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleDateString('id-ID', {
     year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+    month: 'long',
+    day: 'numeric',
   });
-};
-
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  img.src = '/placeholder-video.jpg';
-};
+}
 </script>
 
 <style scoped>
@@ -238,10 +302,10 @@ const handleImageError = (event: Event) => {
   overflow: hidden;
 }
 
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style> 
