@@ -26,11 +26,11 @@ class HandleAllErrors
             if ($request->header('X-Inertia') || $request->wantsJson()) {
                 switch ($response->getStatusCode()) {
                     case 403:
-                        return Inertia::render('Unauthorized');
+                        return Inertia::render('Unauthorized')->toResponse($request);
                     case 404:
-                        return Inertia::render('NotFound');
+                        return Inertia::render('NotFound')->toResponse($request);
                     case 500:
-                        return Inertia::render('ServerError');
+                        return Inertia::render('ServerError')->toResponse($request);
                     default:
                         return $response;
                 }
@@ -39,22 +39,22 @@ class HandleAllErrors
             return $response;
         } catch (AuthorizationException $e) {
             if ($request->header('X-Inertia') || $request->wantsJson()) {
-                return Inertia::render('Unauthorized');
+                return Inertia::render('Unauthorized')->toResponse($request);
             }
             throw $e;
         } catch (AccessDeniedHttpException $e) {
             if ($request->header('X-Inertia') || $request->wantsJson()) {
-                return Inertia::render('Unauthorized');
+                return Inertia::render('Unauthorized')->toResponse($request);
             }
             throw $e;
         } catch (NotFoundHttpException $e) {
             if ($request->header('X-Inertia') || $request->wantsJson()) {
-                return Inertia::render('NotFound');
+                return Inertia::render('NotFound')->toResponse($request);
             }
             throw $e;
         } catch (\Exception $e) {
             if ($request->header('X-Inertia') || $request->wantsJson()) {
-                return Inertia::render('ServerError');
+                return Inertia::render('ServerError')->toResponse($request);
             }
             throw $e;
         }

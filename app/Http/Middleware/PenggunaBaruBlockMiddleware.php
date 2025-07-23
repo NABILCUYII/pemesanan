@@ -6,22 +6,26 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class PenggunaBaruBlockMiddleware
 {
     /**
      * Handle an incoming request.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
+
+        // Jika user adalah pengguna baru, hanya izinkan akses ke halaman selamat datang
         if ($user && $user->role && ($user->role->role ?? '') === 'penggunaBARU') {
-            // Izinkan hanya akses ke route selamat-datang.index
             if (!$request->routeIs('selamat-datang.index')) {
                 return redirect()->route('selamat-datang.index');
             }
         }
+
         return $next($request);
     }
 }

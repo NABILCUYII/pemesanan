@@ -102,6 +102,7 @@ const goBack = () => {
                     >
                         <option value="admin">Admin</option>
                         <option value="user">User</option>
+                        <option value="penggunaBARU">Pengguna BARU</option>
                     </select>
                     <div v-if="form.errors.role" class="mt-1 text-xs text-red-600">
                         {{ form.errors.role }}

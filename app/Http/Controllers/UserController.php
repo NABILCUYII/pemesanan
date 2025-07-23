@@ -4,19 +4,52 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+
+    // API endpoint: hanya user dengan role 'penggunaBARU'
+    public function getNewUsers()
+    {
+        $users = User::whereHas('role', function($q) {
+            $q->where('role', 'penggunaBARU');
+        })->with('role')->get();
+        // Pastikan data role selalu ada (meskipun null)
+        $usersArr = $users->map(function($user) {
+            $arr = $user->toArray();
+            $arr['role'] = $user->role ? $user->role->toArray() : null;
+            return $arr;
+        });
+        return response()->json(['users' => $usersArr]);
+    }
+
+    // Halaman verifikasi user baru (opsional, jika ingin render inertia)
+    public function newuser()
+    {
+        $users = User::whereHas('role', function($q) {
+            $q->where('role', 'penggunaBARU');
+        })->with('role')->get();
+        // Pastikan data role selalu ada (meskipun null)
+        $usersArr = $users->map(function($user) {
+            $arr = $user->toArray();
+            $arr['role'] = $user->role ? $user->role->toArray() : null;
+            return $arr;
+        });
+        return Inertia::render('users/NEWuser', [
+            'users' => $usersArr
+        ]);
+    }
+    
     public function index()
     {
         $user = Auth::user();
 
         // Check if user is admin
-        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $user ? [
                     'name' => $user->name,
@@ -25,7 +58,7 @@ class UserController extends Controller
             ]);
         }
         
-        $users = User::with('role')->get();
+        $users = User::with('role')->get(); 
         return Inertia::render('users/index', [
             'users' => $users
         ]);
@@ -36,7 +69,7 @@ class UserController extends Controller
         $user = Auth::user();
 
         // Check if user is admin
-        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $user ? [
                     'name' => $user->name,
@@ -53,7 +86,7 @@ class UserController extends Controller
         $user = Auth::user();
 
         // Check if user is admin
-        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $user ? [
                     'name' => $user->name,
@@ -87,7 +120,7 @@ class UserController extends Controller
         $currentUser = Auth::user();
 
         // Check if user is admin
-        if (!$currentUser || !$currentUser->role || ($currentUser->role->role ?? '') !== 'Admin') {
+        if (!$currentUser || !$currentUser->role || ($currentUser->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $currentUser ? [
                     'name' => $currentUser->name,
@@ -106,7 +139,7 @@ class UserController extends Controller
         $currentUser = Auth::user();
 
         // Check if user is admin
-        if (!$currentUser || !$currentUser->role || ($currentUser->role->role ?? '') !== 'Admin') {
+        if (!$currentUser || !$currentUser->role || ($currentUser->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $currentUser ? [
                     'name' => $currentUser->name,
@@ -146,7 +179,7 @@ class UserController extends Controller
         $currentUser = Auth::user();
 
         // Check if user is admin
-        if (!$currentUser || !$currentUser->role || ($currentUser->role->role ?? '') !== 'Admin') {
+        if (!$currentUser || !$currentUser->role || ($currentUser->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $currentUser ? [
                     'name' => $currentUser->name,
@@ -164,4 +197,37 @@ class UserController extends Controller
         $user->delete();
         return redirect()->route('users.index');
     }
+
+    public function showApi($id) {
+        $user = User::with('role')->findOrFail($id);
+        // Pastikan data role selalu ada (meskipun null)
+        $userArr = $user->toArray();
+        $userArr['role'] = $user->role ? $user->role->toArray() : null;
+        return response()->json(['user' => $userArr]);
+    }
+
+    public function approveNewUser($id)
+    {
+        $user = User::with('role')->findOrFail($id);
+        if ($user->role && $user->role->role === 'penggunaBARU') {
+            $user->role->role = 'user';
+            $user->role->save();
+        }
+        $user->status = 'active';
+        $user->save();
+        return redirect()->back();
+    }
+
+    public function rejectNewUser($id)
+    {
+        $user = User::with('role')->findOrFail($id);
+        // Hapus relasi role jika ada
+        if ($user->role) {
+            $user->role()->delete();
+        }
+        $user->delete();
+        return redirect()->back();
+    }
+
+
 }

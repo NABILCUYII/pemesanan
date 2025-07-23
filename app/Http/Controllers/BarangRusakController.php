@@ -13,7 +13,12 @@ class BarangRusakController extends Controller
 
         // Check if user is admin
         if (!auth()->user()->isAdmin()) {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
         }
         
         $barangRusak = Barang::whereIn('status', ['rusak', 'hilang'])

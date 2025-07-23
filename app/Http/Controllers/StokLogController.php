@@ -15,7 +15,7 @@ class StokLogController extends Controller
         $user = Auth::user();
 
         // Check if user is admin
-        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $user ? [
                     'name' => $user->name,
@@ -68,7 +68,7 @@ class StokLogController extends Controller
         $user = Auth::user();
 
         // Check if user is admin
-        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $user ? [
                     'name' => $user->name,
@@ -88,7 +88,7 @@ class StokLogController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->role || ($user->role->role ?? '') !== 'Admin') {
+        if (!$user || !$user->role || ($user->role->role ?? '') !== 'admin') {
             return inertia('Forbidden', [
                 'user' => $user ? [
                     'name' => $user->name,

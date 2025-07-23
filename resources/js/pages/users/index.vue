@@ -65,15 +65,32 @@ const destroy = () => {
           <h1 class="text-2xl font-bold text-gray-800 mb-1">Daftar Pengguna</h1>
           <p class="text-gray-500 text-sm">Kelola data user aplikasi dengan mudah dan nyaman.</p>
         </div>
-        <Link
-          :href="route('users.create')"
-          class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-          </svg>
-          Tambah User
-        </Link>
+        <div class="flex items-center gap-2">
+          <!-- Notifikasi Button to NEWuser -->
+          <Link
+            :href="route('users.NEWuser')"
+            class="relative inline-flex items-center px-4 py-2.5 bg-yellow-100 text-yellow-800 rounded-lg shadow font-semibold hover:bg-yellow-200 transition"
+            style="min-width: 0;"
+          >
+            <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+            <span class="text-sm font-bold uppercase tracking-wide">NEWuser</span>
+            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+            </span>
+          </Link>
+          <Link
+            :href="route('users.create')"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Tambah User
+          </Link>
+        </div>
       </div>
 
       <!-- Search Bar -->

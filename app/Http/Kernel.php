@@ -78,5 +78,9 @@ class Kernel extends HttpKernel
         'handle.forbidden' => \App\Http\Middleware\HandleForbidden::class,
         'handle.all.errors' => \App\Http\Middleware\HandleAllErrors::class,
         'handle.403' => \App\Http\Middleware\Handle403Errors::class,
+        // Perbaikan: gunakan alias yang konsisten dan mudah dipakai di route
+        'penggunabaru.block' => \App\Http\Middleware\PenggunaBaruBlockMiddleware::class,
     ];
+
+    // Hapus $routeMiddleware, gunakan hanya $middlewareAliases (sejak Laravel 9+)
 }

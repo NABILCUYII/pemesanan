@@ -13,14 +13,7 @@ class BarangController extends Controller
 
         // Check if user is admin
        // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
+        
         
         $barang = Barang::latest()->get();
         return Inertia::render('Barang/index', [
@@ -31,16 +24,7 @@ class BarangController extends Controller
     public function aset()
     {
 
-        // Check if user is admin
-       // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
+       
         
         $barang = Barang::latest()->get();
         return Inertia::render('Barang/aset', [
@@ -51,16 +35,7 @@ class BarangController extends Controller
     public function permintaan()
     {
 
-        // Check if user is admin
-       // Check if user is admin
-        if (!auth()->user()->isAdmin()) {
-            return inertia('Forbidden', [
-                'user' => auth()->user() ? [
-                    'name' => auth()->user()->name,
-                    'role' => auth()->user()->role ?? 'User'
-                ] : null
-            ]);
-        }
+      
         
         $barang = Barang::latest()->get();
         return Inertia::render('Barang/permintaan', [
@@ -263,5 +238,13 @@ class BarangController extends Controller
         
         $count = Barang::where('stok', 0)->count();
         return response()->json(['count' => $count]);
+    }
+
+    public function semua()
+    {
+        $barang = Barang::latest()->get();
+        return Inertia::render('Barang/semuaBRG', [
+            'barang' => $barang
+        ]);
     }
 }

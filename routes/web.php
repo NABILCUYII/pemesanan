@@ -5,7 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\BarangRusakController;
-use App\Http\Controllers\PermintaanController;
+use App\Http\Controllers\PermintaanController; 
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\SelamatDatangController;
@@ -15,20 +15,26 @@ use App\Http\Controllers\StokLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\VideoBeritaController;
+use App\Http\Middleware\PenggunaBaruBlockMiddleware as PenggunaBaruBlock;
 
+
+// Route utama
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-Route::get('dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard hanya untuk user yang sudah diverifikasi (bukan pengguna baru)
+Route::get('dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', PenggunaBaruBlock::class])
+    ->name('dashboard');
 
-// Rute SelamatDatang
+// Rute SelamatDatang (semua user yang sudah login)
 Route::middleware(['auth'])->group(function () {
     Route::get('selamat-datang', [SelamatDatangController::class, 'index'])->name('selamat-datang.index');
 });
 
-// Rute Users
-Route::middleware(['auth'])->group(function () {
+// Rute Users (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::get('users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('users', [UserController::class, 'store'])->name('users.store');
@@ -37,8 +43,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
-// Rute Barang
-Route::middleware(['auth'])->group(function () {
+// Rute Barang (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('barang', [BarangController::class, 'index'])->name('barang.index');
     Route::get('barang/aset', [BarangController::class, 'aset'])->name('barang.aset');
     Route::get('barang/permintaan', [BarangController::class, 'permintaan'])->name('barang.permintaan');
@@ -53,22 +59,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('api/barang/stok-habis-count', [BarangController::class, 'stokHabisCount']);
     Route::get('api/permintaan/pending-count', [PermintaanController::class, 'pendingCount']);
     Route::get('api/inventaris/pending-count', [InventarisController::class, 'pendingCount']);
+    Route::get('barang/semua', [BarangController::class, 'semua'])->name('barang.semuaBRG');
 });
 
-// Rute Barang Rusak
-Route::middleware(['auth'])->group(function () {
+// Rute Barang Rusak & Barang Hilang (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('barang-rusak', [BarangRusakController::class, 'index'])->name('barang-rusak.index');
     Route::get('barang-rusak/create', [BarangRusakController::class, 'create'])->name('barang-rusak.create');
     Route::post('barang-rusak', [BarangRusakController::class, 'store'])->name('barang-rusak.store');
     Route::put('barang-rusak/{barang}/status', [BarangRusakController::class, 'updateStatus'])->name('barang-rusak.update-status');
-    
     // Rute Barang Hilang
     Route::get('barang-hilang/create', [BarangRusakController::class, 'createHilang'])->name('barang-hilang.create');
     Route::post('barang-hilang', [BarangRusakController::class, 'storeHilang'])->name('barang-hilang.store');
 });
 
-// Rute Permintaan
-Route::middleware(['auth'])->group(function () {
+// Rute Permintaan (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('permintaan', [PermintaanController::class, 'index'])->name('permintaan.index');
     Route::get('permintaan/create', [PermintaanController::class, 'create'])->name('permintaan.create');
     Route::post('permintaan', [PermintaanController::class, 'store'])->name('permintaan.store');
@@ -81,8 +87,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('permintaan/{permintaan}', [PermintaanController::class, 'destroy'])->name('permintaan.destroy');
 });
 
-// Rute Peminjaman
-Route::middleware(['auth'])->group(function () {
+// Rute Peminjaman (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
     Route::get('peminjaman/create', [PeminjamanController::class, 'create'])->name('peminjaman.create');
     Route::post('peminjaman', [PeminjamanController::class, 'store'])->name('peminjaman.store');
@@ -98,8 +104,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/peminjaman/{peminjaman}/return', [PeminjamanController::class, 'processReturn'])->name('peminjaman.process-return');
 });
 
-// Rute Inventaris
-Route::middleware(['auth'])->group(function () {
+// Rute Inventaris (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('inventaris', [InventarisController::class, 'index'])->name('inventaris.index');
     Route::get('inventaris/create', [InventarisController::class, 'create'])->name('inventaris.create');
     Route::post('inventaris', [InventarisController::class, 'store'])->name('inventaris.store');
@@ -114,13 +120,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('inventaris/{inventaris}', [InventarisController::class, 'show'])->name('inventaris.show');
 });
 
-// Rute Riwayat
-Route::middleware(['auth'])->group(function () {
+// Rute Riwayat (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
 });
 
-// Rute Laporan
-Route::middleware(['auth'])->group(function () {
+// Rute Laporan (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('laporan/download', [LaporanController::class, 'download'])->name('laporan.download');
     Route::get('laporan/download-permintaan', [LaporanController::class, 'downloadPermintaan'])->name('laporan.download-permintaan');
@@ -133,15 +139,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('laporan/test-pdf', [LaporanController::class, 'testPdf'])->name('laporan.test-pdf');
 });
 
-// Rute Stok Log
-Route::middleware(['auth'])->group(function () {
+// Rute Stok Log (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('stok-log', [StokLogController::class, 'index'])->name('stok-log.index');
     Route::get('stok-log/{id}', [StokLogController::class, 'show'])->name('stok-log.show');
     Route::get('stok-log/barang/{barangId}', [StokLogController::class, 'barang'])->name('stok-log.barang');
 });
 
-// Rute Video Berita
-Route::middleware(['auth'])->group(function () {
+// Rute Video Berita (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('video-berita', [VideoBeritaController::class, 'index'])->name('video-berita.index');
     Route::get('video-berita/create', [VideoBeritaController::class, 'create'])->name('video-berita.create');
     Route::post('video-berita', [VideoBeritaController::class, 'store'])->name('video-berita.store');
@@ -151,8 +157,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('api/video-berita/active', [VideoBeritaController::class, 'getActiveVideos'])->name('video-berita.active');
 });
 
-// Video Berita Routes (2024)
-Route::middleware(['auth'])->group(function () {
+// Video Berita Routes (2024) (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('/video-berita', [VideoBeritaController::class, 'index'])->name('video-berita.index');
     Route::get('/video-berita/create', [VideoBeritaController::class, 'create'])->name('video-berita.create');
     Route::post('/video-berita', [VideoBeritaController::class, 'store'])->name('video-berita.store');
@@ -162,7 +168,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/video-berita/{videoBerita}/toggle-status', [VideoBeritaController::class, 'toggleStatus'])->name('video-berita.toggle-status');
 });
 
-// Footer Pages Routes
+// Footer Pages Routes (semua user yang sudah login)
 Route::middleware(['auth'])->group(function () {
     Route::get('/privacy', function () {
         return Inertia::render('Privacy');
@@ -181,7 +187,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('contact');
 });
 
-// Rute Halaman Informasi
+// Rute Halaman Informasi (semua user yang sudah login)
 Route::middleware(['auth'])->group(function () {
     Route::get('tentang', function () {
         return Inertia::render('Tentang');
@@ -195,7 +201,7 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 
-// Error routes
+// Error routes (tidak perlu middleware, biarkan terbuka)
 Route::get('/404', [ErrorController::class, 'notFound'])->name('error.404');
 Route::get('/403', [ErrorController::class, 'unauthorized'])->name('error.403');
 Route::get('/forbidden', [ErrorController::class, 'forbidden'])->name('error.forbidden');
@@ -224,7 +230,7 @@ Route::get('/test-403-auth', function () {
 Route::get('/test-403-http', function () {
     throw new \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException('Access denied');
 })->name('test.403.http');
-
+ 
 Route::get('/test-404', function () {
     abort(404, 'Page not found');
 })->name('test.404');
@@ -237,3 +243,15 @@ Route::get('/test-500', function () {
 Route::fallback(function () {
     return Inertia::render('NotFound');
 });
+
+// Rute khusus untuk pengguna baru (hanya untuk user yang statusnya pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
+    Route::get('/users/newuser', [UserController::class, 'newuser'])->name('users.NEWuser');
+    Route::get('/api/users/new', [UserController::class, 'getNewUsers']);
+    Route::post('/users/approve/{id}', [UserController::class, 'approveNewUser'])->name('users.approve');
+    Route::post('/users/reject/{id}', [UserController::class, 'rejectNewUser'])->name('users.reject');
+});
+
+// Route API users yang tidak perlu onlyPenggunaBaru/PenggunaBaruBlock::class
+Route::get('api/users/{id}', [UserController::class, 'showApi']);
+Route::get('/api/users/all', [UserController::class, 'getAllUsers']);
