@@ -440,7 +440,7 @@ const frequentlyBorrowedChart = computed(() => {
           <CardHeader class="border-b border-[#B0C4DE] bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] p-6 animate-gradient-x">
             <CardTitle class="text-xl font-bold text-white flex items-center gap-2">
               <TrendingUp class="h-5 w-5" />
-              Barang Masuk
+              Stock Barang Masuk
             </CardTitle>
           </CardHeader>
           <CardContent class="p-6">

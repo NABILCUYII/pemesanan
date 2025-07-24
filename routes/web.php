@@ -21,7 +21,7 @@ use App\Http\Middleware\PenggunaBaruBlockMiddleware as PenggunaBaruBlock;
 // Route utama
 Route::get('/', function () {
     return Inertia::render('Welcome');
-})->name('home');
+})->name('welcome');
 
 // Dashboard hanya untuk user yang sudah diverifikasi (bukan pengguna baru)
 Route::get('dashboard', [DashboardController::class, 'index'])

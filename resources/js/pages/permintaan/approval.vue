@@ -2,7 +2,7 @@
 import { computed, ref, reactive } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Calendar, Search, CheckCircle, XCircle } from 'lucide-vue-next';
+import { Calendar, Search, CheckCircle, XCircle, Package, RotateCcw, Play } from 'lucide-vue-next';
 import {
     Table,
     TableHeader,
@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/composables/useInitials';
 import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
-
+// --- Data Interfaces ---
 interface Barang {
     id: number;
     nama_barang: string;
@@ -56,31 +56,69 @@ interface Peminjaman {
     tanggal_pengembalian: string;
 }
 
-const props = defineProps<{
+interface InventarisItem {
+    id: number;
+    nama_barang: string;
+    kode_barang: string;
+    nomor_inventaris: string;
+    status: string;
+    kategori: string;
+    peminjam?: User;
+    tanggal_pinjam?: string;
+    tanggal_pengembalian?: string;
+    alasan?: string;
+    catatan?: string;
+    is_overdue?: boolean;
+    created_at: string;
+}
+
+// --- Props ---
+const props = withDefaults(defineProps<{
     permintaan: Permintaan[];
     peminjaman: Peminjaman[];
-}>();
+    inventaris?: InventarisItem[];
+}>(), {
+    inventaris: () => [],
+});
 
 const { getInitials } = useInitials();
-
 const { getPhotoUrl } = usePhotoUrl();
 
 const searchQuery = ref('');
 const selectedStatus = ref('pending');
 const activeTab = ref('permintaan');
 
+// Status options
 const statusOptions = [
     { value: 'pending', label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800' },
     { value: 'approved', label: 'Disetujui', color: 'bg-green-100 text-green-800' },
     { value: 'rejected', label: 'Ditolak', color: 'bg-red-100 text-red-800' },
+    { value: 'in_progress', label: 'Dipinjam', color: 'bg-blue-100 text-blue-800' },
+    { value: 'returned', label: 'Dikembalikan', color: 'bg-gray-100 text-gray-800' },
 ];
 
+// Kategori options (for inventaris)
+const kategoriOptions = [
+    { value: '', label: 'Semua Kategori' },
+    { value: 'elektronik', label: 'Elektronik' },
+    { value: 'furniture', label: 'Furniture' },
+    { value: 'kendaraan', label: 'Kendaraan' },
+    { value: 'alat_tulis', label: 'Alat Tulis' },
+    { value: 'lainnya', label: 'Lainnya' }
+];
+const selectedKategori = ref('');
+
+// --- Status helpers ---
 const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (status) {
         case 'approved':
             return 'secondary';
         case 'rejected':
             return 'destructive';
+        case 'in_progress':
+            return 'default';
+        case 'returned':
+            return 'outline';
         default:
             return 'default';
     }
@@ -92,15 +130,21 @@ const getStatusText = (status: string) => {
             return 'Disetujui';
         case 'rejected':
             return 'Ditolak';
+        case 'in_progress':
+            return 'Dipinjam';
+        case 'returned':
+            return 'Dikembalikan';
         default:
             return 'Menunggu';
     }
 };
 
-// Animasi state
+// --- Animasi state ---
 const animatingPermintaan = reactive<{ [id: number]: string }>({});
 const animatingPeminjaman = reactive<{ [id: number]: string }>({});
+const animatingInventaris = reactive<{ [id: number]: string }>({});
 
+// --- Approval Handlers (Permintaan & Peminjaman) ---
 const handleApprovePermintaan = (id: number) => {
     animatingPermintaan[id] = 'approve';
     setTimeout(() => {
@@ -161,6 +205,38 @@ const handleRejectPeminjaman = (id: number) => {
     }, 600);
 };
 
+// --- Approval Handlers (Inventaris) ---
+const handleApproveInventaris = (id: number) => {
+    animatingInventaris[id] = 'approve';
+    setTimeout(() => {
+        router.post('/inventaris/approve', {
+            inventaris_id: id,
+            action: 'approve',
+            alasan: 'Inventaris disetujui',
+            catatan: ''
+        });
+        setTimeout(() => {
+            delete animatingInventaris[id];
+        }, 600);
+    }, 600);
+};
+
+const handleRejectInventaris = (id: number) => {
+    animatingInventaris[id] = 'reject';
+    setTimeout(() => {
+        router.post('/inventaris/approve', {
+            inventaris_id: id,
+            action: 'reject',
+            alasan: 'Inventaris ditolak',
+            catatan: ''
+        });
+        setTimeout(() => {
+            delete animatingInventaris[id];
+        }, 600);
+    }, 600);
+};
+
+// --- Filtering ---
 const filteredPermintaan = computed(() => {
     return props.permintaan.filter(item => {
         const q = searchQuery.value.toLowerCase();
@@ -183,16 +259,29 @@ const filteredPeminjaman = computed(() => {
     });
 });
 
+const filteredInventaris = computed(() => {
+    return (props.inventaris ?? []).filter(item => {
+        const q = searchQuery.value.toLowerCase();
+        const matchesSearch =
+            item.nama_barang.toLowerCase().includes(q) ||
+            item.kode_barang.toLowerCase().includes(q) ||
+            (item.peminjam?.name?.toLowerCase().includes(q) ?? false) ||
+            (item.nomor_inventaris?.toLowerCase().includes(q) ?? false);
+        const matchesStatus = selectedStatus.value ? item.status === selectedStatus.value : true;
+        const matchesKategori = selectedKategori.value ? item.kategori === selectedKategori.value : true;
+        return matchesSearch && matchesStatus && matchesKategori;
+    });
+});
+
+// --- Grouping ---
 const groupedPermintaan = computed(() => {
     const groups = new Map<number, Permintaan[]>();
-    console.log(filteredPermintaan.value);
     filteredPermintaan.value.forEach(item => {
         if (!groups.has(item.user_id)) {
             groups.set(item.user_id, []);
         }
         groups.get(item.user_id)?.push(item);
     });
-    console.log(groups);
     return Array.from(groups.entries()).map(([userId, items]) => ({
         user: items[0].user,
         items
@@ -201,14 +290,12 @@ const groupedPermintaan = computed(() => {
 
 const groupedPeminjaman = computed(() => {
     const groups = new Map<number, Peminjaman[]>();
-    console.log(filteredPeminjaman.value);
     filteredPeminjaman.value.forEach(item => {
         if (!groups.has(item.user_id)) {
             groups.set(item.user_id, []);
         }
         groups.get(item.user_id)?.push(item);
     });
-    console.log(groups);
     return Array.from(groups.entries()).map(([userId, items]) => ({
         user: items[0].user,
         items
@@ -223,14 +310,14 @@ const groupedPeminjaman = computed(() => {
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 class="text-4xl font-extrabold text-indigo-900 mb-1 tracking-tight drop-shadow-sm">Persetujuan</h1>
-                    <p class="text-gray-500 text-base">Kelola permintaan dan peminjaman barang dengan mudah dan cepat.</p>
+                    <p class="text-gray-500 text-base">Kelola permintaan, peminjaman, dan approval inventaris barang dengan mudah dan cepat.</p>
                 </div>
                 <div class="flex gap-2 items-center">
                     <div class="relative">
                         <input
                             v-model="searchQuery"
                             type="text"
-                            placeholder="Cari nama barang, kode, atau user..."
+                            placeholder="Cari nama barang, kode, user, atau nomor inventaris..."
                             class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition w-64 bg-white shadow-sm"
                         />
                         <Search class="absolute left-2 top-2.5 w-5 h-5 text-gray-400" />
@@ -239,7 +326,17 @@ const groupedPeminjaman = computed(() => {
                         v-model="selectedStatus"
                         class="py-2 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition bg-white shadow-sm text-gray-700"
                     >
+                        <option value="">Semua Status</option>
                         <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+                            {{ opt.label }}
+                        </option>
+                    </select>
+                    <select
+                        v-if="activeTab === 'inventaris'"
+                        v-model="selectedKategori"
+                        class="py-2 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition bg-white shadow-sm text-gray-700"
+                    >
+                        <option v-for="opt in kategoriOptions" :key="opt.value" :value="opt.value">
                             {{ opt.label }}
                         </option>
                     </select>
@@ -262,10 +359,19 @@ const groupedPeminjaman = computed(() => {
                     >
                         Peminjaman
                     </button>
+                    <button 
+                        class="flex-1 px-4 py-3 text-lg font-semibold transition focus:outline-none"
+                        :class="activeTab === 'inventaris' ? 'bg-gradient-to-r from-indigo-600 to-blue-500 text-white shadow' : 'bg-white text-indigo-700 hover:bg-indigo-50'"
+                        @click="activeTab = 'inventaris'"
+                    >
+                        Approval Inventaris
+                    </button>
                 </div>
 
+                <!-- Permintaan Tab -->
                 <transition name="fade" mode="out-in">
                 <div v-if="activeTab === 'permintaan'" key="permintaan">
+                    <!-- ... (unchanged: permintaan table & card, same as before) ... -->
                     <!-- TABEL PERMINTAAN (untuk md ke atas) -->
                     <div class="bg-white rounded-2xl border shadow-lg hidden md:block">
                         <div v-if="groupedPermintaan.length === 0" class="p-8 text-center text-gray-400">
@@ -365,7 +471,6 @@ const groupedPeminjaman = computed(() => {
                             </Table>
                         </div>
                     </div>
-
                     <!-- CARD PERMINTAAN (untuk hp/sm) -->
                     <div class="space-y-6 md:hidden">
                         <div v-if="groupedPermintaan.length === 0" class="p-8 text-center text-gray-400 bg-white rounded-2xl shadow">
@@ -459,9 +564,10 @@ const groupedPeminjaman = computed(() => {
                 </div>
                 </transition>
 
+                <!-- Peminjaman Tab -->
                 <transition name="fade" mode="out-in">
                 <div v-if="activeTab === 'peminjaman'" key="peminjaman">
-                    <!-- TABEL PEMINJAMAN (untuk md ke atas) -->
+                    <!-- ... (unchanged: peminjaman table & card, same as before) ... -->
                     <div class="bg-white rounded-2xl border shadow-lg hidden md:block">
                         <div v-if="groupedPeminjaman.length === 0" class="p-8 text-center text-gray-400">
                             <span class="text-2xl">📦</span>
@@ -569,7 +675,6 @@ const groupedPeminjaman = computed(() => {
                             </Table>
                         </div>
                     </div>
-
                     <!-- CARD PEMINJAMAN (untuk hp/sm) -->
                     <div class="space-y-6 md:hidden">
                         <div v-if="groupedPeminjaman.length === 0" class="p-8 text-center text-gray-400 bg-white rounded-2xl shadow">
@@ -587,7 +692,6 @@ const groupedPeminjaman = computed(() => {
                                 <div>
                                     <div class="font-bold text-indigo-800">{{ group.user.name }}</div>
                                     <div class="text-xs text-gray-500">{{ group.user.email }}</div>
-                                    
                                 </div>
                             </div>
                             <div class="divide-y">
@@ -663,6 +767,109 @@ const groupedPeminjaman = computed(() => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                </transition>
+
+                <!-- Approval Inventaris Tab -->
+                <transition name="fade" mode="out-in">
+                <div v-if="activeTab === 'inventaris'" key="inventaris">
+                    <div class="bg-white rounded-2xl border shadow-lg">
+                        <div v-if="filteredInventaris.length === 0" class="p-8 text-center text-gray-400">
+                            <span class="text-2xl">📦</span>
+                            <div>Tidak ada inventaris ditemukan.</div>
+                        </div>
+                        <Table v-else>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead class="text-indigo-700">Tanggal</TableHead>
+                                    <TableHead class="text-indigo-700">Nomor</TableHead>
+                                    <TableHead class="text-indigo-700">Barang</TableHead>
+                                    <TableHead class="text-indigo-700">Kode</TableHead>
+                                    <TableHead class="text-indigo-700">Kategori</TableHead>
+                                    <TableHead class="text-indigo-700">Status</TableHead>
+                                    <TableHead class="text-indigo-700">Peminjam</TableHead>
+                                    <TableHead class="text-indigo-700">Tgl Pinjam</TableHead>
+                                    <TableHead class="text-indigo-700">Tgl Kembali</TableHead>
+                                    <TableHead class="text-right text-indigo-700">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow v-for="item in filteredInventaris" :key="item.id" class="hover:bg-indigo-50 transition">
+                                    <TableCell class="text-sm">
+                                        <div class="flex items-center gap-1">
+                                            <Calendar class="w-4 h-4 text-indigo-400" />
+                                            <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell class="font-medium text-indigo-700">{{ item.nomor_inventaris }}</TableCell>
+                                    <TableCell class="font-semibold text-indigo-900">{{ item.nama_barang }}</TableCell>
+                                    <TableCell class="font-medium text-indigo-700">{{ item.kode_barang }}</TableCell>
+                                    <TableCell class="font-medium text-indigo-700 capitalize">{{ item.kategori }}</TableCell>
+                                    <TableCell>
+                                        <Badge :variant="getStatusVariant(item.status)">
+                                            {{ getStatusText(item.status) }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span v-if="item.peminjam">{{ item.peminjam.name }}</span>
+                                        <span v-else>-</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span v-if="item.tanggal_pinjam">{{ new Date(item.tanggal_pinjam).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        <span v-else>-</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span v-if="item.tanggal_pengembalian">{{ new Date(item.tanggal_pengembalian).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        <span v-else>-</span>
+                                    </TableCell>
+                                    <TableCell class="text-right space-x-2">
+                                        <transition name="approve-anim" mode="out-in">
+                                            <Button
+                                                v-if="item.status === 'pending' && animatingInventaris[item.id] !== 'approve' && animatingInventaris[item.id] !== 'reject'"
+                                                variant="default"
+                                                size="sm"
+                                                class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
+                                                @click="handleApproveInventaris(item.id)"
+                                                key="approve"
+                                            >
+                                                <span class="font-semibold flex items-center gap-1">
+                                                    <CheckCircle class="w-4 h-4 animate-pulse" /> Setujui
+                                                </span>
+                                            </Button>
+                                            <span
+                                                v-else-if="animatingInventaris[item.id] === 'approve'"
+                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
+                                                key="approved"
+                                            >
+                                                <CheckCircle class="w-5 h-5 animate-bounce" /> Disetujui!
+                                            </span>
+                                        </transition>
+                                        <transition name="reject-anim" mode="out-in">
+                                            <Button
+                                                v-if="item.status === 'pending' && animatingInventaris[item.id] !== 'approve' && animatingInventaris[item.id] !== 'reject'"
+                                                variant="destructive"
+                                                size="sm"
+                                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
+                                                @click="handleRejectInventaris(item.id)"
+                                                key="reject"
+                                            >
+                                                <span class="font-semibold flex items-center gap-1">
+                                                    <XCircle class="w-4 h-4 animate-pulse" /> Tolak
+                                                </span>
+                                            </Button>
+                                            <span
+                                                v-else-if="animatingInventaris[item.id] === 'reject'"
+                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
+                                                key="rejected"
+                                            >
+                                                <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
+                                            </span>
+                                        </transition>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
                     </div>
                 </div>
                 </transition>
