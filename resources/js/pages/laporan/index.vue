@@ -4,7 +4,7 @@ import { ref, computed, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Download, Calendar, ChevronDown, ChevronRight, User, Search, FileSpreadsheet } from 'lucide-vue-next';
+import { FileText, Download, Calendar, ChevronDown, ChevronRight, User, Search, FileSpreadsheet, Users, Package, Handshake, Box } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import {
     Table,
@@ -56,10 +56,41 @@ interface StokChange {
 }
 
 interface Props {
-    users: User[];
-    stokChanges: StokChange[];
+    users: {
+        data: User[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
+    stokChanges: {
+        data: StokChange[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
     month: number | null;
     year: number | null;
+    filters: {
+        search?: string;
+    };
+    statistics: {
+        total_users: number;
+        total_permintaan: number;
+        total_peminjaman: number;
+        total_barang: number;
+    };
     months: Record<string, string>;
     years: number[];
 }
@@ -74,16 +105,24 @@ const { getInitials } = useInitials();
 const selectedMonth = ref(props.month?.toString() ?? (new Date().getMonth() + 1).toString());
 const selectedYear = ref(props.year?.toString() ?? new Date().getFullYear().toString());
 
-const searchQuery = ref('');
+// Search and filter functionality
+const searchQuery = ref(props.filters.search || '');
 
-const filteredUsers = computed(() => {
-    if (!searchQuery.value) return props.users;
-    
-    const query = searchQuery.value.toLowerCase();
-    return props.users.filter(user => 
-        user.name.toLowerCase().includes(query)
-    );
-});
+const applyFilters = () => {
+    router.get(route('laporan.index'), {
+        month: parseInt(selectedMonth.value),
+        year: parseInt(selectedYear.value),
+        search: searchQuery.value
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+const clearFilters = () => {
+    searchQuery.value = '';
+    applyFilters();
+};
 
 // Watch for changes in selectedMonth and selectedYear
 watch([selectedMonth, selectedYear], ([newMonth, newYear]) => {
@@ -96,6 +135,7 @@ const updateReport = () => {
     router.get(route('laporan.index'), {
         month: parseInt(selectedMonth.value),
         year: parseInt(selectedYear.value),
+        search: searchQuery.value
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -150,7 +190,7 @@ const isUserExpanded = (userId: number) => {
 
 // Computed property untuk menghitung stok awal berdasarkan rumus
 const calculatedStokChanges = computed(() => {
-    return props.stokChanges.map(item => {
+    return props.stokChanges.data.map(item => {
         const valuesToSum = [
             item.stok_akhir,
             item.permintaan_keluar,
@@ -242,6 +282,65 @@ const { getPhotoUrl } = usePhotoUrl();
                 </div>
             </div>
 
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-blue-100 to-blue-50">
+                    <CardContent class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500">Total Users</p>
+                                <p class="text-2xl font-bold text-blue-700">{{ statistics.total_users }}</p>
+                            </div>
+                            <span class="bg-blue-200 rounded-full p-2">
+                                <Users class="h-6 w-6 text-blue-500" />
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+                
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-green-100 to-green-50">
+                    <CardContent class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500">Total Permintaan</p>
+                                <p class="text-2xl font-bold text-green-700">{{ statistics.total_permintaan }}</p>
+                            </div>
+                            <span class="bg-green-200 rounded-full p-2">
+                                <Handshake class="h-6 w-6 text-green-500" />
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+                
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-purple-100 to-purple-50">
+                    <CardContent class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500">Total Peminjaman</p>
+                                <p class="text-2xl font-bold text-purple-700">{{ statistics.total_peminjaman }}</p>
+                            </div>
+                            <span class="bg-purple-200 rounded-full p-2">
+                                <Box class="h-6 w-6 text-purple-500" />
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+                
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-orange-100 to-orange-50">
+                    <CardContent class="p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500">Total Barang</p>
+                                <p class="text-2xl font-bold text-orange-700">{{ statistics.total_barang }}</p>
+                            </div>
+                            <span class="bg-orange-200 rounded-full p-2">
+                                <Package class="h-6 w-6 text-orange-500" />
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <!-- Filter Section -->
             <Card class="border-2 border-gray-100 shadow-sm">
                 <CardHeader class="pb-4">
@@ -253,7 +352,7 @@ const { getPhotoUrl } = usePhotoUrl();
                 </CardHeader>
                 <CardContent>
                     <div class="flex flex-col gap-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div class="space-y-2">
                                 <Label for="month" class="text-sm font-medium">Bulan</Label>
                                 <Select v-model="selectedMonth">
@@ -280,10 +379,41 @@ const { getPhotoUrl } = usePhotoUrl();
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div class="flex items-end">
-                                <div class="text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md w-full">
-                                    Periode: {{ months[selectedMonth] }} {{ selectedYear }}
+                            <div class="space-y-2">
+                                <Label for="search" class="text-sm font-medium">Cari</Label>
+                                <div class="relative">
+                                    <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Input
+                                        v-model="searchQuery"
+                                        type="text"
+                                        placeholder="Cari nama pengguna atau barang..."
+                                        class="pl-9 pr-3 py-2 text-sm border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+                                        @keyup.enter="applyFilters"
+                                    />
                                 </div>
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <Button 
+                                    @click="applyFilters"
+                                    size="sm"
+                                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4"
+                                >
+                                    <Search class="h-4 w-4 mr-1" />
+                                    Cari
+                                </Button>
+                                <Button 
+                                    @click="clearFilters"
+                                    variant="outline"
+                                    size="sm"
+                                    class="border-gray-300 hover:bg-gray-50 px-4"
+                                >
+                                    Reset
+                                </Button>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
+                                Periode: {{ months[selectedMonth] }} {{ selectedYear }}
                             </div>
                         </div>
                     </div>
@@ -300,20 +430,9 @@ const { getPhotoUrl } = usePhotoUrl();
                     <CardDescription class="text-base">Daftar lengkap aktivitas permintaan dan peminjaman per pengguna dalam periode yang dipilih</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="mb-6">
-                        <div class="relative max-w-md">
-                            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                v-model="searchQuery"
-                                placeholder="Cari nama pengguna..."
-                                class="pl-10 h-11 border-2 focus:border-primary"
-                            />
-                        </div>
-                    </div>
-                    
                     <!-- Mobile view - Card layout -->
                     <div class="block md:hidden space-y-4">
-                        <div v-for="user in filteredUsers" :key="user.id" class="border rounded-lg p-4 space-y-3">
+                        <div v-for="user in users.data" :key="user.id" class="border rounded-lg p-4 space-y-3">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1">
                                     <div class="flex items-center gap-3">
@@ -373,7 +492,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                 <!-- Permintaan Details -->
                                 <div v-if="user.permintaan && user.permintaan.length > 0">
                                     <h5 class="font-semibold mb-2 text-sm">Detail Permintaan</h5>
-                                    <div class="space-y-2">
+                                    <div class="space-y-2 max-h-40 overflow-y-auto">
                                         <div v-for="permintaan in user.permintaan" :key="permintaan.id" class="bg-muted/30 rounded-md p-3 space-y-1">
                                             <div class="flex justify-between items-start">
                                                 <span class="font-medium text-sm">{{ permintaan.nama_barang }}</span>
@@ -392,7 +511,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                 <!-- Peminjaman Details -->
                                 <div v-if="user.peminjaman && user.peminjaman.length > 0">
                                     <h5 class="font-semibold mb-2 text-sm">Detail Peminjaman</h5>
-                                    <div class="space-y-2">
+                                    <div class="space-y-2 max-h-40 overflow-y-auto">
                                         <div v-for="peminjaman in user.peminjaman" :key="peminjaman.id" class="bg-muted/30 rounded-md p-3 space-y-1">
                                             <div class="flex justify-between items-start">
                                                 <span class="font-medium text-sm">{{ peminjaman.nama_barang }}</span>
@@ -439,7 +558,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow v-for="user in filteredUsers" :key="user.id" class="hover:bg-muted/30 transition-colors">
+                                    <TableRow v-for="user in users.data" :key="user.id" class="hover:bg-muted/30 transition-colors">
                                         <TableCell class="font-medium py-4">
                                             <div class="flex items-center gap-3">
                                                 <Avatar class="w-8 h-8">
@@ -478,9 +597,9 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </TableCell>
                                     </TableRow>
                                     <!-- Expanded content for each user -->
-                                    <TableRow v-for="user in filteredUsers" :key="`expanded-${user.id}`" v-show="isUserExpanded(user.id)" class="bg-muted/20">
+                                    <TableRow v-for="user in users.data" :key="`expanded-${user.id}`" v-show="isUserExpanded(user.id)" class="bg-muted/20">
                                         <TableCell colspan="4" class="p-0">
-                                            <div class="p-6 space-y-6">
+                                            <div class="p-6 space-y-6 max-h-96 overflow-y-auto">
                                                 <!-- Header with download button -->
                                                 <div class="flex justify-between items-center pb-4 border-b">
                                                     <h3 class="text-lg font-semibold text-gray-900">Detail Laporan: {{ user.name }}</h3>
@@ -582,6 +701,53 @@ const { getPhotoUrl } = usePhotoUrl();
                             </Table>
                         </div>
                     </div>
+
+                    <!-- Pagination for Users -->
+                    <div v-if="users.last_page > 1" class="flex items-center justify-center mt-6">
+                        <nav class="inline-flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                :disabled="users.current_page === 1"
+                                @click="router.get(route('laporan.index'), { 
+                                    month: selectedMonth, 
+                                    year: selectedYear, 
+                                    search: searchQuery,
+                                    page: users.current_page - 1 
+                                })"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </Button>
+                            
+                            <span class="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded">
+                                {{ users.current_page }} / {{ users.last_page }}
+                            </span>
+                            
+                            <span class="px-2 py-1 text-xs text-gray-500">
+                                ({{ users.data.length }} dari {{ users.total }})
+                            </span>
+                            
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                :disabled="users.current_page === users.last_page"
+                                @click="router.get(route('laporan.index'), { 
+                                    month: selectedMonth, 
+                                    year: selectedYear, 
+                                    search: searchQuery,
+                                    page: users.current_page + 1 
+                                })"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Button>
+                        </nav>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -677,6 +843,53 @@ const { getPhotoUrl } = usePhotoUrl();
                                 </TableBody>
                             </Table>
                         </div>
+                    </div>
+
+                    <!-- Pagination for Stock Changes -->
+                    <div v-if="stokChanges.last_page > 1" class="flex items-center justify-center mt-6">
+                        <nav class="inline-flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                :disabled="stokChanges.current_page === 1"
+                                @click="router.get(route('laporan.index'), { 
+                                    month: selectedMonth, 
+                                    year: selectedYear, 
+                                    search: searchQuery,
+                                    stok_page: stokChanges.current_page - 1 
+                                })"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </Button>
+                            
+                            <span class="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded">
+                                {{ stokChanges.current_page }} / {{ stokChanges.last_page }}
+                            </span>
+                            
+                            <span class="px-2 py-1 text-xs text-gray-500">
+                                ({{ stokChanges.data.length }} dari {{ stokChanges.total }})
+                            </span>
+                            
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                :disabled="stokChanges.current_page === stokChanges.last_page"
+                                @click="router.get(route('laporan.index'), { 
+                                    month: selectedMonth, 
+                                    year: selectedYear, 
+                                    search: searchQuery,
+                                    stok_page: stokChanges.current_page + 1 
+                                })"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </Button>
+                        </nav>
                     </div>
                 </CardContent>
             </Card>

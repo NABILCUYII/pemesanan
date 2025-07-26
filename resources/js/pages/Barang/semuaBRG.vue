@@ -27,21 +27,28 @@ interface BarangItem {
 }
 const props = defineProps<{
     barang: {
-        id: number;
-        kode_barang: string;
-        nama_barang: string;
-        deskripsi: string;
-        kategori: string;
-        stok: number;
-        satuan?: string;
-        lokasi?: string;
-    }[];
+        data: BarangItem[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        // ... properti pagination lain dari Laravel ...
+    };
+    stats: {
+        total_barang: number;
+        total_aset: number;
+        total_permintaan: number;
+        total_tersedia: number;
+        total_habis: number;
+    };
 }>();
 
 const searchQuery = ref('');
 
+const items = ref<BarangItem[]>([...props.barang.data]);
+
 const filteredBarang = computed(() => {
-    return props.barang.filter(item => {
+    return items.value.filter(item => {
         return (
             item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
             item.kode_barang.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -59,6 +66,46 @@ const deleteBarang = (id: number) => {
 const viewMode = ref<'card' | 'table'>('card');
 function toggleViewMode() {
   viewMode.value = viewMode.value === 'card' ? 'table' : 'card';
+}
+
+// Pagination helper function
+function getVisiblePages() {
+  const current = props.barang.current_page;
+  const last = props.barang.last_page;
+  const pages = [];
+  
+  if (last <= 7) {
+    // If total pages <= 7, show all pages
+    for (let i = 1; i <= last; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Always show first page
+    pages.push(1);
+    
+    if (current > 3) {
+      pages.push('...');
+    }
+    
+    // Show pages around current page
+    const start = Math.max(2, current - 1);
+    const end = Math.min(last - 1, current + 1);
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    if (current < last - 2) {
+      pages.push('...');
+    }
+    
+    // Always show last page
+    if (last > 1) {
+      pages.push(last);
+    }
+  }
+  
+  return pages;
 }
 </script>
 
@@ -80,6 +127,59 @@ function toggleViewMode() {
                           </Button>
                       </Link>
                   </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-blue-600 text-sm font-medium">Total Barang</p>
+                            <p class="text-2xl font-bold text-blue-800">{{ props.stats.total_barang }}</p>
+                        </div>
+                        <Package class="w-8 h-8 text-blue-600" />
+                    </div>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-indigo-600 text-sm font-medium">Total Aset</p>
+                            <p class="text-2xl font-bold text-indigo-800">{{ props.stats.total_aset }}</p>
+                        </div>
+                        <Package class="w-8 h-8 text-indigo-600" />
+                    </div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-green-600 text-sm font-medium">Total Permintaan</p>
+                            <p class="text-2xl font-bold text-green-800">{{ props.stats.total_permintaan }}</p>
+                        </div>
+                        <Box class="w-8 h-8 text-green-600" />
+                    </div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-emerald-600 text-sm font-medium">Tersedia</p>
+                            <p class="text-2xl font-bold text-emerald-800">{{ props.stats.total_tersedia }}</p>
+                        </div>
+                        <div class="w-8 h-8 bg-emerald-200 rounded-full flex items-center justify-center">
+                            <span class="text-emerald-800 font-bold text-sm">✓</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-red-600 text-sm font-medium">Habis</p>
+                            <p class="text-2xl font-bold text-red-800">{{ props.stats.total_habis }}</p>
+                        </div>
+                        <div class="w-8 h-8 bg-red-200 rounded-full flex items-center justify-center">
+                            <span class="text-red-800 font-bold text-sm">!</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -240,6 +340,46 @@ function toggleViewMode() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div v-if="props.barang.last_page > 1" class="flex justify-center mt-6">
+                <div class="flex items-center space-x-2">
+                    <!-- Previous Page -->
+                    <Link 
+                        v-if="props.barang.current_page > 1"
+                        :href="route('barang.semuaBRG', { page: props.barang.current_page - 1 })"
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                        Previous
+                    </Link>
+                    
+                    <!-- Page Numbers -->
+                    <template v-for="page in getVisiblePages()" :key="page">
+                        <Link 
+                            v-if="page !== '...'"
+                            :href="route('barang.semuaBRG', { page: page })"
+                            :class="[
+                                'px-3 py-2 text-sm font-medium rounded-md',
+                                page === props.barang.current_page
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                            ]"
+                        >
+                            {{ page }}
+                        </Link>
+                        <span v-else class="px-3 py-2 text-sm text-gray-500">...</span>
+                    </template>
+                    
+                    <!-- Next Page -->
+                    <Link 
+                        v-if="props.barang.current_page < props.barang.last_page"
+                        :href="route('barang.semuaBRG', { page: props.barang.current_page + 1 })"
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                        Next
+                    </Link>
                 </div>
             </div>
         </div>

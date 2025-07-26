@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertTriangle, Plus, History, Box, Handshake, ArrowUpCircle, MapPin, Ruler } from 'lucide-vue-next';
+import { Package, AlertTriangle, Plus, History, Box, Handshake, ArrowUpCircle, MapPin, Ruler, Search, Info } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 
 interface Barang {
@@ -22,7 +22,27 @@ interface Barang {
 }
 
 interface Props {
-    barang: Barang[];
+    barang: {
+        data: Barang[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
+    filters: {
+        search?: string;
+        kategori?: string;
+    };
+    statistics: {
+        total: number;
+        stok_habis: number;
+        stok_menipis: number;
+    };
 }
 
 const props = defineProps<Props>();
@@ -34,10 +54,30 @@ const form = useForm({
     keterangan: ''
 });
 
+// Search and filter functionality
+const searchQuery = ref(props.filters.search || '');
+const selectedKategori = ref(props.filters.kategori || '');
+
+const applyFilters = () => {
+    router.get(route('barang.stok'), {
+        search: searchQuery.value,
+        kategori: selectedKategori.value
+    }, {
+        preserveState: true,
+        preserveScroll: true
+    });
+};
+
+const clearFilters = () => {
+    searchQuery.value = '';
+    selectedKategori.value = '';
+    applyFilters();
+};
+
 // Group barang by kategori
 const groupedBarang = computed(() => {
     const groups: { [key: string]: Barang[] } = {};
-    props.barang.forEach(item => {
+    props.barang.data.forEach(item => {
         const kategori = item.kategori === 'peminjaman' ? 'Aset' : 'Permintaan';
         if (!groups[kategori]) {
             groups[kategori] = [];
@@ -103,75 +143,164 @@ const getKategoriTextColor = (kategori: string | number) => {
 };
 </script>
 
+<style scoped>
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .card-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+}
+</style>
+
 <template>
     <Head title="Stok Barang" />
 
     <AppLayout>
         <div class="p-0 md:p-8 min-h-[100vh] bg-gradient-to-br from-indigo-50 via-white to-blue-100">
             <!-- Header -->
-            <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 class="text-3xl font-extrabold flex items-center gap-3 text-indigo-800 drop-shadow-sm">
-                        <span class="bg-indigo-100 rounded-full p-2 shadow">
-                            <Package class="h-8 w-8 text-indigo-500" />
+                    <h1 class="text-2xl font-bold flex items-center gap-2 text-indigo-800">
+                        <span class="bg-indigo-100 rounded-full p-1.5">
+                            <Package class="h-6 w-6 text-indigo-500" />
                         </span>
                         Stok Barang
                     </h1>
-                    <p class="text-base text-gray-500 mt-1">Kelola dan pantau stok barang berdasarkan kategori</p>
+                    <p class="text-sm text-gray-500 mt-1">Kelola dan pantau stok barang berdasarkan kategori</p>
                 </div>
                 <Button 
                     @click="router.get(route('stok-log.index'))"
-                    class="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg hover:from-indigo-600 hover:to-blue-600"
+                    size="sm"
+                    class="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-sm hover:from-indigo-600 hover:to-blue-600"
                 >
-                    <History class="h-5 w-5" />
-                    Lihat Riwayat Stok
+                    <History class="h-4 w-4" />
+                    Riwayat Stok
                 </Button>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Cari nama barang atau kode barang..."
+                            class="pl-9 pr-3 py-2 text-sm border-gray-200 focus:border-indigo-400 focus:ring-indigo-400"
+                            @keyup.enter="applyFilters"
+                        />
+                    </div>
+                    
+                    <!-- Kategori Filter -->
+                    <select
+                        v-model="selectedKategori"
+                        class="border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 w-full sm:w-48"
+                    >
+                        <option value="">Semua Kategori</option>
+                        <option value="peminjaman">Aset (Peminjaman)</option>
+                        <option value="permintaan">Permintaan</option>
+                    </select>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2">
+                        <Button 
+                            @click="applyFilters"
+                            size="sm"
+                            class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white hover:from-indigo-600 hover:to-blue-600 px-4"
+                        >
+                            <Search class="h-4 w-4 mr-1" />
+                            Cari
+                        </Button>
+                        <Button 
+                            @click="clearFilters"
+                            variant="outline"
+                            size="sm"
+                            class="border-gray-300 hover:bg-gray-50 px-4"
+                        >
+                            Reset
+                        </Button>
+                    </div>
+                </div>
             </div>
             
 
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <Card class="shadow-lg border-0 bg-gradient-to-br from-indigo-100 to-blue-50">
-                    <CardContent class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-indigo-100 to-blue-50">
+                    <CardContent class="p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Total Barang</p>
-                                <p class="text-3xl font-extrabold text-indigo-700 drop-shadow">{{ barang.length }}</p>
+                                <p class="text-xs font-medium text-gray-500">Total Barang</p>
+                                <p class="text-2xl font-bold text-indigo-700">{{ statistics.total }}</p>
                             </div>
-                            <span class="bg-indigo-200 rounded-full p-3">
-                                <Package class="h-9 w-9 text-indigo-500" />
+                            <span class="bg-indigo-200 rounded-full p-2">
+                                <Package class="h-6 w-6 text-indigo-500" />
                             </span>
                         </div>
                     </CardContent>
                 </Card>
                 
-                <Card class="shadow-lg border-0 bg-gradient-to-br from-red-100 to-white">
-                    <CardContent class="p-6">
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-red-100 to-white">
+                    <CardContent class="p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Stok Habis</p>
-                                <p class="text-3xl font-extrabold text-red-600 drop-shadow">
-                                    {{ barang.filter(item => item.stok === 0).length }}
+                                <p class="text-xs font-medium text-gray-500">Stok Habis</p>
+                                <p class="text-2xl font-bold text-red-600">
+                                    {{ statistics.stok_habis }}
                                 </p>
                             </div>
-                            <span class="bg-red-200 rounded-full p-3">
-                                <AlertTriangle class="h-9 w-9 text-red-500" />
+                            <span class="bg-red-200 rounded-full p-2">
+                                <AlertTriangle class="h-6 w-6 text-red-500" />
                             </span>
                         </div>
                     </CardContent>
                 </Card>
                 
-                <Card class="shadow-lg border-0 bg-gradient-to-br from-yellow-100 to-white">
-                    <CardContent class="p-6">
+                <Card class="shadow-sm border-0 bg-gradient-to-br from-yellow-100 to-white">
+                    <CardContent class="p-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Stok Menipis</p>
-                                <p class="text-3xl font-extrabold text-yellow-600 drop-shadow">
-                                    {{ barang.filter(item => item.stok > 0 && item.stok <= 5).length }}
+                                <p class="text-xs font-medium text-gray-500">Stok Menipis</p>
+                                <p class="text-2xl font-bold text-yellow-600">
+                                    {{ statistics.stok_menipis }}
                                 </p>
                             </div>
-                            <span class="bg-yellow-200 rounded-full p-3">
-                                <AlertTriangle class="h-9 w-9 text-yellow-500" />
+                            <span class="bg-yellow-200 rounded-full p-2">
+                                <AlertTriangle class="h-6 w-6 text-yellow-500" />
                             </span>
                         </div>
                     </CardContent>
@@ -179,77 +308,92 @@ const getKategoriTextColor = (kategori: string | number) => {
             </div>
 
             <!-- Category Cards -->
-            <div class="space-y-10">
-                <div v-for="(items, kategori) in groupedBarang" :key="kategori" class="space-y-6">
-                    <div class="flex items-center gap-4 mb-2">
-                        <span class="rounded-full bg-white shadow p-2">
-                            <component :is="getKategoriIcon(kategori)" class="h-7 w-7" :class="getKategoriTextColor(kategori)" />
+            <div class="space-y-6">
+                <div v-for="(items, kategori) in groupedBarang" :key="kategori" class="space-y-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="rounded-full bg-white shadow-sm p-1.5">
+                            <component :is="getKategoriIcon(kategori)" class="h-5 w-5" :class="getKategoriTextColor(kategori)" />
                         </span>
-                        <h2 class="text-2xl font-bold tracking-tight" :class="getKategoriTextColor(kategori)">
+                        <h2 class="text-lg font-semibold tracking-tight" :class="getKategoriTextColor(kategori)">
                             {{ kategori }}
                         </h2>
-                        <Badge variant="outline" class="ml-2 px-3 py-1 text-base border-2 border-indigo-200 bg-white shadow">
+                        <Badge variant="outline" class="ml-2 px-2 py-0.5 text-xs border border-indigo-200 bg-white">
                             {{ items.length }} barang
                         </Badge>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
+                    <div class="card-grid">
                         <Card 
                             v-for="item in items" 
                             :key="item.id"
-                            class="hover:shadow-2xl transition-shadow border-0"
+                            class="hover:shadow-lg transition-shadow border-0 h-full flex flex-col"
                             :class="getKategoriColor(kategori)"
                         >
-                            <CardHeader class="pb-3">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <CardTitle class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                            <span class="truncate">{{ item.nama_barang }}</span>
+                            <CardHeader class="pb-2">
+                                <div class="space-y-2">
+                                    <div class="relative">
+                                        <CardTitle 
+                                            class="text-sm font-semibold text-gray-800 leading-tight line-clamp-2 mb-1 cursor-help"
+                                            :title="item.nama_barang.length > 30 ? item.nama_barang : ''"
+                                        >
+                                            {{ item.nama_barang }}
                                         </CardTitle>
-                                        <CardDescription class="text-sm text-gray-500">
+                                        <Info 
+                                            v-if="item.nama_barang.length > 30" 
+                                            class="absolute -top-1 -right-1 h-3 w-3 text-blue-500 opacity-60" 
+                                        />
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <Badge :variant="getStokStatus(item.stok).variant" class="px-2 py-0.5 text-xs">
+                                            {{ getStokStatus(item.stok).status }}
+                                        </Badge>
+                                        <CardDescription class="text-xs text-gray-500 font-mono">
                                             {{ item.kode_barang }}
                                         </CardDescription>
-                                        <div class="flex flex-wrap gap-2 mt-2">
-                                            <span v-if="item.satuan" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
-                                                <Ruler class="w-3 h-3 mr-1" /> Satuan: {{ item.satuan }}
-                                            </span>
-                                            <span v-if="item.lokasi" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5">
-                                                <MapPin class="w-3 h-3 mr-1" /> Lokasi: {{ item.lokasi }}
-                                            </span>
-                                        </div>
                                     </div>
-                                    <Badge :variant="getStokStatus(item.stok).variant" class="ml-2 px-3 py-1 text-base">
-                                        {{ getStokStatus(item.stok).status }}
-                                    </Badge>
+                                    
+                                    <div class="flex flex-wrap gap-1">
+                                        <span v-if="item.satuan" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-1 py-0.5 max-w-full">
+                                            <Ruler class="w-3 h-3 mr-0.5 flex-shrink-0" />
+                                            <span class="truncate">{{ item.satuan }}</span>
+                                        </span>
+                                        <span v-if="item.lokasi" class="inline-flex items-center text-xs text-gray-500 bg-gray-100 rounded px-1 py-0.5 max-w-full">
+                                            <MapPin class="w-3 h-3 mr-0.5 flex-shrink-0" />
+                                            <span class="truncate">{{ item.lokasi }}</span>
+                                        </span>
+                                    </div>
                                 </div>
                             </CardHeader>
                             
-                            <CardContent class="space-y-4">
-                                <div class="space-y-2">
+                            <CardContent class="flex-1 flex flex-col justify-between space-y-3">
+                                <div class="space-y-1">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-500">Stok:</span>
-                                        <span :class="['text-2xl font-extrabold', getStokColor(item.stok)]">
-                                            {{ item.stok }}
-                                            <span v-if="item.satuan" class="text-base font-normal text-gray-500 ml-1">({{ item.satuan }})</span>
-                                        </span>
+                                        <span class="text-xs font-medium text-gray-500">Stok:</span>
+                                        <div class="text-right">
+                                            <span :class="['text-base font-bold', getStokColor(item.stok)]">
+                                                {{ item.stok }}
+                                            </span>
+                                            <span v-if="item.satuan" class="text-xs text-gray-500 ml-1 block">{{ item.satuan }}</span>
+                                        </div>
                                     </div>
                                     
-                                    <div v-if="item.deskripsi" class="text-sm text-gray-600 line-clamp-2 italic">
+                                    <div v-if="item.deskripsi" class="text-xs text-gray-600 line-clamp-1 italic">
                                         {{ item.deskripsi }}
                                     </div>
                                 </div>
 
-                                <div class="flex items-center gap-2 pt-2">
+                                <div class="flex items-center gap-1 pt-1 mt-auto">
                                     <Dialog :open="isDialogOpen && selectedBarang?.id === item.id" @update:open="isDialogOpen = $event">
                                         <DialogTrigger as-child>
                                             <Button 
                                                 variant="outline" 
                                                 size="sm"
-                                                class="flex-1 border-indigo-300 hover:bg-indigo-50"
+                                                class="flex-1 border-indigo-300 hover:bg-indigo-50 text-xs px-2"
                                                 @click="openAddStockDialog(item)"
                                             >
-                                                <Plus class="h-4 w-4 mr-1" />
-                                                Tambah Stok
+                                                <Plus class="h-3 w-3 mr-1" />
+                                                Tambah
                                             </Button>
                                         </DialogTrigger>
                                         <DialogContent class="sm:max-w-lg p-0 overflow-hidden">
@@ -297,7 +441,6 @@ const getKategoriTextColor = (kategori: string | number) => {
                                                                 required
                                                                 class="pr-12"
                                                             />
-                                                            <!-- HILANGKAN TANDA + -->
                                                         </div>
                                                         <p v-if="form.errors.stok_tambah" class="text-sm text-red-500 mt-1">
                                                             {{ form.errors.stok_tambah }}
@@ -342,10 +485,10 @@ const getKategoriTextColor = (kategori: string | number) => {
                                     <Button 
                                         variant="outline" 
                                         size="sm"
-                                        class="border-indigo-300 hover:bg-indigo-50"
+                                        class="border-indigo-300 hover:bg-indigo-50 p-1"
                                         @click="viewStokHistory(item.id)"
                                     >
-                                        <History class="h-4 w-4" />
+                                        <History class="h-3 w-3" />
                                     </Button>
                                 </div>
                             </CardContent>
@@ -354,13 +497,58 @@ const getKategoriTextColor = (kategori: string | number) => {
                 </div>
             </div>
 
+            <!-- Pagination -->
+            <div v-if="barang.last_page > 1" class="flex items-center justify-center mt-6">
+                <nav class="inline-flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        :disabled="barang.current_page === 1"
+                        @click="router.get(route('barang.stok'), { 
+                            search: searchQuery, 
+                            kategori: selectedKategori, 
+                            page: barang.current_page - 1 
+                        })"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </Button>
+                    
+                    <span class="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded">
+                        {{ barang.current_page }} / {{ barang.last_page }}
+                    </span>
+                    
+                    <span class="px-2 py-1 text-xs text-gray-500">
+                        ({{ barang.data.length }} dari {{ barang.total }})
+                    </span>
+                    
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        :disabled="barang.current_page === barang.last_page"
+                        @click="router.get(route('barang.stok'), { 
+                            search: searchQuery, 
+                            kategori: selectedKategori, 
+                            page: barang.current_page + 1 
+                        })"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </Button>
+                </nav>
+            </div>
+
             <!-- Empty State -->
-            <div v-if="barang.length === 0" class="text-center py-20">
-                <span class="bg-indigo-100 rounded-full p-6 shadow inline-block mb-4">
-                    <Package class="h-16 w-16 text-indigo-400" />
+            <div v-if="barang.data.length === 0" class="text-center py-12">
+                <span class="bg-indigo-100 rounded-full p-4 shadow-sm inline-block mb-3">
+                    <Package class="h-12 w-12 text-indigo-400" />
                 </span>
-                <h3 class="text-2xl font-bold text-gray-400 mb-2">Belum ada data barang</h3>
-                <p class="text-gray-500">Mulai dengan menambahkan barang baru ke sistem</p>
+                <h3 class="text-lg font-semibold text-gray-400 mb-1">Belum ada data barang</h3>
+                <p class="text-sm text-gray-500">Mulai dengan menambahkan barang baru ke sistem</p>
             </div>
         </div>
     </AppLayout>

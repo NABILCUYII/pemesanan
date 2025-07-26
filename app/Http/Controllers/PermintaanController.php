@@ -236,10 +236,50 @@ class PermintaanController extends Controller
             ->where('status', 'pending')
             ->latest()
             ->get();
+
+        $inventaris = \App\Models\Inventaris::with(['user', 'barang'])
+            ->where('status', 'pending')
+            ->latest()
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'nomor_inventaris' => $item->nomor_inventaris,
+                    'nama_barang' => $item->barang->nama_barang,
+                    'kode_barang' => $item->barang->kode_barang,
+                    'jumlah' => $item->jumlah,
+                    'status' => $item->status,
+                    'tanggal_peminjaman' => $item->tanggal_peminjaman,
+                    'tanggal_pengembalian' => $item->tanggal_pengembalian,
+                    'due_date' => $item->due_date,
+                    'keterangan' => $item->keterangan,
+                    'lokasi_peminjaman' => $item->lokasi_peminjaman,
+                    'alasan_approval' => $item->alasan_approval,
+                    'catatan_approval' => $item->catatan_approval,
+                    'kondisi_barang' => $item->kondisi_barang,
+                    'catatan_pengembalian' => $item->catatan_pengembalian,
+                    'is_overdue' => $item->isOverdue(),
+                    'created_at' => $item->created_at,
+                    'user' => [
+                        'id' => $item->user->id,
+                        'name' => $item->user->name,
+                        'email' => $item->user->email,
+                        'photo' => $item->user->photo,
+                        'photo_url' => $item->user->photo ? \Storage::disk('public')->url($item->user->photo) : null,
+                    ],
+                    'barang' => [
+                        'id' => $item->barang->id,
+                        'nama_barang' => $item->barang->nama_barang,
+                        'kode_barang' => $item->barang->kode_barang,
+                        'kategori' => $item->barang->kategori,
+                    ],
+                ];
+            });
     
         return Inertia::render('permintaan/approval', [
             'permintaan' => $permintaan,
-            'peminjaman' => $peminjaman
+            'peminjaman' => $peminjaman,
+            'inventaris' => $inventaris
         ]);
     }
     

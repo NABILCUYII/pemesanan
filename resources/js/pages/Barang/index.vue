@@ -9,22 +9,37 @@ import { ref, computed } from 'vue';
 
 const props = defineProps<{
     barang: {
-        id: number;
-        kode_barang: string;
-        nama_barang: string;
-        deskripsi: string;
-        kategori: string;
-        stok: number;
-        satuan?: string;
-        lokasi?: string;
-    }[];
+        data: {
+            id: number;
+            kode_barang: string;
+            nama_barang: string;
+            deskripsi: string;
+            kategori: string;
+            stok: number;
+            satuan?: string;
+            lokasi?: string;
+        }[];
+        links: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+        meta: {
+            current_page: number;
+            last_page: number;
+            per_page: number;
+            total: number;
+            asset_count: number;
+            consumable_count: number;
+        };
+    };
 }>();
 
 const searchQuery = ref('');
 const selectedKategori = ref('');
 
 const filteredBarang = computed(() => {
-    return props.barang.filter(item => {
+    return props.barang.data.filter(item => {
         const matchesSearch = item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
             item.kode_barang.toLowerCase().includes(searchQuery.value.toLowerCase());
         const matchesKategori = !selectedKategori.value || item.kategori === selectedKategori.value;
@@ -40,7 +55,7 @@ const groupedBarang = computed(() => {
         }
         acc[key].push(item);
         return acc;
-    }, {} as Record<string, typeof props.barang>);
+    }, {} as Record<string, typeof props.barang.data>);
 });
 
 const deleteBarang = (id: number) => {
@@ -50,8 +65,9 @@ const deleteBarang = (id: number) => {
 };
 
 // Count items by category
-const assetCount = computed(() => props.barang.filter(item => item.kategori === 'peminjaman').length);
-const consumableCount = computed(() => props.barang.filter(item => item.kategori === 'permintaan').length);
+const assetCount = computed(() => props.barang?.meta?.asset_count ?? 0);
+const consumableCount = computed(() => props.barang?.meta?.consumable_count ?? 0);
+const totalBarang = computed(() => assetCount.value + consumableCount.value);
 
 // Mode tampilan: 'card' atau 'table'
 const viewMode = ref<'card' | 'table'>('card');
@@ -71,9 +87,9 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Pencil, Eye } from 'lucide-vue-next';
-const selectedItem = ref<typeof props.barang[0] | null>(null);
+const selectedItem = ref<typeof props.barang.data[0] | null>(null);
 const showDetail = ref(false);
-function openDetail(item: typeof props.barang[0]) {
+function openDetail(item: typeof props.barang.data[0]) {
   selectedItem.value = item;
   showDetail.value = true;
 }
@@ -126,7 +142,7 @@ function closeDetail() {
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold text-purple-800">{{ props.barang.length }}</div>
+                                <div class="text-2xl font-bold text-purple-800">{{ totalBarang }}</div>
                                 <div class="text-purple-600 text-sm">item</div>
                             </div>
                         </div>
@@ -204,7 +220,7 @@ function closeDetail() {
                         <div class="text-green-800 font-medium">Total Permintaan</div>
                     </div>
                     <div class="text-center p-4 bg-gray-50 rounded-lg">
-                        <div class="text-2xl font-bold text-gray-600">{{ props.barang.length }}</div>
+                        <div class="text-2xl font-bold text-gray-600">{{ totalBarang }}</div>
                         <div class="text-gray-800 font-medium">Total Semua</div>
                     </div>
                 </div>
@@ -216,7 +232,7 @@ function closeDetail() {
                 <div v-if="viewMode === 'card'">
                   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       <div
-                          v-for="item in props.barang"
+                          v-for="item in filteredBarang"
                           :key="item.id"
                           class="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
                           :class="[item.kategori === 'peminjaman' ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50']"
@@ -240,7 +256,7 @@ function closeDetail() {
                           </p>
                       </div>
                   </div>
-                  <div v-if="props.barang.length === 0" class="text-center py-8 text-gray-500">
+                  <div v-if="filteredBarang.length === 0" class="text-center py-8 text-gray-500">
                       <p>Belum ada barang yang ditambahkan.</p>
                   </div>
                   <!-- Detail Dialog -->
@@ -286,7 +302,7 @@ function closeDetail() {
                         </div>
                       </div>
                       <DialogFooter class="flex flex-col sm:flex-row gap-2 mt-4">
-                        <template v-if="props.barang.length === 0">
+                        <template v-if="totalBarang === 0">
                           <Link v-if="selectedItem" :href="route('barang.edit', selectedItem.id)" class="w-full sm:w-auto">
                             <Button variant="outline" class="w-full">
                               <Pencil class="w-4 h-4 mr-2" /> Edit
@@ -314,7 +330,7 @@ function closeDetail() {
                         </tr>
                       </thead>
                       <tbody class="bg-white divide-y divide-gray-200">
-                        <tr v-for="item in props.barang" :key="item.id">
+                        <tr v-for="item in filteredBarang" :key="item.id">
                           <td class="px-4 py-2 whitespace-nowrap">{{ item.kode_barang }}</td>
                           <td class="px-4 py-2 whitespace-nowrap">{{ item.nama_barang }}</td>
                           <td class="px-4 py-2 whitespace-nowrap">
@@ -334,12 +350,29 @@ function closeDetail() {
                             <button @click="deleteBarang(item.id)" class="text-red-600 hover:underline">Hapus</button>
                           </td>
                         </tr>
-                        <tr v-if="props.barang.length === 0">
+                        <tr v-if="filteredBarang.length === 0">
                           <td colspan="6" class="text-center py-8 text-gray-500">Belum ada barang yang ditambahkan.</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
+                </div>
+                <!-- Pagination -->
+                <div v-if="props.barang.links && props.barang.links.length > 3" class="flex justify-center mt-6">
+                  <nav class="inline-flex -space-x-px">
+                    <button
+                      v-for="(link, i) in props.barang.links"
+                      :key="i"
+                      :disabled="!link.url"
+                      @click="link.url && router.get(link.url)"
+                      v-html="link.label"
+                      :class="[
+                        'px-3 py-1 border text-sm',
+                        link.active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100',
+                        !link.url ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      ]"
+                    />
+                  </nav>
                 </div>
             </div>
         </div>

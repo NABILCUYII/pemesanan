@@ -44,7 +44,7 @@ class UserController extends Controller
         ]);
     }
     
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -58,9 +58,47 @@ class UserController extends Controller
             ]);
         }
         
-        $users = User::with('role')->get(); 
+        $query = User::with('role');
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->whereHas('role', function($q) use ($request) {
+                $q->where('role', $request->input('role'));
+            });
+        }
+        
+        $users = $query->orderBy('name')->paginate(15);
+        
+        // Get statistics
+        $totalUsers = User::count();
+        $adminUsers = User::whereHas('role', function($q) {
+            $q->where('role', 'admin');
+        })->count();
+        $regularUsers = User::whereHas('role', function($q) {
+            $q->where('role', 'user');
+        })->count();
+        $newUsers = User::whereHas('role', function($q) {
+            $q->where('role', 'penggunaBARU');
+        })->count();
+        
         return Inertia::render('users/index', [
-            'users' => $users
+            'users' => $users,
+            'filters' => $request->only(['search', 'role']),
+            'statistics' => [
+                'total' => $totalUsers,
+                'admin' => $adminUsers,
+                'regular' => $regularUsers,
+                'new' => $newUsers
+            ]
         ]);
     }
 
