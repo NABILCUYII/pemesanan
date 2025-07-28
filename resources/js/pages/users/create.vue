@@ -5,7 +5,8 @@ import { Head, useForm, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, UserPlus, Shield, User, Mail, Lock } from 'lucide-vue-next';
+import { ArrowLeft, UserPlus, Shield, User, Mail, Lock, Eye, EyeOff } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Users', href: route('users.index') },
@@ -18,6 +19,12 @@ const form = useForm({
   password: '',
   role: 'user',
 });
+
+const showPassword = ref(false);
+
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+};
 
 const submit = () => {
   form.post(route('users.store'));
@@ -91,14 +98,24 @@ const goBack = () => {
               <Lock class="w-4 h-4 inline mr-2" />
               Password
             </Label>
-            <Input
-              id="password"
-              v-model="form.password"
-              type="password"
-              class="mt-1"
-              required
-              placeholder="Enter secure password (min. 8 characters)"
-            />
+            <div class="relative">
+              <Input
+                id="password"
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                class="mt-1 pr-12"
+                required
+                placeholder="Enter secure password (min. 8 characters)"
+              />
+              <button
+                type="button"
+                @click="togglePasswordVisibility"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <Eye v-if="!showPassword" class="h-5 w-5" />
+                <EyeOff v-else class="h-5 w-5" />
+              </button>
+            </div>
             <div v-if="form.errors.password" class="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded-md">
               {{ form.errors.password }}
             </div>

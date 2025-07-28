@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle, User, Mail, Lock, UserPlus } from 'lucide-vue-next';
+import { LoaderCircle, User, Mail, Lock, UserPlus, Eye, EyeOff } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 const form = useForm({
     name: '',
@@ -15,6 +16,17 @@ const form = useForm({
     password_confirmation: '',
     role: 'user', // Hidden role field with default value 'user'
 });
+
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+};
+
+const toggleConfirmPasswordVisibility = () => {
+    showConfirmPassword.value = !showConfirmPassword.value;
+};
 
 const submit = () => {
     form.post(route('register'), {
@@ -89,14 +101,23 @@ const submit = () => {
                             </div>
                             <Input
                                 id="password"
-                                type="password"
+                                :type="showPassword ? 'text' : 'password'"
                                 required
                                 :tabindex="3"
                                 autocomplete="new-password"
                                 v-model="form.password"
                                 placeholder="Password"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                class="pl-10 pr-12 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
                             />
+                            <button
+                                type="button"
+                                @click="togglePasswordVisibility"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-white/60 hover:text-white transition-colors"
+                                :tabindex="4"
+                            >
+                                <Eye v-if="!showPassword" class="h-5 w-5" />
+                                <EyeOff v-else class="h-5 w-5" />
+                            </button>
                             <InputError :message="form.errors.password" />
                         </div>
 
@@ -106,14 +127,23 @@ const submit = () => {
                             </div>
                             <Input
                                 id="password_confirmation"
-                                type="password"
+                                :type="showConfirmPassword ? 'text' : 'password'"
                                 required
-                                :tabindex="4"
+                                :tabindex="5"
                                 autocomplete="new-password"
                                 v-model="form.password_confirmation"
                                 placeholder="Confirm password"
-                                class="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
+                                class="pl-10 pr-12 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:border-white/40"
                             />
+                            <button
+                                type="button"
+                                @click="toggleConfirmPasswordVisibility"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-white/60 hover:text-white transition-colors"
+                                :tabindex="6"
+                            >
+                                <Eye v-if="!showConfirmPassword" class="h-5 w-5" />
+                                <EyeOff v-else class="h-5 w-5" />
+                            </button>
                             <InputError :message="form.errors.password_confirmation" />
                         </div>
 
@@ -121,6 +151,7 @@ const submit = () => {
                             type="submit" 
                             class="w-full bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]"
                             :disabled="form.processing"
+                            :tabindex="7"
                         >
                             <UserPlus v-if="!form.processing" class="h-5 w-5 mr-2" />
                             <LoaderCircle v-else class="h-5 w-5 mr-2 animate-spin" />
@@ -130,7 +161,7 @@ const submit = () => {
 
                     <div class="text-center text-sm text-white/80">
                         Already have an account?
-                        <TextLink :href="route('login')" class="text-white font-semibold hover:text-white/90 transition-colors" :tabindex="6">
+                        <TextLink :href="route('login')" class="text-white font-semibold hover:text-white/90 transition-colors" :tabindex="8">
                             Log in
                         </TextLink>
                     </div>

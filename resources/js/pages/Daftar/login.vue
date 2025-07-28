@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useForm, Head } from '@inertiajs/vue3';
+import { Eye, EyeOff } from 'lucide-vue-next';
 
 const form = useForm({
   email: '',
@@ -9,6 +10,11 @@ const form = useForm({
 });
 
 const submitting = ref(false);
+const showPassword = ref(false);
+
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value;
+};
 
 const submit = () => {
   submitting.value = true;
@@ -44,13 +50,23 @@ const submit = () => {
 
         <div>
           <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            required
-            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          />
+          <div class="relative">
+            <input
+              id="password"
+              v-model="form.password"
+              :type="showPassword ? 'text' : 'password'"
+              required
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pr-12"
+            />
+            <button
+              type="button"
+              @click="togglePasswordVisibility"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <Eye v-if="!showPassword" class="h-5 w-5" />
+              <EyeOff v-else class="h-5 w-5" />
+            </button>
+          </div>
           <div v-if="form.errors.password" class="mt-1 text-sm text-red-600">
             {{ form.errors.password }}
           </div>

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle, Mail, Lock, LogIn } from 'lucide-vue-next';
+import { LoaderCircle, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 defineProps<{
     status?: string;
@@ -19,6 +20,12 @@ const form = useForm({
     password: '',
     remember: false,
 });
+
+const showPassword = ref(false);
+
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+};
 
 const submit = () => {
     form.post(route('login'), {
@@ -77,24 +84,33 @@ const submit = () => {
                             </div>
                             <Input
                                 id="password"
-                                type="password"
+                                :type="showPassword ? 'text' : 'password'"
                                 required
                                 :tabindex="2"
                                 autocomplete="current-password"
                                 v-model="form.password"
                                 placeholder="Kata sandi"
-                                class="pl-10 bg-white/20 border-[#2F4F4F]/20 text-[#2F4F4F] placeholder:text-[#2F4F4F]/60 focus:border-[#20B2AA]/40 focus:ring-[#20B2AA]/20"
+                                class="pl-10 pr-12 bg-white/20 border-[#2F4F4F]/20 text-[#2F4F4F] placeholder:text-[#2F4F4F]/60 focus:border-[#20B2AA]/40 focus:ring-[#20B2AA]/20"
                             />
+                            <button
+                                type="button"
+                                @click="togglePasswordVisibility"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#2F4F4F]/60 hover:text-[#2F4F4F] transition-colors"
+                                :tabindex="3"
+                            >
+                                <Eye v-if="!showPassword" class="h-5 w-5" />
+                                <EyeOff v-else class="h-5 w-5" />
+                            </button>
                             <InputError :message="form.errors.password" class="text-orange-600" />
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between">
                         <Label for="remember" class="flex items-center space-x-3 text-[#2F4F4F]/80">
-                            <Checkbox id="remember" v-model="form.remember" :tabindex="3" class="border-[#2F4F4F]/40" />
+                            <Checkbox id="remember" v-model="form.remember" :tabindex="4" class="border-[#2F4F4F]/40" />
                             <span>Ingat saya</span>
                         </Label>
-                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm text-[#2F4F4F]/80 hover:text-[#20B2AA]" :tabindex="5">
+                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm text-[#2F4F4F]/80 hover:text-[#20B2AA]" :tabindex="6">
                             Lupa kata sandi?
                         </TextLink>
                     </div>
@@ -102,7 +118,7 @@ const submit = () => {
                     <Button 
                         type="submit" 
                         class="w-full bg-gradient-to-r from-[#20B2AA] to-[#87CEEB] hover:from-[#1A9A94] hover:to-[#5F9EA0] text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:scale-[0.98]" 
-                        :tabindex="4" 
+                        :tabindex="5" 
                         :disabled="form.processing"
                     >
                         <LogIn v-if="!form.processing" class="h-5 w-5 mr-2" />
@@ -112,7 +128,7 @@ const submit = () => {
 
                     <div class="text-center text-sm text-[#2F4F4F]/80">
                         Belum punya akun?
-                        <TextLink :href="route('register')" class="text-[#20B2AA] hover:text-[#1A9A94] font-semibold transition-colors" :tabindex="5">Daftar</TextLink>
+                        <TextLink :href="route('register')" class="text-[#20B2AA] hover:text-[#1A9A94] font-semibold transition-colors" :tabindex="7">Daftar</TextLink>
                     </div>
                 </form>
             </div>
