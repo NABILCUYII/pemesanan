@@ -10,36 +10,56 @@ class BarangController extends Controller
 {
     public function index()
     {
-
         // Check if user is admin
-       // Check if user is admin
-        
-        
-        $barang = Barang::latest()->get();
+        // Check if user is admin
+        $barang = Barang::latest()->paginate(10);
+        // Tambahkan total kategori ke meta
+        $assetCount = Barang::where('kategori', 'peminjaman')->count();
+        $consumableCount = Barang::where('kategori', 'permintaan')->count();
+        $barang->setCollection($barang->getCollection()); // pastikan collection tetap
+        $meta = $barang->toArray();
+        $meta['meta']['asset_count'] = $assetCount;
+        $meta['meta']['consumable_count'] = $consumableCount;
         return Inertia::render('Barang/index', [
-            'barang' => $barang
+            'barang' => $meta
         ]);
     }
 
     public function aset()
     {
-
-       
+        $barang = Barang::where('kategori', 'peminjaman')->latest()->paginate(12); // 12 per page, bisa diubah
         
-        $barang = Barang::latest()->get();
+        // Get total counts for statistics
+        $totalAset = Barang::where('kategori', 'peminjaman')->count();
+        $totalTersedia = Barang::where('kategori', 'peminjaman')->where('stok', '>', 0)->count();
+        $totalHabis = Barang::where('kategori', 'peminjaman')->where('stok', 0)->count();
+        
         return Inertia::render('Barang/aset', [
-            'barang' => $barang
+            'barang' => $barang,
+            'stats' => [
+                'total_aset' => $totalAset,
+                'total_tersedia' => $totalTersedia,
+                'total_habis' => $totalHabis
+            ]
         ]);
     }
 
     public function permintaan()
     {
-
-      
+        $barang = Barang::where('kategori', 'permintaan')->latest()->paginate(12); // 12 per page, bisa diubah
         
-        $barang = Barang::latest()->get();
+        // Get total counts for statistics
+        $totalPermintaan = Barang::where('kategori', 'permintaan')->count();
+        $totalTersedia = Barang::where('kategori', 'permintaan')->where('stok', '>', 0)->count();
+        $totalHabis = Barang::where('kategori', 'permintaan')->where('stok', 0)->count();
+        
         return Inertia::render('Barang/permintaan', [
-            'barang' => $barang
+            'barang' => $barang,
+            'stats' => [
+                'total_permintaan' => $totalPermintaan,
+                'total_tersedia' => $totalTersedia,
+                'total_habis' => $totalHabis
+            ]
         ]);
     }
 
@@ -156,7 +176,7 @@ class BarangController extends Controller
             ->with('message', 'Barang berhasil dihapus');
     }
 
-    public function stok()
+    public function stok(Request $request)
     {
 
         // Check if user is admin
@@ -170,9 +190,37 @@ class BarangController extends Controller
             ]);
         }
         
-        $barang = Barang::latest()->get();
+        $query = Barang::latest();
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('nama_barang', 'like', "%{$search}%")
+                  ->orWhere('kode_barang', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by kategori
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->input('kategori'));
+        }
+        
+        $barang = $query->paginate(12);
+        
+        // Get statistics for summary cards
+        $totalBarang = Barang::count();
+        $stokHabis = Barang::where('stok', 0)->count();
+        $stokMenipis = Barang::where('stok', '>', 0)->where('stok', '<=', 5)->count();
+        
         return Inertia::render('Barang/stok', [
-            'barang' => $barang
+            'barang' => $barang,
+            'filters' => $request->only(['search', 'kategori']),
+            'statistics' => [
+                'total' => $totalBarang,
+                'stok_habis' => $stokHabis,
+                'stok_menipis' => $stokMenipis
+            ]
         ]);
     }
 
@@ -240,11 +288,34 @@ class BarangController extends Controller
         return response()->json(['count' => $count]);
     }
 
-    public function semua()
+    public function semua(Request $request)
     {
-        $barang = Barang::latest()->get();
+        $query = Barang::latest();
+        if ($request->has('q')) {
+            $q = $request->input('q');
+            $query->where('nama_barang', 'like', "%$q%");
+        }
+        $barang = $query->paginate(12);
+        
+        // Get total counts for statistics
+        $totalBarang = Barang::count();
+        $totalAset = Barang::where('kategori', 'peminjaman')->count();
+        $totalPermintaan = Barang::where('kategori', 'permintaan')->count();
+        $totalTersedia = Barang::where('stok', '>', 0)->count();
+        $totalHabis = Barang::where('stok', 0)->count();
+        
+        if ($request->wantsJson()) {
+            return response()->json($barang);
+        }
         return Inertia::render('Barang/semuaBRG', [
-            'barang' => $barang
+            'barang' => $barang,
+            'stats' => [
+                'total_barang' => $totalBarang,
+                'total_aset' => $totalAset,
+                'total_permintaan' => $totalPermintaan,
+                'total_tersedia' => $totalTersedia,
+                'total_habis' => $totalHabis
+            ]
         ]);
     }
 }

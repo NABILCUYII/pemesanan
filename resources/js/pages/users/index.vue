@@ -3,6 +3,11 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Users, Shield, User, UserPlus, Search, Filter } from 'lucide-vue-next';
 
 interface User {
   id: number;
@@ -13,7 +18,28 @@ interface User {
 }
 
 interface Props {
-  users: User[];
+  users: {
+    data: User[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    links: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+  };
+  filters: {
+    search?: string;
+    role?: string;
+  };
+  statistics: {
+    total: number;
+    admin: number;
+    regular: number;
+    new: number;
+  };
 }
 
 const props = defineProps<Props>();
@@ -22,17 +48,28 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Users', href: route('users.index') },
 ];
 
-const searchQuery = ref('');
+// Search and filter functionality
+const searchQuery = ref(props.filters.search || '');
+const selectedRole = ref(props.filters.role || '');
+
+const applyFilters = () => {
+  router.get(route('users.index'), {
+    search: searchQuery.value,
+    role: selectedRole.value
+  }, {
+    preserveState: true,
+    preserveScroll: true
+  });
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedRole.value = '';
+  applyFilters();
+};
+
 const showDeleteModal = ref(false);
 const userToDelete = ref<User | null>(null);
-
-const filteredUsers = computed(() => {
-  const query = searchQuery.value.toLowerCase().trim();
-  return props.users.filter(user => 
-    user.name.toLowerCase().includes(query) ||
-    user.email.toLowerCase().includes(query)
-  );
-});
 
 const confirmDelete = (user: User) => {
   userToDelete.value = user;
@@ -60,7 +97,7 @@ const destroy = () => {
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="mx-auto max-w-7xl py-8 px-4">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-bold text-gray-800 mb-1">Daftar Pengguna</h1>
           <p class="text-gray-500 text-sm">Kelola data user aplikasi dengan mudah dan nyaman.</p>
@@ -93,20 +130,110 @@ const destroy = () => {
         </div>
       </div>
 
-      <!-- Search Bar -->
-      <div class="mb-6">
-        <div class="relative max-w-md mx-auto">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+      <!-- Statistics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card class="shadow-sm border-0 bg-gradient-to-br from-blue-100 to-blue-50">
+          <CardContent class="p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-gray-500">Total Users</p>
+                <p class="text-2xl font-bold text-blue-700">{{ statistics.total }}</p>
+              </div>
+              <span class="bg-blue-200 rounded-full p-2">
+                <Users class="h-6 w-6 text-blue-500" />
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card class="shadow-sm border-0 bg-gradient-to-br from-red-100 to-red-50">
+          <CardContent class="p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-gray-500">Admin</p>
+                <p class="text-2xl font-bold text-red-700">{{ statistics.admin }}</p>
+              </div>
+              <span class="bg-red-200 rounded-full p-2">
+                <Shield class="h-6 w-6 text-red-500" />
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card class="shadow-sm border-0 bg-gradient-to-br from-green-100 to-green-50">
+          <CardContent class="p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-gray-500">Regular Users</p>
+                <p class="text-2xl font-bold text-green-700">{{ statistics.regular }}</p>
+              </div>
+              <span class="bg-green-200 rounded-full p-2">
+                <User class="h-6 w-6 text-green-500" />
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card class="shadow-sm border-0 bg-gradient-to-br from-yellow-100 to-yellow-50">
+          <CardContent class="p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-gray-500">New Users</p>
+                <p class="text-2xl font-bold text-yellow-700">{{ statistics.new }}</p>
+              </div>
+              <span class="bg-yellow-200 rounded-full p-2">
+                <UserPlus class="h-6 w-6 text-yellow-500" />
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- Search and Filter Section -->
+      <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-100 p-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <!-- Search Input -->
+          <div class="relative flex-1">
+            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari nama atau email pengguna..."
+              class="pl-9 pr-3 py-2 text-sm border-gray-200 focus:border-blue-400 focus:ring-blue-400"
+              @keyup.enter="applyFilters"
+            />
           </div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Cari nama atau email pengguna..."
-            class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg shadow-sm leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-          />
+          
+          <!-- Role Filter -->
+          <select
+            v-model="selectedRole"
+            class="border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 w-full sm:w-48"
+          >
+            <option value="">Semua Role</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+            <option value="penggunaBARU">Pengguna Baru</option>
+          </select>
+          
+          <!-- Action Buttons -->
+          <div class="flex gap-2">
+            <Button 
+              @click="applyFilters"
+              size="sm"
+              class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4"
+            >
+              <Search class="h-4 w-4 mr-1" />
+              Cari
+            </Button>
+            <Button 
+              @click="clearFilters"
+              variant="outline"
+              size="sm"
+              class="border-gray-300 hover:bg-gray-50 px-4"
+            >
+              Reset
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -123,18 +250,18 @@ const destroy = () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-if="filteredUsers.length === 0">
+            <tr v-if="users.data.length === 0">
               <td colspan="5" class="px-8 py-6 text-center text-gray-400 text-base">
-                <span v-if="searchQuery">Tidak ada hasil pencarian</span>
+                <span v-if="searchQuery || selectedRole">Tidak ada hasil pencarian</span>
                 <span v-else>Tidak ada user ditemukan</span>
               </td>
             </tr>
             <tr
-              v-for="(user, idx) in filteredUsers"
+              v-for="(user, idx) in users.data"
               :key="user.id"
               class="border-b last:border-b-0 border-gray-100 hover:bg-blue-50/40 transition"
             >
-              <td class="px-8 py-4 text-gray-500 text-sm">{{ idx + 1 }}</td>
+              <td class="px-8 py-4 text-gray-500 text-sm">{{ (users.current_page - 1) * users.per_page + idx + 1 }}</td>
               <td class="px-8 py-4 text-gray-800 font-medium flex items-center gap-3">
                  <!-- User photo profile like in UserMenuContent -->
                  <template v-if="user && user.photo">
@@ -167,7 +294,7 @@ const destroy = () => {
               <td class="px-8 py-4">
                 <span
                   class="inline-flex items-center rounded-full px-4 py-1 text-sm font-semibold"
-                  :class="user.role?.role === 'admin' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'"
+                  :class="user.role?.role === 'admin' ? 'bg-red-100 text-red-600' : user.role?.role === 'penggunaBARU' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-700'"
                 >
                   {{ user.role?.role || 'No role' }}
                 </span>
@@ -199,14 +326,14 @@ const destroy = () => {
         </table>
 
         <!-- Card list untuk layar kecil -->
-        <div v-if="filteredUsers.length === 0" class="md:hidden text-center text-gray-400 py-10 text-base">
-          <span v-if="searchQuery">Tidak ada hasil pencarian</span>
+        <div v-if="users.data.length === 0" class="md:hidden text-center text-gray-400 py-10 text-base">
+          <span v-if="searchQuery || selectedRole">Tidak ada hasil pencarian</span>
           <span v-else>Tidak ada user ditemukan</span>
         </div>
 
         <div class="space-y-5 md:hidden p-4">
           <div
-            v-for="user in filteredUsers"
+            v-for="(user, idx) in users.data"
             :key="user.id"
             class="border border-gray-100 rounded-xl p-6 shadow bg-white flex flex-col gap-3"
           >
@@ -218,7 +345,7 @@ const destroy = () => {
                 <h2 class="text-lg font-semibold text-gray-800">{{ user.name }}</h2>
                 <span
                   class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold"
-                  :class="user.role?.role === 'admin' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'"
+                  :class="user.role?.role === 'admin' ? 'bg-red-100 text-red-600' : user.role?.role === 'penggunaBARU' ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-700'"
                 >
                   {{ user.role?.role || 'No role' }}
                 </span>
@@ -247,6 +374,51 @@ const destroy = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="users.last_page > 1" class="flex items-center justify-center mt-6">
+        <nav class="inline-flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            :disabled="users.current_page === 1"
+            @click="router.get(route('users.index'), { 
+              search: searchQuery, 
+              role: selectedRole, 
+              page: users.current_page - 1 
+            })"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Button>
+          
+          <span class="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded">
+            {{ users.current_page }} / {{ users.last_page }}
+          </span>
+          
+          <span class="px-2 py-1 text-xs text-gray-500">
+            ({{ users.data.length }} dari {{ users.total }})
+          </span>
+          
+          <Button 
+            variant="ghost" 
+            size="sm"
+            class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            :disabled="users.current_page === users.last_page"
+            @click="router.get(route('users.index'), { 
+              search: searchQuery, 
+              role: selectedRole, 
+              page: users.current_page + 1 
+            })"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </Button>
+        </nav>
       </div>
     </div>
 

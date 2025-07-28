@@ -58,18 +58,29 @@ interface Peminjaman {
 
 interface InventarisItem {
     id: number;
+    nomor_inventaris: string;
     nama_barang: string;
     kode_barang: string;
-    nomor_inventaris: string;
-    status: string;
-    kategori: string;
-    peminjam?: User;
-    tanggal_pinjam?: string;
+    jumlah: number;
+    status: 'pending' | 'approved' | 'in_progress' | 'rejected' | 'returned' | 'overdue' | 'maintenance';
+    tanggal_peminjaman: string;
     tanggal_pengembalian?: string;
-    alasan?: string;
-    catatan?: string;
+    due_date: string;
+    keterangan?: string;
+    lokasi_peminjaman?: string;
+    alasan_approval?: string;
+    catatan_approval?: string;
+    kondisi_barang?: 'baik' | 'rusak_ringan' | 'rusak_berat' | 'hilang';
+    catatan_pengembalian?: string;
     is_overdue?: boolean;
     created_at: string;
+    user: User;
+    barang: {
+        id: number;
+        nama_barang: string;
+        kode_barang: string;
+        kategori: string;
+    };
 }
 
 // --- Props ---
@@ -95,16 +106,15 @@ const statusOptions = [
     { value: 'rejected', label: 'Ditolak', color: 'bg-red-100 text-red-800' },
     { value: 'in_progress', label: 'Dipinjam', color: 'bg-blue-100 text-blue-800' },
     { value: 'returned', label: 'Dikembalikan', color: 'bg-gray-100 text-gray-800' },
+    { value: 'overdue', label: 'Terlambat', color: 'bg-red-100 text-red-800' },
+    { value: 'maintenance', label: 'Maintenance', color: 'bg-orange-100 text-orange-800' },
 ];
 
-// Kategori options (for inventaris)
+// Kategori options (for inventaris) - based on barang kategori
 const kategoriOptions = [
     { value: '', label: 'Semua Kategori' },
-    { value: 'elektronik', label: 'Elektronik' },
-    { value: 'furniture', label: 'Furniture' },
-    { value: 'kendaraan', label: 'Kendaraan' },
-    { value: 'alat_tulis', label: 'Alat Tulis' },
-    { value: 'lainnya', label: 'Lainnya' }
+    { value: 'peminjaman', label: 'Peminjaman' },
+    { value: 'permintaan', label: 'Permintaan' }
 ];
 const selectedKategori = ref('');
 
@@ -119,6 +129,10 @@ const getStatusVariant = (status: string): 'default' | 'secondary' | 'destructiv
             return 'default';
         case 'returned':
             return 'outline';
+        case 'overdue':
+            return 'destructive';
+        case 'maintenance':
+            return 'secondary';
         default:
             return 'default';
     }
@@ -134,6 +148,10 @@ const getStatusText = (status: string) => {
             return 'Dipinjam';
         case 'returned':
             return 'Dikembalikan';
+        case 'overdue':
+            return 'Terlambat';
+        case 'maintenance':
+            return 'Maintenance';
         default:
             return 'Menunggu';
     }
@@ -206,29 +224,58 @@ const handleRejectPeminjaman = (id: number) => {
 };
 
 // --- Approval Handlers (Inventaris) ---
-const handleApproveInventaris = (id: number) => {
-    animatingInventaris[id] = 'approve';
-    setTimeout(() => {
-        router.post('/inventaris/approve', {
-            inventaris_id: id,
-            action: 'approve',
-            alasan: 'Inventaris disetujui',
-            catatan: ''
-        });
-        setTimeout(() => {
-            delete animatingInventaris[id];
-        }, 600);
-    }, 600);
+// Perbaikan: Tampilkan dialog konfirmasi alasan/catatan sebelum approve/reject inventaris
+import { ref as vueRef } from 'vue';
+
+const showInventarisDialog = vueRef(false);
+const inventarisDialogType = vueRef<'approve' | 'reject'>('approve');
+const inventarisDialogItem = vueRef<InventarisItem | null>(null);
+const inventarisDialogAlasan = vueRef('');
+const inventarisDialogCatatan = vueRef('');
+
+// Tambahkan debugging untuk approval inventaris
+const openInventarisDialog = (item: InventarisItem, type: 'approve' | 'reject') => {
+    console.debug('[DEBUG] openInventarisDialog', { item, type });
+    inventarisDialogType.value = type;
+    inventarisDialogItem.value = item;
+    inventarisDialogAlasan.value = type === 'approve' ? 'Inventaris disetujui' : 'Inventaris ditolak';
+    inventarisDialogCatatan.value = '';
+    showInventarisDialog.value = true;
 };
 
-const handleRejectInventaris = (id: number) => {
-    animatingInventaris[id] = 'reject';
+const closeInventarisDialog = () => {
+    console.debug('[DEBUG] closeInventarisDialog');
+    showInventarisDialog.value = false;
+    inventarisDialogItem.value = null;
+    inventarisDialogAlasan.value = '';
+    inventarisDialogCatatan.value = '';
+};
+
+const submitInventarisApproval = () => {
+    if (!inventarisDialogItem.value) return;
+    const id = inventarisDialogItem.value.id;
+    const type = inventarisDialogType.value;
+    console.debug('[DEBUG] submitInventarisApproval', {
+        id,
+        type,
+        alasan: inventarisDialogAlasan.value,
+        catatan: inventarisDialogCatatan.value,
+        item: inventarisDialogItem.value
+    });
+    animatingInventaris[id] = type;
+    showInventarisDialog.value = false;
     setTimeout(() => {
+        console.debug('[DEBUG] router.post /inventaris/approve', {
+            inventaris_id: id,
+            action: type,
+            alasan: inventarisDialogAlasan.value,
+            catatan: inventarisDialogCatatan.value
+        });
         router.post('/inventaris/approve', {
             inventaris_id: id,
-            action: 'reject',
-            alasan: 'Inventaris ditolak',
-            catatan: ''
+            action: type,
+            alasan: inventarisDialogAlasan.value,
+            catatan: inventarisDialogCatatan.value
         });
         setTimeout(() => {
             delete animatingInventaris[id];
@@ -265,10 +312,10 @@ const filteredInventaris = computed(() => {
         const matchesSearch =
             item.nama_barang.toLowerCase().includes(q) ||
             item.kode_barang.toLowerCase().includes(q) ||
-            (item.peminjam?.name?.toLowerCase().includes(q) ?? false) ||
+            (item.user?.name?.toLowerCase().includes(q) ?? false) ||
             (item.nomor_inventaris?.toLowerCase().includes(q) ?? false);
         const matchesStatus = selectedStatus.value ? item.status === selectedStatus.value : true;
-        const matchesKategori = selectedKategori.value ? item.kategori === selectedKategori.value : true;
+        const matchesKategori = selectedKategori.value ? item.barang.kategori === selectedKategori.value : true;
         return matchesSearch && matchesStatus && matchesKategori;
     });
 });
@@ -406,9 +453,56 @@ const groupedPeminjaman = computed(() => {
                                 <TableBody>
                                     <TableRow v-for="item in group.items" :key="item.id" class="hover:bg-indigo-50 transition">
                                         <TableCell class="text-sm">
-                                            <div class="flex items-center gap-1">
-                                                <Calendar class="w-4 h-4 text-indigo-400" />
-                                                <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                            <div class="flex flex-col gap-1">
+                                                <div class="flex items-center gap-1">
+                                                    <Calendar class="w-4 h-4 text-indigo-400" />
+                                                    <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                                </div>
+                                                <!-- Tombol Setujui & Tolak di bawah tanggal -->
+                                                <div class="flex gap-2 mt-2">
+                                                    <transition name="approve-anim" mode="out-in">
+                                                        <Button 
+                                                            v-if="item.status === 'pending' && animatingPermintaan[item.id] !== 'approve' && animatingPermintaan[item.id] !== 'reject'"
+                                                            variant="default" 
+                                                            size="sm"
+                                                            class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
+                                                            @click="handleApprovePermintaan(item.id)"
+                                                            key="approve"
+                                                        >
+                                                            <span class="font-semibold flex items-center gap-1">
+                                                                <CheckCircle class="w-4 h-4 animate-pulse" /> Terima
+                                                            </span>
+                                                        </Button>
+                                                        <span
+                                                            v-else-if="animatingPermintaan[item.id] === 'approve'"
+                                                            class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
+                                                            key="approved"
+                                                        >
+                                                            <CheckCircle class="w-5 h-5 animate-bounce" /> Diterima!
+                                                        </span>
+                                                    </transition>
+                                                    <transition name="reject-anim" mode="out-in">
+                                                        <Button 
+                                                            v-if="item.status === 'pending' && animatingPermintaan[item.id] !== 'approve' && animatingPermintaan[item.id] !== 'reject'"
+                                                            variant="destructive" 
+                                                            size="sm"
+                                                            class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
+                                                            @click="handleRejectPermintaan(item.id)"
+                                                            key="reject"
+                                                        >
+                                                            <span class="font-semibold flex items-center gap-1">
+                                                                <XCircle class="w-4 h-4 animate-pulse" /> Tolak
+                                                            </span>
+                                                        </Button>
+                                                        <span
+                                                            v-else-if="animatingPermintaan[item.id] === 'reject'"
+                                                            class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
+                                                            key="rejected"
+                                                        >
+                                                            <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
+                                                        </span>
+                                                    </transition>
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell class="font-semibold text-indigo-900">{{ item.barang.nama_barang }}</TableCell>
@@ -422,7 +516,56 @@ const groupedPeminjaman = computed(() => {
                                         <TableCell class="max-w-xs truncate text-gray-600">
                                             {{ item.keterangan || '-' }}
                                         </TableCell>
-                                        <TableCell class="text-right space-x-2">
+                                        <!-- Kolom aksi dikosongkan karena tombol sudah di bawah tanggal -->
+                                        <TableCell class="text-right space-x-2"></TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                    <!-- CARD PERMINTAAN (untuk hp/sm) -->
+                    <div class="space-y-6 md:hidden">
+                        <div v-if="groupedPermintaan.length === 0" class="p-8 text-center text-gray-400 bg-white rounded-2xl shadow">
+                            <span class="text-2xl">😕</span>
+                            <div>Tidak ada permintaan ditemukan.</div>
+                        </div>
+                        <div v-for="group in groupedPermintaan" :key="group.user.id" class="border rounded-2xl overflow-hidden shadow bg-white">
+                            <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3">
+                                <Avatar class="w-12 h-12 ring-2 ring-indigo-200 shadow">
+                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url" alt="User Photo" />
+                                    <AvatarFallback>
+                                        {{ getInitials(group.user.name) }}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <div class="font-bold text-indigo-800">{{ group.user.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ group.user.email }}</div>
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3"></div>
+                            <div class="divide-y">
+                                <div
+                                    v-for="item in group.items"
+                                    :key="item.id"
+                                    class="p-4"
+                                >
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h2 class="font-semibold text-lg text-indigo-900">{{ item.barang.nama_barang }}</h2>
+                                        <Badge :variant="getStatusVariant(item.status)">
+                                            {{ getStatusText(item.status) }}
+                                        </Badge>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
+                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Kode: {{ item.barang.kode_barang }}</span>
+                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Jumlah: {{ item.jumlah }}</span>
+                                    </div>
+                                    <div class="flex flex-col gap-2 text-gray-500 mb-1">
+                                        <div class="flex items-center gap-2">
+                                            <Calendar class="w-4 h-4 text-indigo-400" />
+                                            <span><strong>Tanggal:</strong> {{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        </div>
+                                        <!-- Tombol Setujui & Tolak di bawah tanggal -->
+                                        <div class="flex gap-2">
                                             <transition name="approve-anim" mode="out-in">
                                                 <Button 
                                                     v-if="item.status === 'pending' && animatingPermintaan[item.id] !== 'approve' && animatingPermintaan[item.id] !== 'reject'"
@@ -465,98 +608,9 @@ const groupedPeminjaman = computed(() => {
                                                     <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
                                                 </span>
                                             </transition>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-                    <!-- CARD PERMINTAAN (untuk hp/sm) -->
-                    <div class="space-y-6 md:hidden">
-                        <div v-if="groupedPermintaan.length === 0" class="p-8 text-center text-gray-400 bg-white rounded-2xl shadow">
-                            <span class="text-2xl">😕</span>
-                            <div>Tidak ada permintaan ditemukan.</div>
-                        </div>
-                        <div v-for="group in groupedPermintaan" :key="group.user.id" class="border rounded-2xl overflow-hidden shadow bg-white">
-                            <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3">
-                                <Avatar class="w-12 h-12 ring-2 ring-indigo-200 shadow">
-                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url" alt="User Photo" />
-                                    <AvatarFallback>
-                                        {{ getInitials(group.user.name) }}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <div class="font-bold text-indigo-800">{{ group.user.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ group.user.email }}</div>
-                                </div>
-                            </div>
-                            <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3"></div>
-                            <div class="divide-y">
-                                <div
-                                    v-for="item in group.items"
-                                    :key="item.id"
-                                    class="p-4"
-                                >
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h2 class="font-semibold text-lg text-indigo-900">{{ item.barang.nama_barang }}</h2>
-                                        <Badge :variant="getStatusVariant(item.status)">
-                                            {{ getStatusText(item.status) }}
-                                        </Badge>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
-                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Kode: {{ item.barang.kode_barang }}</span>
-                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Jumlah: {{ item.jumlah }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 text-gray-500 mb-1">
-                                        <Calendar class="w-4 h-4 text-indigo-400" />
-                                        <span><strong>Tanggal:</strong> {{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        </div>
                                     </div>
                                     <p class="text-sm text-gray-500 mb-3"><strong>Keterangan:</strong> {{ item.keterangan || '-' }}</p>
-                                    
-                                    <div class="flex gap-2 justify-end">
-                                        <transition name="approve-anim" mode="out-in">
-                                            <Button 
-                                                v-if="item.status === 'pending' && animatingPermintaan[item.id] !== 'approve' && animatingPermintaan[item.id] !== 'reject'"
-                                                variant="default" 
-                                                size="sm"
-                                                class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
-                                                @click="handleApprovePermintaan(item.id)"
-                                                key="approve"
-                                            >
-                                                <span class="font-semibold flex items-center gap-1">
-                                                    <CheckCircle class="w-4 h-4 animate-pulse" /> Terima
-                                                </span>
-                                            </Button>
-                                            <span
-                                                v-else-if="animatingPermintaan[item.id] === 'approve'"
-                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
-                                                key="approved"
-                                            >
-                                                <CheckCircle class="w-5 h-5 animate-bounce" /> Diterima!
-                                            </span>
-                                        </transition>
-                                        <transition name="reject-anim" mode="out-in">
-                                            <Button 
-                                                v-if="item.status === 'pending' && animatingPermintaan[item.id] !== 'approve' && animatingPermintaan[item.id] !== 'reject'"
-                                                variant="destructive" 
-                                                size="sm"
-                                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
-                                                @click="handleRejectPermintaan(item.id)"
-                                                key="reject"
-                                            >
-                                                <span class="font-semibold flex items-center gap-1">
-                                                    <XCircle class="w-4 h-4 animate-pulse" /> Tolak
-                                                </span>
-                                            </Button>
-                                            <span
-                                                v-else-if="animatingPermintaan[item.id] === 'reject'"
-                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
-                                                key="rejected"
-                                            >
-                                                <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
-                                            </span>
-                                        </transition>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -602,9 +656,56 @@ const groupedPeminjaman = computed(() => {
                                 <TableBody>
                                     <TableRow v-for="item in group.items" :key="item.id" class="hover:bg-indigo-50 transition">
                                         <TableCell class="text-sm">
-                                            <div class="flex items-center gap-1">
-                                                <Calendar class="w-4 h-4 text-indigo-400" />
-                                                <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                            <div class="flex flex-col gap-1">
+                                                <div class="flex items-center gap-1">
+                                                    <Calendar class="w-4 h-4 text-indigo-400" />
+                                                    <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                                </div>
+                                                <!-- Tombol Setujui & Tolak di bawah tanggal -->
+                                                <div class="flex gap-2 mt-2">
+                                                    <transition name="approve-anim" mode="out-in">
+                                                        <Button 
+                                                            v-if="item.status === 'pending' && animatingPeminjaman[item.id] !== 'approve' && animatingPeminjaman[item.id] !== 'reject'"
+                                                            variant="default" 
+                                                            size="sm"
+                                                            class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
+                                                            @click="handleApprovePeminjaman(item.id)"
+                                                            key="approve"
+                                                        >
+                                                            <span class="font-semibold flex items-center gap-1">
+                                                                <CheckCircle class="w-4 h-4 animate-pulse" /> Terima
+                                                            </span>
+                                                        </Button>
+                                                        <span
+                                                            v-else-if="animatingPeminjaman[item.id] === 'approve'"
+                                                            class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
+                                                            key="approved"
+                                                        >
+                                                            <CheckCircle class="w-5 h-5 animate-bounce" /> Diterima!
+                                                        </span>
+                                                    </transition>
+                                                    <transition name="reject-anim" mode="out-in">
+                                                        <Button 
+                                                            v-if="item.status === 'pending' && animatingPeminjaman[item.id] !== 'approve' && animatingPeminjaman[item.id] !== 'reject'"
+                                                            variant="destructive" 
+                                                            size="sm"
+                                                            class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
+                                                            @click="handleRejectPeminjaman(item.id)"
+                                                            key="reject"
+                                                        >
+                                                            <span class="font-semibold flex items-center gap-1">
+                                                                <XCircle class="w-4 h-4 animate-pulse" /> Tolak
+                                                            </span>
+                                                        </Button>
+                                                        <span
+                                                            v-else-if="animatingPeminjaman[item.id] === 'reject'"
+                                                            class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
+                                                            key="rejected"
+                                                        >
+                                                            <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
+                                                        </span>
+                                                    </transition>
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell class="font-semibold text-indigo-900">{{ item.barang.nama_barang }}</TableCell>
@@ -626,7 +727,59 @@ const groupedPeminjaman = computed(() => {
                                         <TableCell class="max-w-xs truncate text-gray-600">
                                             {{ item.keterangan || '-' }}
                                         </TableCell>
-                                        <TableCell class="text-right space-x-2">
+                                        <!-- Kolom aksi dikosongkan karena tombol sudah di bawah tanggal -->
+                                        <TableCell class="text-right space-x-2"></TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                    <!-- CARD PEMINJAMAN (untuk hp/sm) -->
+                    <div class="space-y-6 md:hidden">
+                        <div v-if="groupedPeminjaman.length === 0" class="p-8 text-center text-gray-400 bg-white rounded-2xl shadow">
+                            <span class="text-2xl">📦</span>
+                            <div>Tidak ada peminjaman ditemukan.</div>
+                        </div>
+                        <div v-for="group in groupedPeminjaman" :key="group.user.id" class="border rounded-2xl overflow-hidden shadow bg-white">
+                            <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3">
+                                <Avatar class="w-12 h-12 ring-2 ring-indigo-200 shadow">
+                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url || ''" alt="User Photo" />
+                                    <AvatarFallback>
+                                        {{ getInitials(group.user.name) }}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <div class="font-bold text-indigo-800">{{ group.user.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ group.user.email }}</div>
+                                </div>
+                            </div>
+                            <div class="divide-y">
+                                <div
+                                    v-for="item in group.items"
+                                    :key="item.id"
+                                    class="p-4"
+                                >
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h2 class="font-semibold text-lg text-indigo-900">{{ item.barang.nama_barang }}</h2>
+                                        <Badge :variant="getStatusVariant(item.status)">
+                                            {{ getStatusText(item.status) }}
+                                        </Badge>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
+                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Kode: {{ item.barang.kode_barang }}</span>
+                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Jumlah: {{ item.jumlah }}</span>
+                                    </div>
+                                    <div class="flex flex-col gap-2 text-gray-500 mb-1">
+                                        <div class="flex items-center gap-2">
+                                            <Calendar class="w-4 h-4 text-indigo-400" />
+                                            <span><strong>Tanggal:</strong> {{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <Calendar class="w-4 h-4 text-indigo-400" />
+                                            <span><strong>Tanggal Pengembalian:</strong> {{ item.tanggal_pengembalian ? new Date(item.tanggal_pengembalian).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-' }}</span>
+                                        </div>
+                                        <!-- Tombol Setujui & Tolak di bawah tanggal -->
+                                        <div class="flex gap-2">
                                             <transition name="approve-anim" mode="out-in">
                                                 <Button 
                                                     v-if="item.status === 'pending' && animatingPeminjaman[item.id] !== 'approve' && animatingPeminjaman[item.id] !== 'reject'"
@@ -669,101 +822,9 @@ const groupedPeminjaman = computed(() => {
                                                     <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
                                                 </span>
                                             </transition>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-                    <!-- CARD PEMINJAMAN (untuk hp/sm) -->
-                    <div class="space-y-6 md:hidden">
-                        <div v-if="groupedPeminjaman.length === 0" class="p-8 text-center text-gray-400 bg-white rounded-2xl shadow">
-                            <span class="text-2xl">📦</span>
-                            <div>Tidak ada peminjaman ditemukan.</div>
-                        </div>
-                        <div v-for="group in groupedPeminjaman" :key="group.user.id" class="border rounded-2xl overflow-hidden shadow bg-white">
-                            <div class="bg-gradient-to-r from-indigo-50 to-white px-4 py-3 border-b flex items-center gap-3">
-                                <Avatar class="w-12 h-12 ring-2 ring-indigo-200 shadow">
-                                    <AvatarImage v-if="group.user.photo_url" :src="group.user.photo_url || ''" alt="User Photo" />
-                                    <AvatarFallback>
-                                        {{ getInitials(group.user.name) }}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <div class="font-bold text-indigo-800">{{ group.user.name }}</div>
-                                    <div class="text-xs text-gray-500">{{ group.user.email }}</div>
-                                </div>
-                            </div>
-                            <div class="divide-y">
-                                <div
-                                    v-for="item in group.items"
-                                    :key="item.id"
-                                    class="p-4"
-                                >
-                                    <div class="flex justify-between items-center mb-2">
-                                        <h2 class="font-semibold text-lg text-indigo-900">{{ item.barang.nama_barang }}</h2>
-                                        <Badge :variant="getStatusVariant(item.status)">
-                                            {{ getStatusText(item.status) }}
-                                        </Badge>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2 text-sm text-gray-600 mb-2">
-                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Kode: {{ item.barang.kode_barang }}</span>
-                                        <span class="bg-indigo-50 px-2 py-1 rounded font-medium">Jumlah: {{ item.jumlah }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 text-gray-500 mb-1">
-                                        <Calendar class="w-4 h-4 text-indigo-400" />
-                                        <span><strong>Tanggal:</strong> {{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 text-gray-500 mb-1">
-                                        <Calendar class="w-4 h-4 text-indigo-400" />
-                                        <span><strong>Tanggal Pengembalian:</strong> {{ item.tanggal_pengembalian ? new Date(item.tanggal_pengembalian).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-' }}</span>
+                                        </div>
                                     </div>
                                     <p class="text-sm text-gray-500 mb-3"><strong>Keterangan:</strong> {{ item.keterangan || '-' }}</p>
-                                    
-                                    <div class="flex gap-2 justify-end">
-                                        <transition name="approve-anim" mode="out-in">
-                                            <Button 
-                                                v-if="item.status === 'pending' && animatingPeminjaman[item.id] !== 'approve' && animatingPeminjaman[item.id] !== 'reject'"
-                                                variant="default" 
-                                                size="sm"
-                                                class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
-                                                @click="handleApprovePeminjaman(item.id)"
-                                                key="approve"
-                                            >
-                                                <span class="font-semibold flex items-center gap-1">
-                                                    <CheckCircle class="w-4 h-4 animate-pulse" /> Terima
-                                                </span>
-                                            </Button>
-                                            <span
-                                                v-else-if="animatingPeminjaman[item.id] === 'approve'"
-                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
-                                                key="approved"
-                                            >
-                                                <CheckCircle class="w-5 h-5 animate-bounce" /> Diterima!
-                                            </span>
-                                        </transition>
-                                        <transition name="reject-anim" mode="out-in">
-                                            <Button 
-                                                v-if="item.status === 'pending' && animatingPeminjaman[item.id] !== 'approve' && animatingPeminjaman[item.id] !== 'reject'"
-                                                variant="destructive" 
-                                                size="sm"
-                                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
-                                                @click="handleRejectPeminjaman(item.id)"
-                                                key="reject"
-                                            >
-                                                <span class="font-semibold flex items-center gap-1">
-                                                    <XCircle class="w-4 h-4 animate-pulse" /> Tolak
-                                                </span>
-                                            </Button>
-                                            <span
-                                                v-else-if="animatingPeminjaman[item.id] === 'reject'"
-                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
-                                                key="rejected"
-                                            >
-                                                <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
-                                            </span>
-                                        </transition>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -786,6 +847,7 @@ const groupedPeminjaman = computed(() => {
                                     <TableHead class="text-indigo-700">Nomor</TableHead>
                                     <TableHead class="text-indigo-700">Barang</TableHead>
                                     <TableHead class="text-indigo-700">Kode</TableHead>
+                                    <TableHead class="text-indigo-700">Jumlah</TableHead>
                                     <TableHead class="text-indigo-700">Kategori</TableHead>
                                     <TableHead class="text-indigo-700">Status</TableHead>
                                     <TableHead class="text-indigo-700">Peminjam</TableHead>
@@ -797,79 +859,146 @@ const groupedPeminjaman = computed(() => {
                             <TableBody>
                                 <TableRow v-for="item in filteredInventaris" :key="item.id" class="hover:bg-indigo-50 transition">
                                     <TableCell class="text-sm">
-                                        <div class="flex items-center gap-1">
-                                            <Calendar class="w-4 h-4 text-indigo-400" />
-                                            <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        <div class="flex flex-col gap-1">
+                                            <div class="flex items-center gap-1">
+                                                <Calendar class="w-4 h-4 text-indigo-400" />
+                                                <span class="font-medium">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                            </div>
+                                            <!-- Tombol Setujui & Tolak di bawah tanggal -->
+                                            <div class="flex gap-2 mt-2">
+                                                <transition name="approve-anim" mode="out-in">
+                                                    <Button
+                                                        v-if="item.status === 'pending' && animatingInventaris[item.id] !== 'approve' && animatingInventaris[item.id] !== 'reject'"
+                                                        variant="default"
+                                                        size="sm"
+                                                        class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
+                                                        @click="openInventarisDialog(item, 'approve')"
+                                                        key="approve"
+                                                    >
+                                                        <span class="font-semibold flex items-center gap-1">
+                                                            <CheckCircle class="w-4 h-4 animate-pulse" /> Setujui
+                                                        </span>
+                                                    </Button>
+                                                    <span
+                                                        v-else-if="animatingInventaris[item.id] === 'approve'"
+                                                        class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
+                                                        key="approved"
+                                                    >
+                                                        <CheckCircle class="w-5 h-5 animate-bounce" /> Disetujui!
+                                                    </span>
+                                                </transition>
+                                                <transition name="reject-anim" mode="out-in">
+                                                    <Button
+                                                        v-if="item.status === 'pending' && animatingInventaris[item.id] !== 'approve' && animatingInventaris[item.id] !== 'reject'"
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
+                                                        @click="openInventarisDialog(item, 'reject')"
+                                                        key="reject"
+                                                    >
+                                                        <span class="font-semibold flex items-center gap-1">
+                                                            <XCircle class="w-4 h-4 animate-pulse" /> Tolak
+                                                        </span>
+                                                    </Button>
+                                                    <span
+                                                        v-else-if="animatingInventaris[item.id] === 'reject'"
+                                                        class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
+                                                        key="rejected"
+                                                    >
+                                                        <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
+                                                    </span>
+                                                </transition>
+                                            </div>
                                         </div>
                                     </TableCell>
                                     <TableCell class="font-medium text-indigo-700">{{ item.nomor_inventaris }}</TableCell>
-                                    <TableCell class="font-semibold text-indigo-900">{{ item.nama_barang }}</TableCell>
-                                    <TableCell class="font-medium text-indigo-700">{{ item.kode_barang }}</TableCell>
-                                    <TableCell class="font-medium text-indigo-700 capitalize">{{ item.kategori }}</TableCell>
+                                    <TableCell class="font-semibold text-indigo-900">{{ item.barang.nama_barang }}</TableCell>
+                                    <TableCell class="font-medium text-indigo-700">{{ item.barang.kode_barang }}</TableCell>
+                                    <TableCell class="text-center font-bold text-indigo-700">{{ item.jumlah }}</TableCell>
+                                    <TableCell class="font-medium text-indigo-700 capitalize">{{ item.barang.kategori }}</TableCell>
                                     <TableCell>
                                         <Badge :variant="getStatusVariant(item.status)">
                                             {{ getStatusText(item.status) }}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <span v-if="item.peminjam">{{ item.peminjam.name }}</span>
+                                        <span v-if="item.user">{{ item.user.name }}</span>
                                         <span v-else>-</span>
                                     </TableCell>
                                     <TableCell>
-                                        <span v-if="item.tanggal_pinjam">{{ new Date(item.tanggal_pinjam).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                        <span v-if="item.tanggal_peminjaman">{{ new Date(item.tanggal_peminjaman).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
                                         <span v-else>-</span>
                                     </TableCell>
                                     <TableCell>
                                         <span v-if="item.tanggal_pengembalian">{{ new Date(item.tanggal_pengembalian).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
                                         <span v-else>-</span>
                                     </TableCell>
-                                    <TableCell class="text-right space-x-2">
-                                        <transition name="approve-anim" mode="out-in">
-                                            <Button
-                                                v-if="item.status === 'pending' && animatingInventaris[item.id] !== 'approve' && animatingInventaris[item.id] !== 'reject'"
-                                                variant="default"
-                                                size="sm"
-                                                class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow"
-                                                @click="handleApproveInventaris(item.id)"
-                                                key="approve"
-                                            >
-                                                <span class="font-semibold flex items-center gap-1">
-                                                    <CheckCircle class="w-4 h-4 animate-pulse" /> Setujui
-                                                </span>
-                                            </Button>
-                                            <span
-                                                v-else-if="animatingInventaris[item.id] === 'approve'"
-                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-green-500 text-white font-semibold animate-approve"
-                                                key="approved"
-                                            >
-                                                <CheckCircle class="w-5 h-5 animate-bounce" /> Disetujui!
-                                            </span>
-                                        </transition>
-                                        <transition name="reject-anim" mode="out-in">
-                                            <Button
-                                                v-if="item.status === 'pending' && animatingInventaris[item.id] !== 'approve' && animatingInventaris[item.id] !== 'reject'"
-                                                variant="destructive"
-                                                size="sm"
-                                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow"
-                                                @click="handleRejectInventaris(item.id)"
-                                                key="reject"
-                                            >
-                                                <span class="font-semibold flex items-center gap-1">
-                                                    <XCircle class="w-4 h-4 animate-pulse" /> Tolak
-                                                </span>
-                                            </Button>
-                                            <span
-                                                v-else-if="animatingInventaris[item.id] === 'reject'"
-                                                class="inline-flex items-center gap-1 px-3 py-2 rounded bg-red-500 text-white font-semibold animate-reject"
-                                                key="rejected"
-                                            >
-                                                <XCircle class="w-5 h-5 animate-shake" /> Ditolak!
-                                            </span>
-                                        </transition>
-                                    </TableCell>
+                                    <!-- Kolom aksi dikosongkan karena tombol sudah di bawah tanggal -->
+                                    <TableCell class="text-right space-x-2"></TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
+                    </div>
+                    <!-- Dialog Konfirmasi Approval Inventaris -->
+                    <div v-if="showInventarisDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+                        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md relative">
+                            <button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600" @click="closeInventarisDialog">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span v-if="inventarisDialogType === 'approve'" class="inline-flex items-center text-green-600">
+                                        <CheckCircle class="w-5 h-5 mr-1" /> Setujui Inventaris
+                                    </span>
+                                    <span v-else class="inline-flex items-center text-red-600">
+                                        <XCircle class="w-5 h-5 mr-1" /> Tolak Inventaris
+                                    </span>
+                                </div>
+                                <div class="font-semibold text-indigo-900 text-lg mb-1">
+                                    {{ inventarisDialogItem?.barang?.nama_barang }} <span class="text-xs text-gray-500">({{ inventarisDialogItem?.nomor_inventaris }})</span>
+                                </div>
+                                <div class="text-sm text-gray-500 mb-2">
+                                    Kode: <span class="font-medium">{{ inventarisDialogItem?.barang?.kode_barang }}</span>
+                                </div>
+                            </div>
+                            <form @submit.prevent="submitInventarisApproval">
+                                <div class="mb-3">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alasan</label>
+                                    <input
+                                        v-model="inventarisDialogAlasan"
+                                        type="text"
+                                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+                                        required
+                                    />
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+                                    <textarea
+                                        v-model="inventarisDialogCatatan"
+                                        rows="2"
+                                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+                                    ></textarea>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <Button type="button" variant="secondary" @click="closeInventarisDialog">Batal</Button>
+                                    <Button
+                                        :variant="inventarisDialogType === 'approve' ? 'default' : 'destructive'"
+                                        type="submit"
+                                        :class="inventarisDialogType === 'approve'
+                                            ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                                            : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white'"
+                                    >
+                                        <span class="font-semibold flex items-center gap-1">
+                                            <CheckCircle v-if="inventarisDialogType === 'approve'" class="w-4 h-4" />
+                                            <XCircle v-else class="w-4 h-4" />
+                                            {{ inventarisDialogType === 'approve' ? 'Setujui' : 'Tolak' }}
+                                        </span>
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 </transition>
@@ -943,5 +1072,10 @@ const groupedPeminjaman = computed(() => {
 .reject-anim-enter-from, .reject-anim-leave-to {
   opacity: 0;
   transform: scale(0.95);
+}
+
+/* Dialog overlay */
+[aria-modal="true"], .modal-backdrop, .fixed.inset-0.z-50 {
+  z-index: 50;
 }
 </style>

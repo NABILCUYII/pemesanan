@@ -21,129 +21,173 @@ class LaporanController extends Controller
 {
     public function index(Request $request)
     {
-
-          // Check if user is admin
-          if (!auth()->user()->isAdmin()) {
-              return inertia('Forbidden', [
-                  'user' => auth()->user() ? [
-                      'name' => auth()->user()->name,
-                      'role' => auth()->user()->role ?? 'User'
-                  ] : null
-              ]);
-          }
+        // Check if user is admin
+        if (!auth()->user()->isAdmin()) {
+            return inertia('Forbidden', [
+                'user' => auth()->user() ? [
+                    'name' => auth()->user()->name,
+                    'role' => auth()->user()->role ?? 'User'
+                ] : null
+            ]);
+        }
 
         $month = $request->input('month');
         $year = $request->input('year');
+        $search = $request->input('search');
 
-        // Get user data with their requests and loans
-        $users = User::with(['permintaan.barang', 'peminjaman.barang'])
-            ->get()
-            ->map(function ($user) use ($month, $year) {
-                // Get user's requests for the selected period
-                $permintaanQuery = $user->permintaan();
-                $peminjamanQuery = $user->peminjaman();
-                
-                if ($month) {
-                    $permintaanQuery->whereMonth('created_at', $month);
-                    $peminjamanQuery->whereMonth('created_at', $month);
-                }
-                if ($year) {
-                    $permintaanQuery->whereYear('created_at', $year);
-                    $peminjamanQuery->whereYear('created_at', $year);
-                }
-                
-                $permintaan = $permintaanQuery->get()->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'type' => 'permintaan',
-                        'nama_barang' => $item->barang->nama_barang,
-                        'kode_barang' => $item->barang->kode_barang,
-                        'jumlah' => $item->jumlah,
-                        'status' => $item->status,
-                        'created_at' => $item->created_at,
-                        'keterangan' => $item->keterangan,
-                    ];
-                });
-
-                $peminjaman = $peminjamanQuery->get()->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'type' => 'peminjaman',
-                        'nama_barang' => $item->barang->nama_barang,
-                        'kode_barang' => $item->barang->kode_barang,
-                        'jumlah' => $item->jumlah,
-                        'status' => $item->status,
-                        'created_at' => $item->created_at,
-                        'tanggal_peminjaman' => $item->tanggal_peminjaman,
-                        'tanggal_pengembalian' => $item->tanggal_pengembalian,
-                        'due_date' => $item->due_date,
-                        'keterangan' => $item->keterangan,
-                    ];
-                });
-
+        // Build query for users with pagination
+        $usersQuery = User::with(['permintaan.barang', 'peminjaman.barang']);
+        
+        // Add search filter
+        if ($search) {
+            $usersQuery->where('name', 'like', "%{$search}%");
+        }
+        
+        // Get paginated users with separate page parameter
+        $usersPage = $request->input('page', 1);
+        $users = $usersQuery->paginate(10, ['*'], 'page', $usersPage);
+        
+        // Transform the data for each user
+        $users->getCollection()->transform(function ($user) use ($month, $year) {
+            // Get user's requests for the selected period
+            $permintaanQuery = $user->permintaan();
+            $peminjamanQuery = $user->peminjaman();
+            
+            if ($month) {
+                $permintaanQuery->whereMonth('created_at', $month);
+                $peminjamanQuery->whereMonth('created_at', $month);
+            }
+            if ($year) {
+                $permintaanQuery->whereYear('created_at', $year);
+                $peminjamanQuery->whereYear('created_at', $year);
+            }
+            
+            $permintaan = $permintaanQuery->get()->map(function ($item) {
                 return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'photo' => $user->photo,
-                    'permintaan' => $permintaan,
-                    'peminjaman' => $peminjaman,
-                    'total_permintaan' => $permintaan->count(),
-                    'total_peminjaman' => $peminjaman->count(),
+                    'id' => $item->id,
+                    'type' => 'permintaan',
+                    'nama_barang' => $item->barang->nama_barang,
+                    'kode_barang' => $item->barang->kode_barang,
+                    'jumlah' => $item->jumlah,
+                    'status' => $item->status,
+                    'created_at' => $item->created_at,
+                    'keterangan' => $item->keterangan,
                 ];
             });
 
-        // Get stock movement data
-        $stokChanges = DB::table('barang')
-            ->select('barang.id', 'barang.nama_barang', 'barang.kode_barang', 'barang.stok')
-            ->get()
-            ->map(function ($barang) use ($month, $year) {
-                // Get initial stock (first stock entry)
-                $initialStock = DB::table('stok_logs')
-                    ->where('barang_id', $barang->id)
-                    ->where('jenis', 'masuk')
-                    ->orderBy('created_at', 'asc')
-                    ->first();
-                
-                // If no stock logs exist, use current stock as initial stock
-                $stokAwal = $initialStock ? $initialStock->jumlah : $barang->stok;
-                
-                // Get transactions for the selected period
-                $permintaanKeluarQuery = Permintaan::where('barang_id', $barang->id)->where('status', 'approved');
-                $peminjamanKeluarQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'approved');
-                $peminjamanKembaliQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'returned');
-                
-                if ($month) {
-                    $permintaanKeluarQuery->whereMonth('created_at', $month);
-                    $peminjamanKeluarQuery->whereMonth('created_at', $month);
-                    $peminjamanKembaliQuery->whereMonth('tanggal_pengembalian', $month);
-                }
-                if ($year) {
-                    $permintaanKeluarQuery->whereYear('created_at', $year);
-                    $peminjamanKeluarQuery->whereYear('created_at', $year);
-                    $peminjamanKembaliQuery->whereYear('tanggal_pengembalian', $year);
-                }
-                
-                $permintaanKeluar = $permintaanKeluarQuery->sum('jumlah');
-                $peminjamanKeluar = $peminjamanKeluarQuery->sum('jumlah');
-                $peminjamanKembali = $peminjamanKembaliQuery->sum('jumlah');
-                
+            $peminjaman = $peminjamanQuery->get()->map(function ($item) {
                 return [
-                    'id' => $barang->id,
-                    'nama_barang' => $barang->nama_barang,
-                    'kode_barang' => $barang->kode_barang,
-                    'stok_awal' => $stokAwal,
-                    'permintaan_keluar' => $permintaanKeluar,
-                    'peminjaman_keluar' => $peminjamanKeluar,
-                    'peminjaman_kembali' => $peminjamanKembali,
-                    'stok_akhir' => $barang->stok, // Current total stock
+                    'id' => $item->id,
+                    'type' => 'peminjaman',
+                    'nama_barang' => $item->barang->nama_barang,
+                    'kode_barang' => $item->barang->kode_barang,
+                    'jumlah' => $item->jumlah,
+                    'status' => $item->status,
+                    'created_at' => $item->created_at,
+                    'tanggal_peminjaman' => $item->tanggal_peminjaman,
+                    'tanggal_pengembalian' => $item->tanggal_pengembalian,
+                    'due_date' => $item->due_date,
+                    'keterangan' => $item->keterangan,
                 ];
             });
+
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'photo' => $user->photo,
+                'photo_url' => $user->photo ? \Storage::disk('public')->url($user->photo) : null,
+                'permintaan' => $permintaan,
+                'peminjaman' => $peminjaman,
+                'total_permintaan' => $permintaan->count(),
+                'total_peminjaman' => $peminjaman->count(),
+            ];
+        });
+
+        // Get stock movement data with pagination
+        $stokChangesQuery = DB::table('barang')
+            ->select('barang.id', 'barang.nama_barang', 'barang.kode_barang', 'barang.stok');
+        
+        // Add search filter for stock changes
+        if ($search) {
+            $stokChangesQuery->where(function($query) use ($search) {
+                $query->where('nama_barang', 'like', "%{$search}%")
+                      ->orWhere('kode_barang', 'like', "%{$search}%");
+            });
+        }
+        
+        // Get paginated stock changes with separate page parameter
+        $stokPage = $request->input('stok_page', 1);
+        $stokChanges = $stokChangesQuery->paginate(10, ['*'], 'stok_page', $stokPage);
+        
+        $stokChanges->getCollection()->transform(function ($barang) use ($month, $year) {
+            // Get initial stock (first stock entry)
+            $initialStock = DB::table('stok_logs')
+                ->where('barang_id', $barang->id)
+                ->where('jenis', 'masuk')
+                ->orderBy('created_at', 'asc')
+                ->first();
+            
+            // If no stock logs exist, use current stock as initial stock
+            $stokAwal = $initialStock ? $initialStock->jumlah : $barang->stok;
+            
+            // Get transactions for the selected period
+            $permintaanKeluarQuery = Permintaan::where('barang_id', $barang->id)->where('status', 'approved');
+            $peminjamanKeluarQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'approved');
+            $peminjamanKembaliQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'returned');
+            
+            if ($month) {
+                $permintaanKeluarQuery->whereMonth('created_at', $month);
+                $peminjamanKeluarQuery->whereMonth('created_at', $month);
+                $peminjamanKembaliQuery->whereMonth('tanggal_pengembalian', $month);
+            }
+            if ($year) {
+                $permintaanKeluarQuery->whereYear('created_at', $year);
+                $peminjamanKeluarQuery->whereYear('created_at', $year);
+                $peminjamanKembaliQuery->whereYear('tanggal_pengembalian', $year);
+            }
+            
+            $permintaanKeluar = $permintaanKeluarQuery->sum('jumlah');
+            $peminjamanKeluar = $peminjamanKeluarQuery->sum('jumlah');
+            $peminjamanKembali = $peminjamanKembaliQuery->sum('jumlah');
+            
+            return [
+                'id' => $barang->id,
+                'nama_barang' => $barang->nama_barang,
+                'kode_barang' => $barang->kode_barang,
+                'stok_awal' => $stokAwal,
+                'permintaan_keluar' => $permintaanKeluar,
+                'peminjaman_keluar' => $peminjamanKeluar,
+                'peminjaman_kembali' => $peminjamanKembali,
+                'stok_akhir' => $barang->stok, // Current total stock
+            ];
+        });
+
+        // Get statistics
+        $totalUsers = User::count();
+        $totalPermintaan = Permintaan::when($month, function($query) use ($month) {
+            return $query->whereMonth('created_at', $month);
+        })->when($year, function($query) use ($year) {
+            return $query->whereYear('created_at', $year);
+        })->count();
+        $totalPeminjaman = Peminjaman::when($month, function($query) use ($month) {
+            return $query->whereMonth('created_at', $month);
+        })->when($year, function($query) use ($year) {
+            return $query->whereYear('created_at', $year);
+        })->count();
+        $totalBarang = DB::table('barang')->count();
 
         return Inertia::render('laporan/index', [
             'users' => $users,
             'stokChanges' => $stokChanges,
             'month' => $month,
             'year' => $year,
+            'filters' => $request->only(['search']),
+            'statistics' => [
+                'total_users' => $totalUsers,
+                'total_permintaan' => $totalPermintaan,
+                'total_peminjaman' => $totalPeminjaman,
+                'total_barang' => $totalBarang,
+            ],
             'months' => [
                 1 => 'Januari',
                 2 => 'Februari',
