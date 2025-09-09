@@ -47,10 +47,20 @@ class VideoBeritaController extends Controller
             'urutan' => 'nullable|integer|min:0',
         ]);
 
-        // Extract YouTube ID from URL
+        // Extract YouTube or Instagram embed info from URL
         $youtubeId = $this->extractYoutubeId($validated['video_url']);
-        $embedUrl = $youtubeId ? "https://www.youtube.com/embed/{$youtubeId}" : null;
-        $youtubeThumbnail = $youtubeId ? "https://img.youtube.com/vi/{$youtubeId}/maxresdefault.jpg" : null;
+        $embedUrl = null;
+        $youtubeThumbnail = null;
+
+        if ($youtubeId) {
+            $embedUrl = "https://www.youtube.com/embed/{$youtubeId}";
+            $youtubeThumbnail = "https://img.youtube.com/vi/{$youtubeId}/maxresdefault.jpg";
+        } else {
+            $instagramEmbed = $this->extractInstagramEmbedUrl($validated['video_url']);
+            if ($instagramEmbed) {
+                $embedUrl = $instagramEmbed;
+            }
+        }
 
         VideoBerita::create([
             'judul' => $validated['judul'],
@@ -106,10 +116,20 @@ class VideoBeritaController extends Controller
             'urutan' => 'nullable|integer|min:0',
         ]);
 
-        // Extract YouTube ID from URL
+        // Extract YouTube or Instagram embed info from URL
         $youtubeId = $this->extractYoutubeId($validated['video_url']);
-        $embedUrl = $youtubeId ? "https://www.youtube.com/embed/{$youtubeId}" : null;
-        $youtubeThumbnail = $youtubeId ? "https://img.youtube.com/vi/{$youtubeId}/maxresdefault.jpg" : null;
+        $embedUrl = null;
+        $youtubeThumbnail = null;
+
+        if ($youtubeId) {
+            $embedUrl = "https://www.youtube.com/embed/{$youtubeId}";
+            $youtubeThumbnail = "https://img.youtube.com/vi/{$youtubeId}/maxresdefault.jpg";
+        } else {
+            $instagramEmbed = $this->extractInstagramEmbedUrl($validated['video_url']);
+            if ($instagramEmbed) {
+                $embedUrl = $instagramEmbed;
+            }
+        }
 
         $videoBerita->update([
             'judul' => $validated['judul'],
@@ -185,6 +205,29 @@ class VideoBeritaController extends Controller
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $url, $matches)) {
                 return $matches[1];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Build Instagram embed URL for post/reel/tv links
+     */
+    private function extractInstagramEmbedUrl(string $url): ?string
+    {
+        // Match common Instagram URL formats and build the embed URL
+        $patterns = [
+            '/instagram\.com\/(p)\/([a-zA-Z0-9_-]+)/',
+            '/instagram\.com\/(reel)\/([a-zA-Z0-9_-]+)/',
+            '/instagram\.com\/(tv)\/([a-zA-Z0-9_-]+)/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $url, $matches)) {
+                $type = $matches[1];
+                $code = $matches[2];
+                return "https://www.instagram.com/{$type}/{$code}/embed";
             }
         }
 

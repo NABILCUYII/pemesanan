@@ -70,19 +70,21 @@ class RingkasanSheet implements FromCollection, WithHeadings, WithMapping, WithS
             ['Tanggal Generate: ' . Carbon::now()->format('d/m/Y H:i:s')],
             [''],
             ['RINGKASAN AKTIVITAS PER PENGGUNA'],
-            ['Nama Pengguna', 'Total Permintaan', 'Total Peminjaman', 'Status Aktivitas']
+            ['Nama Pengguna', 'Total Permintaan', 'Total Peminjaman', 'Inventaris Keluar', 'Inventaris Kembali', 'Status Aktivitas']
         ];
     }
 
     public function map($user): array
     {
-        $totalAktivitas = $user->total_permintaan + $user->total_peminjaman;
+        $totalAktivitas = $user->total_permintaan + $user->total_peminjaman + ($user->total_inventaris_keluar ?? 0) + ($user->total_inventaris_kembali ?? 0);
         $statusAktivitas = $totalAktivitas > 0 ? 'Aktif' : 'Tidak Aktif';
         
         return [
             $user->name,
             $user->total_permintaan,
             $user->total_peminjaman,
+            $user->total_inventaris_keluar ?? 0,
+            $user->total_inventaris_kembali ?? 0,
             $statusAktivitas
         ];
     }
@@ -90,32 +92,32 @@ class RingkasanSheet implements FromCollection, WithHeadings, WithMapping, WithS
     public function styles(Worksheet $sheet)
     {
         // Style untuk judul utama
-        $sheet->mergeCells('A1:D1');
+        $sheet->mergeCells('A1:F1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk periode
-        $sheet->mergeCells('A2:D2');
+        $sheet->mergeCells('A2:F2');
         $sheet->getStyle('A2')->getFont()->setSize(12);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk tanggal generate
-        $sheet->mergeCells('A3:D3');
+        $sheet->mergeCells('A3:F3');
         $sheet->getStyle('A3')->getFont()->setSize(10);
         $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk sub judul
-        $sheet->mergeCells('A5:D5');
+        $sheet->mergeCells('A5:F5');
         $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A5')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk header tabel
-        $sheet->getStyle('A6:D6')->getFont()->setBold(true);
-        $sheet->getStyle('A6:D6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
-        $sheet->getStyle('A6:D6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A6:F6')->getFont()->setBold(true);
+        $sheet->getStyle('A6:F6')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
+        $sheet->getStyle('A6:F6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk data
-        $sheet->getStyle('A7:D' . (6 + count($this->users)))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A7:F' . (6 + count($this->users)))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         return [];
     }
@@ -127,6 +129,8 @@ class RingkasanSheet implements FromCollection, WithHeadings, WithMapping, WithS
             'B' => 20,
             'C' => 20,
             'D' => 20,
+            'E' => 20,
+            'F' => 20,
         ];
     }
 
@@ -181,15 +185,15 @@ class AktivitasPenggunaSheet implements FromCollection, WithHeadings, WithMappin
             ['DETAIL AKTIVITAS PENGGUNA'],
             ['Periode: ' . $monthName . ' ' . $this->year],
             [''],
-            ['Nama Pengguna', 'Total Permintaan', 'Total Peminjaman', 'Total Aktivitas', 'Persentase Aktivitas']
+            ['Nama Pengguna', 'Total Permintaan', 'Total Peminjaman', 'Inventaris Keluar', 'Inventaris Kembali', 'Total Aktivitas', 'Persentase Aktivitas']
         ];
     }
 
     public function map($user): array
     {
-        $totalAktivitas = $user->total_permintaan + $user->total_peminjaman;
+        $totalAktivitas = $user->total_permintaan + $user->total_peminjaman + ($user->total_inventaris_keluar ?? 0) + ($user->total_inventaris_kembali ?? 0);
         $totalSemua = collect($this->users)->sum(function($u) {
-            return $u->total_permintaan + $u->total_peminjaman;
+            return $u->total_permintaan + $u->total_peminjaman + ($u->total_inventaris_keluar ?? 0) + ($u->total_inventaris_kembali ?? 0);
         });
         $persentase = $totalSemua > 0 ? round(($totalAktivitas / $totalSemua) * 100, 2) : 0;
         
@@ -197,6 +201,8 @@ class AktivitasPenggunaSheet implements FromCollection, WithHeadings, WithMappin
             $user->name,
             $user->total_permintaan,
             $user->total_peminjaman,
+            $user->total_inventaris_keluar ?? 0,
+            $user->total_inventaris_kembali ?? 0,
             $totalAktivitas,
             $persentase . '%'
         ];
@@ -205,22 +211,22 @@ class AktivitasPenggunaSheet implements FromCollection, WithHeadings, WithMappin
     public function styles(Worksheet $sheet)
     {
         // Style untuk judul
-        $sheet->mergeCells('A1:E1');
+        $sheet->mergeCells('A1:G1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk periode
-        $sheet->mergeCells('A2:E2');
+        $sheet->mergeCells('A2:G2');
         $sheet->getStyle('A2')->getFont()->setSize(12);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk header tabel
-        $sheet->getStyle('A4:E4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:E4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
-        $sheet->getStyle('A4:E4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A4:G4')->getFont()->setBold(true);
+        $sheet->getStyle('A4:G4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
+        $sheet->getStyle('A4:G4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk data
-        $sheet->getStyle('A5:E' . (4 + count($this->users)))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A5:G' . (4 + count($this->users)))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         return [];
     }
@@ -233,6 +239,8 @@ class AktivitasPenggunaSheet implements FromCollection, WithHeadings, WithMappin
             'C' => 20,
             'D' => 20,
             'E' => 20,
+            'F' => 20,
+            'G' => 20,
         ];
     }
 
@@ -287,7 +295,7 @@ class PergerakanStokSheet implements FromCollection, WithHeadings, WithMapping, 
             ['PERGERAKAN STOK BARANG'],
             ['Periode: ' . $monthName . ' ' . $this->year],
             [''],
-            ['Nama Barang', 'Kode Barang', 'Stok Awal', 'Permintaan Keluar', 'Peminjaman Keluar', 'Peminjaman Kembali', 'Stok Akhir']
+            ['Nama Barang', 'Kode Barang', 'Stok Awal', 'Permintaan Keluar', 'Peminjaman Keluar', 'Peminjaman Kembali', 'Inventaris Keluar', 'Inventaris Kembali', 'Stok Akhir']
         ];
     }
 
@@ -300,6 +308,8 @@ class PergerakanStokSheet implements FromCollection, WithHeadings, WithMapping, 
             $item->permintaan_keluar,
             $item->peminjaman_keluar,
             $item->peminjaman_kembali,
+            $item->inventaris_keluar ?? 0,
+            $item->inventaris_kembali ?? 0,
             $item->stok_akhir
         ];
     }
@@ -307,22 +317,22 @@ class PergerakanStokSheet implements FromCollection, WithHeadings, WithMapping, 
     public function styles(Worksheet $sheet)
     {
         // Style untuk judul
-        $sheet->mergeCells('A1:G1');
+        $sheet->mergeCells('A1:I1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk periode
-        $sheet->mergeCells('A2:G2');
+        $sheet->mergeCells('A2:I2');
         $sheet->getStyle('A2')->getFont()->setSize(12);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk header tabel
-        $sheet->getStyle('A4:G4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:G4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
-        $sheet->getStyle('A4:G4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A4:I4')->getFont()->setBold(true);
+        $sheet->getStyle('A4:I4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
+        $sheet->getStyle('A4:I4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk data
-        $sheet->getStyle('A5:G' . (4 + count($this->stokChanges)))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A5:I' . (4 + count($this->stokChanges)))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         return [];
     }
@@ -336,7 +346,9 @@ class PergerakanStokSheet implements FromCollection, WithHeadings, WithMapping, 
             'D' => 20,
             'E' => 20,
             'F' => 20,
-            'G' => 15,
+            'G' => 20,
+            'H' => 20,
+            'I' => 15,
         ];
     }
 

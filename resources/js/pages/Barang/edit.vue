@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref } from 'vue';
-import { BadgeCheck, Package, Layers, FileText, ArrowLeft, Save } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { BadgeCheck, Package, Layers, FileText, ArrowLeft, Save, QrCode } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
+import BarcodeDisplay from '@/components/BarcodeDisplay.vue';
 
 const props = defineProps<{
     barang: {
@@ -43,6 +44,18 @@ const manualLokasi = ref(form.lokasi && ![
 // Helper untuk set value dropdown jika bukan preset
 if (manualSatuan.value) form.satuan = 'Lainnya';
 if (manualLokasi.value) form.lokasi = 'Lainnya';
+
+// Computed property for barcode data
+const barcodeData = computed(() => {
+    return {
+        kode_barang: form.kode_barang,
+        nama_barang: form.nama_barang,
+        kategori: form.kategori,
+        stok: Number(form.stok) || 0,
+        satuan: form.satuan === 'Lainnya' ? manualSatuan.value : form.satuan,
+        lokasi: form.lokasi === 'Lainnya' ? manualLokasi.value : form.lokasi
+    };
+});
 
 const submit = () => {
     const stokAngka = parseInt(form.stok);
@@ -244,6 +257,27 @@ const submit = () => {
                          <p v-if="form.errors.deskripsi" class="text-sm text-red-600 mt-1">
                             {{ form.errors.deskripsi }}
                         </p>
+                    </div>
+
+                    <!-- Barcode Section -->
+                    <div class="border-t pt-6 mt-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <QrCode class="w-5 h-5 text-indigo-600" />
+                            <h3 class="text-lg font-semibold text-indigo-800">Barcode Barang</h3>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <BarcodeDisplay 
+                                :barang-data="barcodeData"
+                                :show-info="true"
+                                :show-actions="true"
+                                :allow-download="true"
+                                :allow-print="true"
+                                :allow-copy="true"
+                                container-class="bg-white p-3 rounded border"
+                                image-class="max-w-full h-auto"
+                                :use-styled-barcode="true"
+                            />
+                        </div>
                     </div>
 
                     <!-- Tombol Aksi -->

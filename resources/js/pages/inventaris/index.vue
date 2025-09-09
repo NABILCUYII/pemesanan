@@ -469,118 +469,115 @@ const statusOptions = [
             <div class="bg-white rounded-lg shadow overflow-hidden">
                 <!-- Desktop Table -->
                 <div v-if="filteredInventaris.length > 0" class="overflow-x-auto hidden md:block">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Peminjam</TableHead>
-                                <TableHead>Nomor Inventaris</TableHead>
-                                <TableHead>Barang</TableHead>
-                                <TableHead>Jumlah</TableHead>
-                                <TableHead>Lokasi</TableHead>
-                                <TableHead>Tanggal Pinjam</TableHead>
-                                <TableHead>Due Date</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead class="text-right">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="group in filteredInventaris" :key="group.user">
-                                <TableCell class="font-medium">
-                                    <div class="flex items-center gap-3">
-                                        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 overflow-hidden">
-                                            <img
-                                                v-if="group.user_photo"
-                                                :src="group.user_photo.startsWith('http') ? group.user_photo : `/storage/${group.user_photo}`"
-                                                alt="User avatar"
-                                                class="w-full h-full object-cover"
-                                                @error="(e) => { 
-                                                    const target = e.target as HTMLImageElement | null;
-                                                    if (target) {
-                                                        target.style.display = 'none';
-                                                        const parent = target.parentElement as HTMLElement | null;
-                                                        if (parent) {
-                                                            parent.innerHTML = `<span class='text-gray-600 font-semibold'>${group.user?.charAt(0) || '?'}</span>`;
-                                                        }
+                    <div v-for="(group, groupIndex) in filteredInventaris" :key="group.user" class="mb-6">
+                        <!-- User Header -->
+                        <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-t-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm overflow-hidden">
+                                        <img
+                                            v-if="group.user_photo"
+                                            :src="group.user_photo.startsWith('http') ? group.user_photo : `/storage/${group.user_photo}`"
+                                            alt="User avatar"
+                                            class="w-full h-full object-cover"
+                                            @error="(e) => { 
+                                                const target = e.target as HTMLImageElement | null;
+                                                if (target) {
+                                                    target.style.display = 'none';
+                                                    const parent = target.parentElement as HTMLElement | null;
+                                                    if (parent) {
+                                                        parent.innerHTML = `<span class='text-purple-600 font-semibold text-lg'>${group.user?.charAt(0) || '?'}</span>`;
                                                     }
-                                                }"
-                                            />
-                                            <span v-else class="text-gray-600 font-semibold">
-                                                {{ group.user?.charAt(0) || '?' }}
-                                            </span>
+                                                }
+                                            }"
+                                        />
+                                        <span v-else class="text-purple-600 font-semibold text-lg">
+                                            {{ group.user?.charAt(0) || '?' }}
                                         </span>
+                                    </span>
+                                    <div>
+                                        <h3 class="font-semibold text-lg text-gray-800">{{ group.user }}</h3>
+                                        <p class="text-sm text-gray-600">{{ group.items.length }} item dipinjam</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <Badge variant="outline" class="text-purple-600 border-purple-300">
+                                        {{ group.items.filter(item => item.status === 'pending').length }} Menunggu
+                                    </Badge>
+                                    <Badge variant="outline" class="text-green-600 border-green-300">
+                                        {{ group.items.filter(item => item.status === 'approved' || item.status === 'in_progress').length }} Aktif
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Table -->
+                        <Table>
+                            <TableHeader>
+                                <TableRow class="bg-gray-50">
+                                    <TableHead class="font-semibold">Nomor Inventaris</TableHead>
+                                    <TableHead class="font-semibold">Barang</TableHead>
+                                    <TableHead class="font-semibold">Jumlah</TableHead>
+                                    <TableHead class="font-semibold">Lokasi</TableHead>
+                                    <TableHead class="font-semibold">Tanggal Pinjam</TableHead>
+                                    <TableHead class="font-semibold">Due Date</TableHead>
+                                    <TableHead class="font-semibold">Status</TableHead>
+                                    <TableHead class="text-right font-semibold">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow 
+                                    v-for="(item, itemIndex) in group.items" 
+                                    :key="item.id"
+                                    :class="[
+                                        'hover:bg-gray-50 transition-colors',
+                                        itemIndex === group.items.length - 1 ? 'border-b-0' : 'border-b border-gray-200'
+                                    ]"
+                                >
+                                    <TableCell class="font-medium">
+                                        <span class="font-mono text-purple-600 bg-purple-50 px-2 py-1 rounded text-sm">
+                                            {{ item.nomor_inventaris }}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
                                         <div>
-                                            <p class="font-medium">{{ group.user }}</p>
-                                            <p class="text-sm text-gray-500">{{ group.items.length }} item</p>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id" class="text-sm">
-                                            <span class="font-mono text-purple-600">{{ item.nomor_inventaris }}</span>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id">
-                                            <p class="font-medium">{{ item.nama_barang }}</p>
+                                            <p class="font-medium text-gray-900">{{ item.nama_barang }}</p>
                                             <p class="text-sm text-gray-500">{{ item.kode_barang }}</p>
                                         </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id" class="text-sm">
+                                    </TableCell>
+                                    <TableCell>
+                                        <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
                                             {{ item.jumlah }}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div v-if="item.lokasi_peminjaman" class="flex items-center gap-1 text-sm">
+                                            <MapPin class="w-3 h-3 text-gray-400" />
+                                            <span class="text-gray-700">{{ item.lokasi_peminjaman }}</span>
                                         </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id" class="text-sm">
-                                            <div v-if="item.lokasi_peminjaman" class="flex items-center gap-1">
-                                                <MapPin class="w-3 h-3 text-gray-400" />
-                                                {{ item.lokasi_peminjaman }}
-                                            </div>
-                                            <span v-else class="text-gray-400">-</span>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id" class="text-sm">
-                                            {{ formatDate(item.tanggal_peminjaman) }}
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id" class="text-sm">
-                                            <span :class="[
-                                                'font-medium',
-                                                item.is_overdue ? 'text-red-600' : 'text-gray-700'
-                                            ]">
-                                                {{ formatDate(item.due_date) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div class="space-y-1">
-                                        <div v-for="item in group.items" :key="item.id">
-                                            <Badge :variant="getStatusVariant(item.status)">
-                                                {{ item.status_text }}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell class="text-right">
-                                    <div class="space-y-2">
-                                        <div v-for="item in group.items" :key="item.id" class="flex justify-end gap-1">
+                                        <span v-else class="text-gray-400 text-sm">-</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span class="text-sm text-gray-700">{{ formatDate(item.tanggal_peminjaman) }}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span :class="[
+                                            'text-sm font-medium px-2 py-1 rounded',
+                                            item.is_overdue ? 'text-red-600 bg-red-50' : 'text-gray-700 bg-gray-50'
+                                        ]">
+                                            {{ formatDate(item.due_date) }}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge :variant="getStatusVariant(item.status)" class="text-xs">
+                                            {{ item.status_text }}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell class="text-right">
+                                        <div class="flex justify-end gap-1">
                                             <!-- View Details -->
                                             <Link :href="route('inventaris.show', item.id.toString())">
-                                                <Button variant="outline" size="sm">
+                                                <Button variant="outline" size="sm" class="h-8 w-8 p-0">
                                                     <User class="w-3 h-3" />
                                                 </Button>
                                             </Link>
@@ -589,21 +586,21 @@ const statusOptions = [
                                             <div v-if="isAdmin" class="flex gap-1">
                                                 <!-- Approve/Reject for pending -->
                                                 <div v-if="item.status === 'pending'" class="flex gap-1">
-                                                    <Button @click="openApprovalModal(item, 'approve')" size="sm" variant="outline">
+                                                    <Button @click="openApprovalModal(item, 'approve')" size="sm" variant="outline" class="h-8 w-8 p-0">
                                                         <Check class="w-3 h-3 text-green-600" />
                                                     </Button>
-                                                    <Button @click="openApprovalModal(item, 'reject')" size="sm" variant="outline">
+                                                    <Button @click="openApprovalModal(item, 'reject')" size="sm" variant="outline" class="h-8 w-8 p-0">
                                                         <XCircle class="w-3 h-3 text-red-600" />
                                                     </Button>
                                                 </div>
 
                                                 <!-- Start Progress for approved -->
-                                                <Button v-if="item.status === 'approved'" @click="startInventaris(item)" size="sm" variant="outline">
+                                                <Button v-if="item.status === 'approved'" @click="startInventaris(item)" size="sm" variant="outline" class="h-8 w-8 p-0">
                                                     <Play class="w-3 h-3 text-blue-600" />
                                                 </Button>
 
                                                 <!-- Return for in_progress -->
-                                                <Button v-if="item.status === 'in_progress'" @click="processReturn(item)" size="sm" variant="outline">
+                                                <Button v-if="item.status === 'in_progress'" @click="processReturn(item)" size="sm" variant="outline" class="h-8 w-8 p-0">
                                                     <RotateCcw class="w-3 h-3 text-orange-600" />
                                                 </Button>
                                             </div>
@@ -612,30 +609,31 @@ const statusOptions = [
                                             <div v-else class="flex gap-1">
                                                 <!-- Edit for pending -->
                                                 <Link v-if="item.status === 'pending'" :href="route('inventaris.edit', item.id.toString())">
-                                                    <Button variant="outline" size="sm">
+                                                    <Button variant="outline" size="sm" class="h-8 w-8 p-0">
                                                         <Edit class="w-3 h-3" />
                                                     </Button>
                                                 </Link>
 
                                                 <!-- Delete for pending -->
-                                                <Button v-if="item.status === 'pending'" @click="openDeleteModal(item)" size="sm" variant="outline">
+                                                <Button v-if="item.status === 'pending'" @click="openDeleteModal(item)" size="sm" variant="outline" class="h-8 w-8 p-0">
                                                     <X class="w-3 h-3 text-red-600" />
                                                 </Button>
                                             </div>
                                         </div>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </div>
                 </div>
 
                 <!-- Mobile Card List -->
                 <div v-if="filteredInventaris.length > 0" class="block md:hidden">
-                    <div v-for="group in filteredInventaris" :key="group.user" class="mb-4">
-                        <div v-for="item in group.items" :key="item.id" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3 shadow-sm">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+                    <div v-for="group in filteredInventaris" :key="group.user" class="mb-6">
+                        <!-- User Header Mobile -->
+                        <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mb-3">
+                            <div class="flex items-center gap-3">
+                                <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-sm overflow-hidden">
                                     <img
                                         v-if="group.user_photo"
                                         :src="group.user_photo.startsWith('http') ? group.user_photo : `/storage/${group.user_photo}`"
@@ -647,82 +645,122 @@ const statusOptions = [
                                                 target.style.display = 'none';
                                                 const parent = target.parentElement as HTMLElement | null;
                                                 if (parent) {
-                                                    parent.innerHTML = `<span class='text-gray-600 font-semibold'>${group.user?.charAt(0) || '?'}</span>`;
+                                                    parent.innerHTML = `<span class='text-purple-600 font-semibold text-xl'>${group.user?.charAt(0) || '?'}</span>`;
                                                 }
                                             }
                                         }"
                                     />
-                                    <span v-else class="text-gray-600 font-semibold">
+                                    <span v-else class="text-purple-600 font-semibold text-xl">
                                         {{ group.user?.charAt(0) || '?' }}
                                     </span>
                                 </span>
-                                <div>
-                                    <p class="font-medium text-base">{{ group.user }}</p>
-                                    <p class="text-xs text-gray-500">Nomor: <span class="font-mono text-purple-600">{{ item.nomor_inventaris }}</span></p>
-                                </div>
-                                <div class="ml-auto">
-                                    <Badge :variant="getStatusVariant(item.status)">
-                                        {{ item.status_text }}
-                                    </Badge>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-lg text-gray-800">{{ group.user }}</h3>
+                                    <p class="text-sm text-gray-600">{{ group.items.length }} item dipinjam</p>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs mb-2">
-                                <div class="font-semibold text-gray-700">Barang</div>
-                                <div>{{ item.nama_barang }}</div>
-                                <div class="font-semibold text-gray-700">Kode</div>
-                                <div>{{ item.kode_barang }}</div>
-                                <div class="font-semibold text-gray-700">Jumlah</div>
-                                <div>{{ item.jumlah }}</div>
-                                <div class="font-semibold text-gray-700">Lokasi</div>
-                                <div>
-                                    <span v-if="item.lokasi_peminjaman" class="flex items-center gap-1">
-                                        <MapPin class="w-3 h-3 text-gray-400" />
-                                        {{ item.lokasi_peminjaman }}
-                                    </span>
-                                    <span v-else class="text-gray-400">-</span>
-                                </div>
-                                <div class="font-semibold text-gray-700">Tgl Pinjam</div>
-                                <div>{{ formatDate(item.tanggal_peminjaman) }}</div>
-                                <div class="font-semibold text-gray-700">Jatuh Tempo</div>
-                                <div>
-                                    <span :class="['font-medium', item.is_overdue ? 'text-red-600' : 'text-gray-700']">
-                                        {{ formatDate(item.due_date) }}
-                                    </span>
-                                </div>
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                <Badge variant="outline" class="text-purple-600 border-purple-300 text-xs">
+                                    {{ group.items.filter(item => item.status === 'pending').length }} Menunggu
+                                </Badge>
+                                <Badge variant="outline" class="text-green-600 border-green-300 text-xs">
+                                    {{ group.items.filter(item => item.status === 'approved' || item.status === 'in_progress').length }} Aktif
+                                </Badge>
                             </div>
-                            <div class="flex flex-wrap gap-1 justify-end">
-                                <!-- View Details -->
-                                <Link :href="route('inventaris.show', item.id.toString())">
-                                    <Button variant="outline" size="sm">
-                                        <User class="w-3 h-3" />
-                                    </Button>
-                                </Link>
-                                <!-- Admin Actions -->
-                                <template v-if="isAdmin">
-                                    <Button v-if="item.status === 'pending'" @click="openApprovalModal(item, 'approve')" size="sm" variant="outline">
-                                        <Check class="w-3 h-3 text-green-600" />
-                                    </Button>
-                                    <Button v-if="item.status === 'pending'" @click="openApprovalModal(item, 'reject')" size="sm" variant="outline">
-                                        <XCircle class="w-3 h-3 text-red-600" />
-                                    </Button>
-                                    <Button v-if="item.status === 'approved'" @click="startInventaris(item)" size="sm" variant="outline">
-                                        <Play class="w-3 h-3 text-blue-600" />
-                                    </Button>
-                                    <Button v-if="item.status === 'in_progress'" @click="processReturn(item)" size="sm" variant="outline">
-                                        <RotateCcw class="w-3 h-3 text-orange-600" />
-                                    </Button>
-                                </template>
-                                <!-- User Actions -->
-                                <template v-else>
-                                    <Link v-if="item.status === 'pending'" :href="route('inventaris.edit', item.id.toString())">
-                                        <Button variant="outline" size="sm">
-                                            <Edit class="w-3 h-3" />
+                        </div>
+
+                        <!-- Items Cards -->
+                        <div class="space-y-3">
+                            <div v-for="item in group.items" :key="item.id" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <!-- Item Header -->
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-mono text-purple-600 bg-purple-50 px-2 py-1 rounded text-xs font-semibold">
+                                                {{ item.nomor_inventaris }}
+                                            </span>
+                                            <Badge :variant="getStatusVariant(item.status)" class="text-xs">
+                                                {{ item.status_text }}
+                                            </Badge>
+                                        </div>
+                                        <h4 class="font-semibold text-gray-900">{{ item.nama_barang }}</h4>
+                                        <p class="text-sm text-gray-500">{{ item.kode_barang }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                                            {{ item.jumlah }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Item Details -->
+                                <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-sm mb-4">
+                                    <div class="flex items-center gap-1">
+                                        <MapPin class="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                        <span class="text-gray-600">Lokasi:</span>
+                                    </div>
+                                    <div class="text-gray-800">
+                                        {{ item.lokasi_peminjaman || '-' }}
+                                    </div>
+                                    
+                                    <div class="text-gray-600">Tanggal Pinjam:</div>
+                                    <div class="text-gray-800">{{ formatDate(item.tanggal_peminjaman) }}</div>
+                                    
+                                    <div class="text-gray-600">Jatuh Tempo:</div>
+                                    <div>
+                                        <span :class="[
+                                            'font-medium px-2 py-1 rounded text-xs',
+                                            item.is_overdue ? 'text-red-600 bg-red-50' : 'text-gray-700 bg-gray-50'
+                                        ]">
+                                            {{ formatDate(item.due_date) }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex flex-wrap gap-2 justify-end">
+                                    <!-- View Details -->
+                                    <Link :href="route('inventaris.show', item.id.toString())">
+                                        <Button variant="outline" size="sm" class="h-8 px-3">
+                                            <User class="w-3 h-3 mr-1" />
+                                            Detail
                                         </Button>
                                     </Link>
-                                    <Button v-if="item.status === 'pending'" @click="openDeleteModal(item)" size="sm" variant="outline">
-                                        <X class="w-3 h-3 text-red-600" />
-                                    </Button>
-                                </template>
+                                    
+                                    <!-- Admin Actions -->
+                                    <template v-if="isAdmin">
+                                        <Button v-if="item.status === 'pending'" @click="openApprovalModal(item, 'approve')" size="sm" variant="outline" class="h-8 px-3">
+                                            <Check class="w-3 h-3 mr-1 text-green-600" />
+                                            Setujui
+                                        </Button>
+                                        <Button v-if="item.status === 'pending'" @click="openApprovalModal(item, 'reject')" size="sm" variant="outline" class="h-8 px-3">
+                                            <XCircle class="w-3 h-3 mr-1 text-red-600" />
+                                            Tolak
+                                        </Button>
+                                        <Button v-if="item.status === 'approved'" @click="startInventaris(item)" size="sm" variant="outline" class="h-8 px-3">
+                                            <Play class="w-3 h-3 mr-1 text-blue-600" />
+                                            Mulai
+                                        </Button>
+                                        <Button v-if="item.status === 'in_progress'" @click="processReturn(item)" size="sm" variant="outline" class="h-8 px-3">
+                                            <RotateCcw class="w-3 h-3 mr-1 text-orange-600" />
+                                            Kembalikan
+                                        </Button>
+                                    </template>
+                                    
+                                    <!-- User Actions -->
+                                    <template v-else>
+                                        <Link v-if="item.status === 'pending'" :href="route('inventaris.edit', item.id.toString())">
+                                            <Button variant="outline" size="sm" class="h-8 px-3">
+                                                <Edit class="w-3 h-3 mr-1" />
+                                                Edit
+                                            </Button>
+                                        </Link>
+                                        <Button v-if="item.status === 'pending'" @click="openDeleteModal(item)" size="sm" variant="outline" class="h-8 px-3">
+                                            <X class="w-3 h-3 mr-1 text-red-600" />
+                                            Hapus
+                                        </Button>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </div>

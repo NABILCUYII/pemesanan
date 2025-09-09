@@ -40,8 +40,11 @@ interface User {
     photo_url?: string;
     permintaan: any[];
     peminjaman: any[];
+    inventaris: any[];
     total_permintaan: number;
     total_peminjaman: number;
+    total_inventaris_keluar: number;
+    total_inventaris_kembali: number;
 }
 
 interface StokChange {
@@ -52,6 +55,8 @@ interface StokChange {
     permintaan_keluar: number;
     peminjaman_keluar: number;
     peminjaman_kembali: number;
+    inventaris_keluar: number;
+    inventaris_kembali: number;
     stok_akhir: number;
 }
 
@@ -195,7 +200,9 @@ const calculatedStokChanges = computed(() => {
             item.stok_akhir,
             item.permintaan_keluar,
             item.peminjaman_keluar,
-            item.peminjaman_kembali
+            item.peminjaman_kembali,
+            item.inventaris_keluar || 0,
+            item.inventaris_kembali || 0
         ];
         
         const stokAwal = valuesToSum
@@ -354,30 +361,34 @@ const { getPhotoUrl } = usePhotoUrl();
                     <div class="flex flex-col gap-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div class="space-y-2">
-                                <Label for="month" class="text-sm font-medium">Bulan</Label>
-                                <Select v-model="selectedMonth">
-                                    <SelectTrigger class="h-11">
-                                        <SelectValue :placeholder="months[selectedMonth]" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="(name, value) in months" :key="value" :value="value">
-                                            {{ name }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label class="text-sm font-medium">Bulan</Label>
+                                <div class="flex flex-wrap gap-2">
+                                    <Button
+                                        v-for="(name, value) in months"
+                                        :key="value"
+                                        :variant="selectedMonth == value.toString() ? 'default' : 'outline'"
+                                        size="sm"
+                                        @click="selectedMonth = value.toString()"
+                                        class="text-xs px-3 py-1"
+                                    >
+                                        {{ name }}
+                                    </Button>
+                                </div>
                             </div>
                             <div class="space-y-2">
-                                <Label for="year" class="text-sm font-medium">Tahun</Label>
-                                <Select v-model="selectedYear">
-                                    <SelectTrigger class="h-11">
-                                        <SelectValue :placeholder="selectedYear" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem v-for="year in years" :key="year" :value="year">
-                                            {{ year }}
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label class="text-sm font-medium">Tahun</Label>
+                                <div class="flex flex-wrap gap-2">
+                                    <Button
+                                        v-for="year in years"
+                                        :key="year"
+                                        :variant="selectedYear == year.toString() ? 'default' : 'outline'"
+                                        size="sm"
+                                        @click="selectedYear = year.toString()"
+                                        class="text-xs px-3 py-1"
+                                    >
+                                        {{ year }}
+                                    </Button>
+                                </div>
                             </div>
                             <div class="space-y-2">
                                 <Label for="search" class="text-sm font-medium">Cari</Label>
@@ -395,17 +406,18 @@ const { getPhotoUrl } = usePhotoUrl();
                             <div class="flex items-end gap-2">
                                 <Button 
                                     @click="applyFilters"
+                                    variant="secondary"
                                     size="sm"
-                                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4"
+                                    class="px-4"
                                 >
                                     <Search class="h-4 w-4 mr-1" />
                                     Cari
                                 </Button>
                                 <Button 
                                     @click="clearFilters"
-                                    variant="outline"
+                                    variant="ghost"
                                     size="sm"
-                                    class="border-gray-300 hover:bg-gray-50 px-4"
+                                    class="px-4"
                                 >
                                     Reset
                                 </Button>
@@ -445,6 +457,8 @@ const { getPhotoUrl } = usePhotoUrl();
                                             <div class="flex gap-4 mt-2 text-sm text-muted-foreground">
                                                 <span>Permintaan: {{ user.total_permintaan }}</span>
                                                 <span>Peminjaman: {{ user.total_peminjaman }}</span>
+                                                <span>Inventaris Keluar: {{ user.total_inventaris_keluar || 0 }}</span>
+                                                <span>Inventaris Kembali: {{ user.total_inventaris_kembali || 0 }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -537,9 +551,38 @@ const { getPhotoUrl } = usePhotoUrl();
                                     </div>
                                 </div>
                                 
+                                <!-- Inventaris Details -->
+                                <div v-if="user.inventaris && user.inventaris.length > 0">
+                                    <h5 class="font-semibold mb-2 text-sm">Detail Inventaris</h5>
+                                    <div class="space-y-2 max-h-40 overflow-y-auto">
+                                        <div v-for="inventaris in user.inventaris" :key="inventaris.id" class="bg-muted/30 rounded-md p-3 space-y-1">
+                                            <div class="flex justify-between items-start">
+                                                <span class="font-medium text-sm">{{ inventaris.nama_barang }}</span>
+                                                <Badge :variant="getStatusVariant(inventaris.status)" class="text-xs">
+                                                    {{ getStatusText(inventaris.status) }}
+                                                </Badge>
+                                            </div>
+                                            <div class="text-xs text-muted-foreground space-y-1">
+                                                <div class="flex justify-between">
+                                                    <span>Jumlah:</span>
+                                                    <span>{{ inventaris.jumlah }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span>Keluar:</span>
+                                                    <span>{{ formatDate(inventaris.tanggal_keluar) }}</span>
+                                                </div>
+                                                <div class="flex justify-between">
+                                                    <span>Kembali:</span>
+                                                    <span>{{ formatDate(inventaris.tanggal_kembali) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <!-- No data message -->
-                                <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0)" class="text-center py-4 text-muted-foreground text-sm">
-                                    Tidak ada data permintaan atau peminjaman untuk periode ini.
+                                <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0) && (!user.inventaris || user.inventaris.length === 0)" class="text-center py-4 text-muted-foreground text-sm">
+                                    Tidak ada data permintaan, peminjaman, atau inventaris untuk periode ini.
                                 </div>
                             </div>
                         </div>
@@ -554,6 +597,8 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <TableHead class="font-semibold text-base py-4">Nama Pengguna</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Total Permintaan</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Total Peminjaman</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Inventaris Keluar</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Inventaris Kembali</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Aksi</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -579,6 +624,16 @@ const { getPhotoUrl } = usePhotoUrl();
                                             </Badge>
                                         </TableCell>
                                         <TableCell class="text-center py-4">
+                                            <Badge variant="outline" class="text-sm px-3 py-1">
+                                                {{ user.total_inventaris_keluar || 0 }}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <Badge variant="outline" class="text-sm px-3 py-1">
+                                                {{ user.total_inventaris_kembali || 0 }}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -598,7 +653,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                     </TableRow>
                                     <!-- Expanded content for each user -->
                                     <TableRow v-for="user in users.data" :key="`expanded-${user.id}`" v-show="isUserExpanded(user.id)" class="bg-muted/20">
-                                        <TableCell colspan="4" class="p-0">
+                                        <TableCell colspan="6" class="p-0">
                                             <div class="p-6 space-y-6 max-h-96 overflow-y-auto">
                                                 <!-- Header with download button -->
                                                 <div class="flex justify-between items-center pb-4 border-b">
@@ -687,8 +742,42 @@ const { getPhotoUrl } = usePhotoUrl();
                                                     </div>
                                                 </div>
                                                 
+                                                <!-- Inventaris Details -->
+                                                <div v-if="user.inventaris && user.inventaris.length > 0">
+                                                    <h4 class="font-semibold mb-4 text-lg flex items-center gap-2">
+                                                        <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                                        Detail Inventaris ({{ user.inventaris.length }} item)
+                                                    </h4>
+                                                    <div class="rounded-lg border-2 overflow-hidden">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow class="bg-muted/30">
+                                                                    <TableHead class="font-medium">Barang</TableHead>
+                                                                    <TableHead class="font-medium text-center">Jumlah</TableHead>
+                                                                    <TableHead class="font-medium text-center">Status</TableHead>
+                                                                    <TableHead class="font-medium text-center">Tanggal Keluar</TableHead>
+                                                                    <TableHead class="font-medium text-center">Tanggal Kembali</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                <TableRow v-for="inventaris in user.inventaris" :key="inventaris.id" class="hover:bg-muted/20">
+                                                                    <TableCell class="font-medium">{{ inventaris.nama_barang }}</TableCell>
+                                                                    <TableCell class="text-center">{{ inventaris.jumlah }}</TableCell>
+                                                                    <TableCell class="text-center">
+                                                                        <Badge :variant="getStatusVariant(inventaris.status)" class="text-xs">
+                                                                            {{ getStatusText(inventaris.status) }}
+                                                                        </Badge>
+                                                                    </TableCell>
+                                                                    <TableCell class="text-center text-sm text-muted-foreground">{{ formatDate(inventaris.tanggal_keluar) }}</TableCell>
+                                                                    <TableCell class="text-center text-sm text-muted-foreground">{{ formatDate(inventaris.tanggal_kembali) }}</TableCell>
+                                                                </TableRow>
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                </div>
+                                                
                                                 <!-- No data message -->
-                                                <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0)" class="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
+                                                <div v-if="(!user.permintaan || user.permintaan.length === 0) && (!user.peminjaman || user.peminjaman.length === 0) && (!user.inventaris || user.inventaris.length === 0)" class="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg">
                                                     <div class="flex flex-col items-center gap-2">
                                                         <FileText class="w-8 h-8 text-muted-foreground/50" />
                                                         <p class="text-sm">Tidak ada data permintaan atau peminjaman untuk periode ini.</p>
@@ -789,9 +878,17 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <div class="text-muted-foreground text-xs">Peminjaman Keluar</div>
                                         <div class="font-semibold">{{ item.peminjaman_keluar }}</div>
                                     </div>
-                                    <div class="bg-muted/30 rounded-md p-3 col-span-2">
+                                    <div class="bg-muted/30 rounded-md p-3">
                                         <div class="text-muted-foreground text-xs">Peminjaman Kembali</div>
                                         <div class="font-semibold">{{ item.peminjaman_kembali }}</div>
+                                    </div>
+                                    <div class="bg-muted/30 rounded-md p-3">
+                                        <div class="text-muted-foreground text-xs">Inventaris Keluar</div>
+                                        <div class="font-semibold">{{ item.inventaris_keluar || 0 }}</div>
+                                    </div>
+                                    <div class="bg-muted/30 rounded-md p-3">
+                                        <div class="text-muted-foreground text-xs">Inventaris Kembali</div>
+                                        <div class="font-semibold">{{ item.inventaris_kembali || 0 }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -809,6 +906,8 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <TableHead class="font-semibold text-base py-4 text-center">Permintaan Keluar</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Peminjaman Keluar</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Peminjaman Kembali</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Inventaris Keluar</TableHead>
+                                        <TableHead class="font-semibold text-base py-4 text-center">Inventaris Kembali</TableHead>
                                         <TableHead class="font-semibold text-base py-4 text-center">Stok Akhir<br><span class="text-xs font-normal text-muted-foreground">(Total Saat Ini)</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -833,6 +932,12 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </TableCell>
                                         <TableCell class="text-center py-4">
                                             <span class="text-green-600 font-medium">{{ item.peminjaman_kembali }}</span>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <span class="text-purple-600 font-medium">{{ item.inventaris_keluar || 0 }}</span>
+                                        </TableCell>
+                                        <TableCell class="text-center py-4">
+                                            <span class="text-indigo-600 font-medium">{{ item.inventaris_kembali || 0 }}</span>
                                         </TableCell>
                                         <TableCell class="text-center py-4">
                                             <Badge :variant="item.stok_akhir > 0 ? 'default' : 'destructive'" class="text-sm px-3 py-1 font-semibold">

@@ -53,7 +53,7 @@
                 v-model="form.deskripsi"
                 placeholder="Masukkan deskripsi video (opsional)"
                 class="mt-1"
-                rows="3"
+                :rows="3"
                 :class="{ 'border-red-500': errors.deskripsi }"
               />
               <p v-if="errors.deskripsi" class="mt-1 text-sm text-red-600">{{ errors.deskripsi }}</p>
@@ -66,12 +66,12 @@
                 id="video_url"
                 v-model="form.video_url"
                 type="url"
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder="https://www.youtube.com/watch?v=... atau https://www.instagram.com/p/..."
                 class="mt-1"
                 :class="{ 'border-red-500': errors.video_url }"
               />
               <p class="mt-1 text-xs text-[#708090]">
-                Format yang didukung: youtube.com/watch?v=..., youtu.be/..., youtube.com/embed/...
+                Format yang didukung: youtube.com/watch?v=..., youtu.be/..., youtube.com/embed/...; instagram.com/p/..., instagram.com/reel/..., instagram.com/tv/...
               </p>
               <p v-if="errors.video_url" class="mt-1 text-sm text-red-600">{{ errors.video_url }}</p>
             </div>

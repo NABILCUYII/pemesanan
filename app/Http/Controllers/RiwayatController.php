@@ -90,4 +90,15 @@ class RiwayatController extends Controller
             return redirect()->back()->with('message', 'Peminjaman berhasil dibatalkan');
         }
     }
+
+    public function deleteAllHistory()
+    {
+        $user = auth()->user();
+        
+        // Delete all user's requests and loans
+        Permintaan::where('user_id', $user->id)->delete();
+        Peminjaman::where('user_id', $user->id)->delete();
+        
+        return redirect()->back()->with('message', 'Semua riwayat berhasil dihapus');
+    }
 } 

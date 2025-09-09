@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ArrowLeft } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref } from 'vue';
-import { PackagePlus } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { PackagePlus, QrCode } from 'lucide-vue-next';
+import BarcodeDisplay from '@/components/BarcodeDisplay.vue';
 
 const form = useForm({
     kode_barang: '',
@@ -49,6 +50,22 @@ function selectLokasi(option: string) {
     }
     showLokasiDropdown.value = false;
 }
+
+// Computed property for barcode preview data
+const barcodePreviewData = computed(() => {
+    if (!form.kode_barang.trim() || !form.nama_barang.trim() || !form.kategori) {
+        return null;
+    }
+    
+    return {
+        kode_barang: form.kode_barang,
+        nama_barang: form.nama_barang,
+        kategori: form.kategori,
+        stok: Number(form.stok) || 0,
+        satuan: form.satuan === 'Lainnya' ? manualSatuan.value : form.satuan,
+        lokasi: form.lokasi === 'Lainnya' ? manualLokasi.value : form.lokasi
+    };
+});
 
 const submit = () => {
     // Validasi kode barang harus diisi
@@ -322,6 +339,30 @@ const submit = () => {
                                 />
                                 <p v-if="form.errors.deskripsi" class="text-xs text-red-500 mt-1">
                                     {{ form.errors.deskripsi }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Barcode Preview Section -->
+                        <div v-if="barcodePreviewData" class="border-t pt-6 mt-6">
+                            <div class="flex items-center gap-2 mb-4">
+                                <QrCode class="w-5 h-5 text-indigo-600" />
+                                <h3 class="text-lg font-semibold text-indigo-800">Preview Barcode</h3>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <BarcodeDisplay 
+                                    :barang-data="barcodePreviewData"
+                                    :show-info="true"
+                                    :show-actions="true"
+                                    :allow-download="false"
+                                    :allow-print="false"
+                                    :allow-copy="true"
+                                    container-class="bg-white p-3 rounded border"
+                                    image-class="max-w-full h-auto"
+                                    :use-styled-barcode="true"
+                                />
+                                <p class="text-xs text-gray-500 mt-2 text-center">
+                                    Barcode akan otomatis dibuat setelah barang disimpan
                                 </p>
                             </div>
                         </div>

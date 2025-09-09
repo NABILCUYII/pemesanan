@@ -318,4 +318,39 @@ class BarangController extends Controller
             ]
         ]);
     }
+
+    // Barcode Management Methods
+    public function barcodeIndex()
+    {
+        $barang = Barang::latest()->get();
+        
+        return Inertia::render('Barcode/index', [
+            'barang' => $barang
+        ]);
+    }
+
+    public function barcodeShow(Barang $barang)
+    {
+        return Inertia::render('Barcode/show', [
+            'barang' => $barang
+        ]);
+    }
+
+    public function barcodeDownload(Barang $barang)
+    {
+        // This will be handled by the frontend
+        return response()->json([
+            'message' => 'Download initiated',
+            'barang' => $barang
+        ]);
+    }
+
+    public function barcodePrint(Barang $barang)
+    {
+        // This will be handled by the frontend
+        return response()->json([
+            'message' => 'Print initiated',
+            'barang' => $barang
+        ]);
+    }
 }

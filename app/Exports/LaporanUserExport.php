@@ -20,21 +20,23 @@ class LaporanUserExport implements FromCollection, WithHeadings, WithMapping, Wi
     protected $user;
     protected $permintaan;
     protected $peminjaman;
+    protected $inventaris;
     protected $month;
     protected $year;
 
-    public function __construct($user, $permintaan, $peminjaman, $month, $year)
+    public function __construct($user, $permintaan, $peminjaman, $inventaris, $month, $year)
     {
         $this->user = $user;
         $this->permintaan = $permintaan;
         $this->peminjaman = $peminjaman;
+        $this->inventaris = $inventaris;
         $this->month = $month;
         $this->year = $year;
     }
 
     public function collection()
     {
-        return collect($this->permintaan->merge($this->peminjaman));
+        return collect($this->permintaan->merge($this->peminjaman)->merge($this->inventaris));
     }
 
     public function headings(): array
@@ -52,9 +54,22 @@ class LaporanUserExport implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function map($item): array
     {
-        $jenisAktivitas = isset($item->jumlah) && isset($item->tanggal_peminjaman) ? 'Peminjaman' : 'Permintaan';
-        $tanggal = isset($item->tanggal_peminjaman) ? $item->tanggal_peminjaman : $item->created_at;
-        $keterangan = isset($item->tanggal_pengembalian) ? 'Kembali: ' . $item->tanggal_pengembalian : ($item->keterangan ?? '-');
+        if (isset($item->tanggal_keluar)) {
+            // Inventory item
+            $jenisAktivitas = 'Inventaris';
+            $tanggal = $item->tanggal_keluar;
+            $keterangan = isset($item->tanggal_kembali) ? 'Kembali: ' . $item->tanggal_kembali : ($item->keterangan ?? '-');
+        } elseif (isset($item->tanggal_peminjaman)) {
+            // Peminjaman item
+            $jenisAktivitas = 'Peminjaman';
+            $tanggal = $item->tanggal_peminjaman;
+            $keterangan = isset($item->tanggal_pengembalian) ? 'Kembali: ' . $item->tanggal_pengembalian : ($item->keterangan ?? '-');
+        } else {
+            // Permintaan item
+            $jenisAktivitas = 'Permintaan';
+            $tanggal = $item->created_at;
+            $keterangan = $item->keterangan ?? '-';
+        }
         
         return [
             $jenisAktivitas,
@@ -95,7 +110,7 @@ class LaporanUserExport implements FromCollection, WithHeadings, WithMapping, Wi
         $sheet->getStyle('A6:G6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Style untuk data
-        $totalRows = $this->permintaan->count() + $this->peminjaman->count();
+        $totalRows = $this->permintaan->count() + $this->peminjaman->count() + $this->inventaris->count();
         if ($totalRows > 0) {
             $sheet->getStyle('A7:G' . (6 + $totalRows))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         }

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Search, Eye, Package, Box } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Search, Eye, Package, Box, QrCode } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
+import BarcodeDisplay from '@/components/BarcodeDisplay.vue';
 import {
     Dialog,
     DialogContent,
@@ -271,6 +272,25 @@ function getVisiblePages() {
                                               <p class="text-gray-600">{{ item.deskripsi || 'Tidak ada deskripsi.' }}</p>
                                           </div>
                                       </div>
+                                      <!-- Barcode Section -->
+                                      <div class="border-t pt-4 mt-4">
+                                          <div class="flex items-center gap-2 mb-3">
+                                              <QrCode class="w-4 h-4 text-indigo-600" />
+                                              <h4 class="font-semibold text-indigo-800">Barcode</h4>
+                                          </div>
+                                          <BarcodeDisplay 
+                                              :barang-data="item"
+                                              :show-info="false"
+                                              :show-actions="true"
+                                              :allow-download="true"
+                                              :allow-print="true"
+                                              :allow-copy="true"
+                                              container-class="bg-gray-50 p-3 rounded border"
+                                              image-class="max-w-full h-auto"
+                                              :use-styled-barcode="true"
+                                          />
+                                      </div>
+                                      
                                       <DialogFooter class="flex flex-col sm:flex-row gap-2 mt-4">
                                           <Link :href="route('barang.edit', item.id)" class="w-full sm:w-auto">
                                               <Button variant="outline" class="w-full">

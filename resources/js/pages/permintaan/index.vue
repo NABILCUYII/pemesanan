@@ -12,6 +12,62 @@ import { usePage } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
 import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
+// Modal component (simple, inline)
+const showModal = ref(false);
+const modalType = ref<'delete' | 'approve' | 'reject' | null>(null);
+const modalItemId = ref<number | null>(null);
+
+const modalTitle = computed(() => {
+    switch (modalType.value) {
+        case 'delete': return 'Konfirmasi Hapus';
+        case 'approve': return 'Konfirmasi Setujui';
+        case 'reject': return 'Konfirmasi Tolak';
+        default: return '';
+    }
+});
+const modalMessage = computed(() => {
+    switch (modalType.value) {
+        case 'delete': return 'Apakah Anda yakin ingin menghapus permintaan ini?';
+        case 'approve': return 'Apakah Anda yakin ingin menyetujui permintaan ini?';
+        case 'reject': return 'Apakah Anda yakin ingin menolak permintaan ini?';
+        default: return '';
+    }
+});
+
+function openModal(type: 'delete' | 'approve' | 'reject', id: number) {
+    modalType.value = type;
+    modalItemId.value = id;
+    showModal.value = true;
+}
+function closeModal() {
+    showModal.value = false;
+    modalType.value = null;
+    modalItemId.value = null;
+}
+
+function handleModalConfirm() {
+    if (modalType.value && modalItemId.value !== null) {
+        if (modalType.value === 'delete') {
+            router.delete(route('permintaan.destroy', modalItemId.value));
+        } else if (modalType.value === 'approve') {
+            router.post(route('permintaan.approve'), {
+                permintaan_id: modalItemId.value,
+                action: 'approve',
+                alasan: 'Permintaan disetujui',
+                catatan: ''
+            });
+        } else if (modalType.value === 'reject') {
+            router.post(route('permintaan.approve'), {
+                permintaan_id: modalItemId.value,
+                action: 'reject',
+                alasan: 'Permintaan ditolak',
+                catatan: ''
+            });
+        }
+    }
+    closeModal();
+}
+
 // Declare route function globally for TypeScript
 declare function route(name: string, params?: any): string;
 
@@ -118,34 +174,6 @@ const getStatusText = (status: string) => {
     }
 };
 
-const deletePermintaan = (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus permintaan ini?')) {
-        router.delete(route('permintaan.destroy', id));
-    }
-};
-
-const approvePermintaan = (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menyetujui permintaan ini?')) {
-        router.post(route('permintaan.approve'), {
-            permintaan_id: id,
-            action: 'approve',
-            alasan: 'Permintaan disetujui',
-            catatan: ''
-        });
-    }
-};
-
-const rejectPermintaan = (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menolak permintaan ini?')) {
-        router.post(route('permintaan.approve'), {
-            permintaan_id: id,
-            action: 'reject',
-            alasan: 'Permintaan ditolak',
-            catatan: ''
-        });
-    }
-};
-
 const completePermintaan = (id: number) => {
     if (confirm('Apakah Anda yakin ingin menandai permintaan ini sebagai selesai?')) {
         router.patch(route('permintaan.complete', id));
@@ -202,6 +230,33 @@ const completePermintaan = (id: number) => {
                 </select>
             </div>
 
+            <!-- Modal -->
+            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
+                <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+                    <div class="p-6">
+                        <h2 class="text-lg font-semibold mb-2">{{ modalTitle }}</h2>
+                        <p class="mb-6">{{ modalMessage }}</p>
+                        <div class="flex justify-end gap-2">
+                            <Button variant="outline" @click="closeModal">Batal</Button>
+                            <Button
+                                :variant="modalType === 'delete' ? 'destructive' : (modalType === 'approve' ? 'default' : 'destructive')"
+                                @click="handleModalConfirm"
+                            >
+                                {{
+                                    modalType === 'delete'
+                                        ? 'Hapus'
+                                        : modalType === 'approve'
+                                            ? 'Setujui'
+                                            : modalType === 'reject'
+                                                ? 'Tolak'
+                                                : ''
+                                }}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Table (untuk desktop) -->
             <div class="hidden md:block">
                 <div v-for="group in filteredPermintaan" :key="group.user" class="mb-8">
@@ -253,7 +308,7 @@ const completePermintaan = (id: number) => {
                                         </Link>
                                         <button
                                             v-if="item.status === 'pending'"
-                                            @click="deletePermintaan(item.id)"
+                                            @click="openModal('delete', item.id)"
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
@@ -262,7 +317,7 @@ const completePermintaan = (id: number) => {
                                         <!-- Admin Approval Actions -->
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="approvePermintaan(item.id)"
+                                            @click="openModal('approve', item.id)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Setujui"
                                         >
@@ -270,7 +325,7 @@ const completePermintaan = (id: number) => {
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="rejectPermintaan(item.id)"
+                                            @click="openModal('reject', item.id)"
                                             class="text-red-600 hover:text-red-800"
                                             title="Tolak"
                                         >
@@ -338,7 +393,7 @@ const completePermintaan = (id: number) => {
                                         </Link>
                                         <button
                                             v-if="item.status === 'pending'"
-                                            @click="deletePermintaan(item.id)"
+                                            @click="openModal('delete', item.id)"
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
@@ -347,7 +402,7 @@ const completePermintaan = (id: number) => {
                                         <!-- Admin Approval Actions -->
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="approvePermintaan(item.id)"
+                                            @click="openModal('approve', item.id)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Setujui"
                                         >
@@ -355,7 +410,7 @@ const completePermintaan = (id: number) => {
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="rejectPermintaan(item.id)"
+                                            @click="openModal('reject', item.id)"
                                             class="text-red-600 hover:text-red-800"
                                             title="Tolak"
                                         >

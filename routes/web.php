@@ -62,6 +62,14 @@ Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('barang/semua', [BarangController::class, 'semua'])->name('barang.semuaBRG');
 });
 
+// Rute Barcode (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
+Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
+    Route::get('barcode', [BarangController::class, 'barcodeIndex'])->name('barcode.index');
+    Route::get('barcode/{barang}', [BarangController::class, 'barcodeShow'])->name('barcode.show');
+    Route::get('barcode/{barang}/download', [BarangController::class, 'barcodeDownload'])->name('barcode.download');
+    Route::get('barcode/{barang}/print', [BarangController::class, 'barcodePrint'])->name('barcode.print');
+});
+
 // Rute Barang Rusak & Barang Hilang (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
 Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('barang-rusak', [BarangRusakController::class, 'index'])->name('barang-rusak.index');
@@ -71,6 +79,9 @@ Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     // Rute Barang Hilang
     Route::get('barang-hilang/create', [BarangRusakController::class, 'createHilang'])->name('barang-hilang.create');
     Route::post('barang-hilang', [BarangRusakController::class, 'storeHilang'])->name('barang-hilang.store');
+    // Rute Barang Rusak dari Inventaris
+    Route::get('barang-rusak/from-inventaris', [BarangRusakController::class, 'createFromInventaris'])->name('barang-rusak.from-inventaris');
+    Route::post('barang-rusak/from-inventaris', [BarangRusakController::class, 'storeFromInventaris'])->name('barang-rusak.store-from-inventaris');
 });
 
 // Rute Permintaan (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
@@ -123,6 +134,8 @@ Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
 // Rute Riwayat (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
 Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('riwayat', [RiwayatController::class, 'index'])->name('riwayat.index');
+    Route::post('riwayat/cancel', [RiwayatController::class, 'cancel'])->name('riwayat.cancel');
+    Route::delete('riwayat/delete-all', [RiwayatController::class, 'deleteAllHistory'])->name('riwayat.delete-all');
 });
 
 // Rute Laporan (hanya untuk user yang sudah diverifikasi, bukan pengguna baru)
@@ -248,6 +261,7 @@ Route::fallback(function () {
 Route::middleware(['auth', PenggunaBaruBlock::class])->group(function () {
     Route::get('/users/newuser', [UserController::class, 'newuser'])->name('users.NEWuser');
     Route::get('/api/users/new', [UserController::class, 'getNewUsers']);
+    Route::get('/api/users/new-count', [UserController::class, 'getNewUsersCount']);
     Route::post('/users/approve/{id}', [UserController::class, 'approveNewUser'])->name('users.approve');
     Route::post('/users/reject/{id}', [UserController::class, 'rejectNewUser'])->name('users.reject');
 });

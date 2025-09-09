@@ -64,6 +64,11 @@ class User extends Authenticatable
         return $this->hasMany(Peminjaman::class);
     }
 
+    public function inventaris()
+    {
+        return $this->hasMany(Inventaris::class);
+    }
+
     /**
      * Get the full URL for the user's photo.
      */

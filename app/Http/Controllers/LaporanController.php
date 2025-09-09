@@ -6,6 +6,7 @@ use App\Models\Permintaan;
 use App\Models\Peminjaman;
 use App\Models\Barang;
 use App\Models\User;
+use App\Models\Inventaris;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class LaporanController extends Controller
         $search = $request->input('search');
 
         // Build query for users with pagination
-        $usersQuery = User::with(['permintaan.barang', 'peminjaman.barang']);
+        $usersQuery = User::with(['permintaan.barang', 'peminjaman.barang', 'inventaris.barang']);
         
         // Add search filter
         if ($search) {
@@ -52,14 +53,17 @@ class LaporanController extends Controller
             // Get user's requests for the selected period
             $permintaanQuery = $user->permintaan();
             $peminjamanQuery = $user->peminjaman();
+            $inventarisQuery = $user->inventaris();
             
             if ($month) {
                 $permintaanQuery->whereMonth('created_at', $month);
                 $peminjamanQuery->whereMonth('created_at', $month);
+                $inventarisQuery->whereMonth('tanggal_peminjaman', $month);
             }
             if ($year) {
                 $permintaanQuery->whereYear('created_at', $year);
                 $peminjamanQuery->whereYear('created_at', $year);
+                $inventarisQuery->whereYear('tanggal_peminjaman', $year);
             }
             
             $permintaan = $permintaanQuery->get()->map(function ($item) {
@@ -91,6 +95,21 @@ class LaporanController extends Controller
                 ];
             });
 
+            $inventaris = $inventarisQuery->get()->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'type' => 'inventaris',
+                    'nama_barang' => $item->barang->nama_barang,
+                    'kode_barang' => $item->barang->kode_barang,
+                    'jumlah' => $item->jumlah,
+                    'status' => $item->status,
+                    'tanggal_keluar' => $item->tanggal_peminjaman,
+                    'tanggal_kembali' => $item->tanggal_pengembalian,
+                    'due_date' => $item->due_date,
+                    'keterangan' => $item->keterangan,
+                ];
+            });
+
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -98,8 +117,11 @@ class LaporanController extends Controller
                 'photo_url' => $user->photo ? \Storage::disk('public')->url($user->photo) : null,
                 'permintaan' => $permintaan,
                 'peminjaman' => $peminjaman,
+                'inventaris' => $inventaris,
                 'total_permintaan' => $permintaan->count(),
                 'total_peminjaman' => $peminjaman->count(),
+                'total_inventaris_keluar' => $inventaris->where('status', 'approved')->count(),
+                'total_inventaris_kembali' => $inventaris->where('status', 'returned')->count(),
             ];
         });
 
@@ -134,21 +156,29 @@ class LaporanController extends Controller
             $permintaanKeluarQuery = Permintaan::where('barang_id', $barang->id)->where('status', 'approved');
             $peminjamanKeluarQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'approved');
             $peminjamanKembaliQuery = Peminjaman::where('barang_id', $barang->id)->where('status', 'returned');
+            $inventarisKeluarQuery = Inventaris::where('barang_id', $barang->id)->where('status', 'approved');
+            $inventarisKembaliQuery = Inventaris::where('barang_id', $barang->id)->where('status', 'returned');
             
             if ($month) {
                 $permintaanKeluarQuery->whereMonth('created_at', $month);
                 $peminjamanKeluarQuery->whereMonth('created_at', $month);
                 $peminjamanKembaliQuery->whereMonth('tanggal_pengembalian', $month);
+                $inventarisKeluarQuery->whereMonth('tanggal_peminjaman', $month);
+                $inventarisKembaliQuery->whereMonth('tanggal_pengembalian', $month);
             }
             if ($year) {
                 $permintaanKeluarQuery->whereYear('created_at', $year);
                 $peminjamanKeluarQuery->whereYear('created_at', $year);
                 $peminjamanKembaliQuery->whereYear('tanggal_pengembalian', $year);
+                $inventarisKeluarQuery->whereYear('tanggal_peminjaman', $year);
+                $inventarisKembaliQuery->whereYear('tanggal_pengembalian', $year);
             }
             
             $permintaanKeluar = $permintaanKeluarQuery->sum('jumlah');
             $peminjamanKeluar = $peminjamanKeluarQuery->sum('jumlah');
             $peminjamanKembali = $peminjamanKembaliQuery->sum('jumlah');
+            $inventarisKeluar = $inventarisKeluarQuery->sum('jumlah');
+            $inventarisKembali = $inventarisKembaliQuery->sum('jumlah');
             
             return [
                 'id' => $barang->id,
@@ -158,6 +188,8 @@ class LaporanController extends Controller
                 'permintaan_keluar' => $permintaanKeluar,
                 'peminjaman_keluar' => $peminjamanKeluar,
                 'peminjaman_kembali' => $peminjamanKembali,
+                'inventaris_keluar' => $inventarisKeluar,
+                'inventaris_kembali' => $inventarisKembali,
                 'stok_akhir' => $barang->stok, // Current total stock
             ];
         });
@@ -665,9 +697,22 @@ class LaporanController extends Controller
                 ];
             });
 
+            $inventaris = $inventarisQuery->get()->map(function ($item) {
+                return (object) [
+                    'id' => $item->id,
+                    'nama_barang' => $item->barang->nama_barang,
+                    'kode_barang' => $item->barang->kode_barang,
+                    'jumlah' => $item->jumlah,
+                    'status' => $item->status,
+                    'tanggal_keluar' => $item->tanggal_peminjaman,
+                    'tanggal_kembali' => $item->tanggal_pengembalian,
+                    'keterangan' => $item->keterangan,
+                ];
+            });
+
             $filename = "laporan-{$user->name}-{$month}-{$year}.xlsx";
             
-            return Excel::download(new LaporanUserExport($user, $permintaan, $peminjaman, $month, $year), $filename);
+            return Excel::download(new LaporanUserExport($user, $permintaan, $peminjaman, $inventaris, $month, $year), $filename);
             
         } catch (\Exception $e) {
             \Log::error('Excel Generation Error: ' . $e->getMessage());

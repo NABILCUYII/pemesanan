@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Plus, Search, User, Edit, X, RotateCcw, Play, Check, XCircle, AlertTriangle } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, computed, inject } from 'vue';
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
 import { usePhotoUrl } from '@/composables/usePhotoUrl';
@@ -89,10 +89,16 @@ const showDeleteModal = ref(false);
 const deletePeminjamanId = ref<number | null>(null);
 const deletePeminjamanItem = ref<PeminjamanItem | null>(null);
 
+// Modal for confirmation before approve/reject/delete
+const showConfirmModal = ref(false);
+const confirmModalType = ref<'approve' | 'reject' | 'delete' | null>(null);
+const confirmModalItem = ref<PeminjamanItem | null>(null);
+
 const openDeleteModal = (item: PeminjamanItem) => {
-    showDeleteModal.value = true;
-    deletePeminjamanId.value = item.id;
-    deletePeminjamanItem.value = item;
+    // Instead of direct delete, show confirmation modal
+    confirmModalType.value = 'delete';
+    confirmModalItem.value = item;
+    showConfirmModal.value = true;
 };
 
 const closeDeleteModal = () => {
@@ -123,13 +129,10 @@ const confirmDeletePeminjaman = () => {
 };
 
 const openApprovalModal = (type: 'approve' | 'reject', peminjaman: PeminjamanItem) => {
-    showApprovalModal.value = true;
-    approvalType.value = type;
-    approvalPeminjaman.value = peminjaman;
-    approvalForm.value = {
-        alasan: type === 'approve' ? 'Peminjaman disetujui' : 'Peminjaman ditolak',
-        catatan: ''
-    };
+    // Instead of direct approval modal, show confirmation modal
+    confirmModalType.value = type;
+    confirmModalItem.value = peminjaman;
+    showConfirmModal.value = true;
 };
 
 const closeApprovalModal = () => {
@@ -236,24 +239,29 @@ const processReturn = (peminjaman: PeminjamanItem) => {
 };
 
 const startPeminjaman = (peminjaman: PeminjamanItem) => {
-    if (confirm('Apakah Anda yakin ingin memulai proses peminjaman ini?')) {
-        router.patch(route('peminjaman.start-progress', peminjaman.id), {}, {
-            onSuccess: () => {
-                addToast({
-                    type: 'success',
-                    title: 'Berhasil',
-                    message: 'Proses peminjaman telah dimulai'
-                });
-            },
-            onError: () => {
-                addToast({
-                    type: 'error',
-                    title: 'Gagal',
-                    message: 'Gagal memulai proses peminjaman'
-                });
-            }
-        });
-    }
+    // Show confirmation modal for start
+    confirmModalType.value = 'approve'; // treat as approve for modal, but you can customize if needed
+    confirmModalItem.value = peminjaman;
+    showConfirmModal.value = true;
+    // If you want to keep the old confirm, comment above and uncomment below
+    // if (confirm('Apakah Anda yakin ingin memulai proses peminjaman ini?')) {
+    //     router.patch(route('peminjaman.start-progress', peminjaman.id), {}, {
+    //         onSuccess: () => {
+    //             addToast({
+    //                 type: 'success',
+    //                 title: 'Berhasil',
+    //                 message: 'Proses peminjaman telah dimulai'
+    //             });
+    //         },
+    //         onError: () => {
+    //             addToast({
+    //                 type: 'error',
+    //                 title: 'Gagal',
+    //                 message: 'Gagal memulai proses peminjaman'
+    //             });
+    //         }
+    //     });
+    // }
 };
 
 const submitReturn = () => {
@@ -285,6 +293,68 @@ const closeReturnModal = () => {
 };
 
 const { getPhotoUrl } = usePhotoUrl();
+
+// Confirm modal logic
+const closeConfirmModal = () => {
+    showConfirmModal.value = false;
+    confirmModalType.value = null;
+    confirmModalItem.value = null;
+};
+
+const handleConfirmModal = () => {
+    if (!confirmModalType.value || !confirmModalItem.value) return;
+
+    if (confirmModalType.value === 'approve') {
+        // Open approval modal with approve type
+        showApprovalModal.value = true;
+        approvalType.value = 'approve';
+        approvalPeminjaman.value = confirmModalItem.value;
+        approvalForm.value = {
+            alasan: 'Peminjaman disetujui',
+            catatan: ''
+        };
+        closeConfirmModal();
+    } else if (confirmModalType.value === 'reject') {
+        // Open approval modal with reject type
+        showApprovalModal.value = true;
+        approvalType.value = 'reject';
+        approvalPeminjaman.value = confirmModalItem.value;
+        approvalForm.value = {
+            alasan: 'Peminjaman ditolak',
+            catatan: ''
+        };
+        closeConfirmModal();
+    } else if (confirmModalType.value === 'delete') {
+        // Open delete modal
+        showDeleteModal.value = true;
+        deletePeminjamanId.value = confirmModalItem.value.id;
+        deletePeminjamanItem.value = confirmModalItem.value;
+        closeConfirmModal();
+    }
+};
+
+// Keyboard event listeners for closing modals
+const handleEscapeKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+        if (showReturnModal.value) {
+            closeReturnModal();
+        } else if (showApprovalModal.value) {
+            closeApprovalModal();
+        } else if (showDeleteModal.value) {
+            closeDeleteModal();
+        } else if (showConfirmModal.value) {
+            closeConfirmModal();
+        }
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('keydown', handleEscapeKey);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleEscapeKey);
+});
 </script>
 
 <template>
@@ -307,7 +377,7 @@ const { getPhotoUrl } = usePhotoUrl();
                     <Link :href="route('peminjaman.create')">
                         <Button class="w-full sm:w-auto">
                             <Plus class="w-4 h-4 mr-2" />
-                            Buat Aset
+                            Pinjam Aset
                         </Button>
                     </Link>
                 </div>
@@ -393,7 +463,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <!-- Admin Approval Actions -->
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="openApprovalModal('approve', item)"
+                                            @click.stop="openApprovalModal('approve', item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Setujui"
                                         >
@@ -401,7 +471,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="openApprovalModal('reject', item)"
+                                            @click.stop="openApprovalModal('reject', item)"
                                             class="text-red-600 hover:text-red-800"
                                             title="Tolak"
                                         >
@@ -410,7 +480,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         
                                         <button
                                             v-if="item.status === 'approved' && isAdmin"
-                                            @click="startPeminjaman(item)"
+                                            @click.stop="startPeminjaman(item)"
                                             class="text-blue-600 hover:text-blue-800"
                                             title="Mulai Peminjaman"
                                         >
@@ -418,7 +488,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="item.status === 'in_progress' && isAdmin"
-                                            @click="processReturn(item)"
+                                            @click.stop="processReturn(item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Kembalikan"
                                         >
@@ -426,7 +496,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="item.status === 'pending'"
-                                            @click="openDeleteModal(item)"
+                                            @click.stop="openDeleteModal(item)"
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
@@ -490,7 +560,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         <!-- Admin Approval Actions -->
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="openApprovalModal('approve', item)"
+                                            @click.stop="openApprovalModal('approve', item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Setujui"
                                         >
@@ -498,7 +568,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'pending'"
-                                            @click="openApprovalModal('reject', item)"
+                                            @click.stop="openApprovalModal('reject', item)"
                                             class="text-red-600 hover:text-red-800"
                                             title="Tolak"
                                         >
@@ -507,7 +577,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         
                                         <button
                                             v-if="item.status === 'approved' && isAdmin"
-                                            @click="startPeminjaman(item)"
+                                            @click.stop="startPeminjaman(item)"
                                             class="text-blue-600 hover:text-blue-800"
                                             title="Mulai Peminjaman"
                                         >
@@ -515,7 +585,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="item.status === 'in_progress' && isAdmin"
-                                            @click="processReturn(item)"
+                                            @click.stop="processReturn(item)"
                                             class="text-green-600 hover:text-green-800"
                                             title="Kembalikan"
                                         >
@@ -523,7 +593,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                         </button>
                                         <button
                                             v-if="item.status === 'pending'"
-                                            @click="openDeleteModal(item)"
+                                            @click.stop="openDeleteModal(item)"
                                             class="text-red-600 hover:text-red-800"
                                         >
                                             <X class="w-4 h-4" />
@@ -544,11 +614,11 @@ const { getPhotoUrl } = usePhotoUrl();
             </div>
 
             <!-- Modal Pengembalian -->
-            <div v-if="showReturnModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div v-if="showReturnModal" class="fixed inset-0 flex items-center justify-center z-[9999] p-4" @click.stop="closeReturnModal">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" @click.stop>
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Form Pengembalian</h3>
-                        <button @click="closeReturnModal" class="text-gray-500 hover:text-gray-700">
+                        <button @click.stop="closeReturnModal" class="text-gray-500 hover:text-gray-700">
                             <X class="w-5 h-5" />
                         </button>
                     </div>
@@ -621,7 +691,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                 </button>
                                 <button
                                     type="button"
-                                    @click="closeReturnModal"
+                                    @click.stop="closeReturnModal"
                                     class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
                                 >
                                     Batal
@@ -633,13 +703,13 @@ const { getPhotoUrl } = usePhotoUrl();
             </div>
 
             <!-- Modal Approve/Reject -->
-            <div v-if="showApprovalModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div v-if="showApprovalModal" class="fixed inset-0 flex items-center justify-center z-[9999] p-4" @click.stop="closeApprovalModal">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" @click.stop>
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">
                             {{ approvalType === 'approve' ? 'Setujui Peminjaman' : 'Tolak Peminjaman' }}
                         </h3>
-                        <button @click="closeApprovalModal" class="text-gray-500 hover:text-gray-700">
+                        <button @click.stop="closeApprovalModal" class="text-gray-500 hover:text-gray-700">
                             <X class="w-5 h-5" />
                         </button>
                     </div>
@@ -684,7 +754,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                 </button>
                                 <button
                                     type="button"
-                                    @click="closeApprovalModal"
+                                    @click.stop="closeApprovalModal"
                                     class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
                                 >
                                     Batal
@@ -696,8 +766,8 @@ const { getPhotoUrl } = usePhotoUrl();
             </div>
 
             <!-- Modal Delete Confirmation -->
-            <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center z-[9999] p-4" @click.stop="closeDeleteModal">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" @click.stop>
                     <div class="flex items-center gap-2 mb-4">
                         <AlertTriangle class="w-6 h-6 text-red-600" />
                         <h3 class="text-lg font-semibold text-red-700">Konfirmasi Hapus</h3>
@@ -718,14 +788,14 @@ const { getPhotoUrl } = usePhotoUrl();
                         <button
                             type="button"
                             class="w-full sm:w-auto border border-gray-300 text-gray-700 rounded-md px-4 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                            @click="closeDeleteModal"
+                            @click.stop="closeDeleteModal"
                         >
                             Batal
                         </button>
                         <button
                             type="button"
                             class="w-full sm:w-auto bg-red-600 text-white rounded-md px-4 py-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
-                            @click="confirmDeletePeminjaman"
+                            @click.stop="confirmDeletePeminjaman"
                         >
                             <X class="w-4 h-4 mr-2" />
                             Hapus Peminjaman
@@ -733,7 +803,75 @@ const { getPhotoUrl } = usePhotoUrl();
                     </div>
                 </div>
             </div>
-           
+
+            <!-- Modal Konfirmasi (Tolak, Terima, Hapus) -->
+            <div v-if="showConfirmModal" class="fixed inset-0 flex items-center justify-center z-[9999] p-4" @click.stop="closeConfirmModal">
+                <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" @click.stop>
+                    <div class="flex items-center gap-2 mb-4">
+                        <template v-if="confirmModalType === 'delete'">
+                            <AlertTriangle class="w-6 h-6 text-red-600" />
+                            <h3 class="text-lg font-semibold text-red-700">Konfirmasi Hapus</h3>
+                        </template>
+                        <template v-else-if="confirmModalType === 'approve'">
+                            <Check class="w-6 h-6 text-green-600" />
+                            <h3 class="text-lg font-semibold text-green-700">Konfirmasi Setujui</h3>
+                        </template>
+                        <template v-else-if="confirmModalType === 'reject'">
+                            <XCircle class="w-6 h-6 text-red-600" />
+                            <h3 class="text-lg font-semibold text-red-700">Konfirmasi Tolak</h3>
+                        </template>
+                    </div>
+                    <div class="mb-4">
+                        <div v-if="confirmModalItem" class="space-y-2">
+                            <p class="font-medium text-gray-800">{{ confirmModalItem.nama_barang }}</p>
+                            <p class="text-sm text-gray-600">
+                                Kode: {{ confirmModalItem.kode_barang }}<br>
+                                Jumlah: {{ confirmModalItem.jumlah }}
+                            </p>
+                        </div>
+                        <div v-if="confirmModalType === 'delete'" class="mt-2 text-sm text-red-600">
+                            Apakah Anda yakin ingin menghapus peminjaman ini? Tindakan ini tidak dapat dibatalkan.
+                        </div>
+                        <div v-else-if="confirmModalType === 'approve'" class="mt-2 text-sm text-green-600">
+                            Apakah Anda yakin ingin menyetujui peminjaman ini?
+                        </div>
+                        <div v-else-if="confirmModalType === 'reject'" class="mt-2 text-sm text-red-600">
+                            Apakah Anda yakin ingin menolak peminjaman ini?
+                        </div>
+                    </div>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <button
+                            type="button"
+                            class="w-full sm:w-auto border border-gray-300 text-gray-700 rounded-md px-4 py-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                            @click.stop="closeConfirmModal"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            class="w-full sm:w-auto"
+                            :class="{
+                                'bg-red-600 text-white rounded-md px-4 py-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center': confirmModalType === 'delete' || confirmModalType === 'reject',
+                                'bg-green-600 text-white rounded-md px-4 py-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center': confirmModalType === 'approve'
+                            }"
+                            @click.stop="handleConfirmModal"
+                        >
+                            <template v-if="confirmModalType === 'delete'">
+                                <X class="w-4 h-4 mr-2" />
+                                Hapus
+                            </template>
+                            <template v-else-if="confirmModalType === 'approve'">
+                                <Check class="w-4 h-4 mr-2" />
+                                Setujui
+                            </template>
+                            <template v-else-if="confirmModalType === 'reject'">
+                                <XCircle class="w-4 h-4 mr-2" />
+                                Tolak
+                            </template>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>

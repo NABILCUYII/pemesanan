@@ -90,74 +90,6 @@
     </div>
 
     <div class="section">
-        <h2>Laporan Perorang</h2>
-        @foreach($users as $index => $user)
-            <div class="user-section">
-                <div class="user-header">
-                    <h3>{{ $user['name'] ?? 'N/A' }}</h3>
-                    <p>Total Permintaan: {{ $user['total_permintaan'] ?? 0 }} | Total Aset: {{ $user['total_peminjaman'] ?? 0 }}</p>
-                </div>
-
-                @if(count($user['permintaan']) > 0)
-                    <h4>Daftar Permintaan</h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Barang</th>
-                                <th>Jumlah</th>
-                                <th>Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($user['permintaan'] as $item)
-                                <tr>
-                                    <td>{{ \Carbon\Carbon::parse($item['created_at'])->format('d/m/Y') }}</td>
-                                    <td>
-                                        {{ $item['nama_barang'] }}<br>
-                                        <small>{{ $item['kode_barang'] }}</small>
-                                    </td>
-                                    <td>{{ $item['jumlah'] }}</td>
-                                    <td>{{ $item['keterangan'] ?? '-' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
-
-                @if(count($user['peminjaman']) > 0)
-                    <h4>Daftar Aset</h4>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Barang</th>
-                                <th>Jumlah</th>
-                                <th>Tenggat</th>
-                                <th>Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($user['peminjaman'] as $item)
-                                <tr>
-                                    <td>{{ \Carbon\Carbon::parse($item['created_at'])->format('d/m/Y') }}</td>
-                                    <td>
-                                        {{ $item['nama_barang'] }}<br>
-                                        <small>{{ $item['kode_barang'] }}</small>
-                                    </td>
-                                    <td>{{ $item['jumlah'] }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($item['due_date'])->format('d/m/Y') }}</td>
-                                    <td>{{ $item['keterangan'] ?? '-' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
-            </div>
-        @endforeach
-    </div>
-
-    <div class="section">
         <h2>Laporan Stok Barang</h2>
         <table>
             <thead>
@@ -165,8 +97,10 @@
                     <th>Barang</th>
                     <th>Stok Awal<br><small>(Pertama Masuk)</small></th>
                     <th>Permintaan Keluar</th>
-                    <th>Aset Keluar</th>
-                    <th>Aset Kembali</th>
+                    <th>Peminjaman Keluar</th>
+                    <th>Peminjaman Kembali</th>
+                    <th>Inventaris Keluar</th>
+                    <th>Inventaris Kembali</th>
                     <th>Stok Akhir<br><small>(Total Saat Ini)</small></th>
                 </tr>
             </thead>
@@ -181,11 +115,66 @@
                         <td>{{ $item['permintaan_keluar'] }}</td>
                         <td>{{ $item['peminjaman_keluar'] }}</td>
                         <td>{{ $item['peminjaman_kembali'] }}</td>
+                        <td>{{ $item['inventaris_keluar'] ?? 0 }}</td>
+                        <td>{{ $item['inventaris_kembali'] ?? 0 }}</td>
                         <td>{{ $item['stok_akhir'] }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
+    </div>
+
+    <div class="section">
+        <h2>Laporan Inventaris</h2>
+        @if(isset($inventaris) && count($inventaris) > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Barang</th>
+                        <th>Kode Barang</th>
+                        <th>Kategori</th>
+                        <th>Jumlah</th>
+                        <th>Status</th>
+                        <th>Tanggal Masuk</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($inventaris as $index => $item)
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $item['nama_barang'] }}</td>
+                            <td>{{ $item['kode_barang'] }}</td>
+                            <td>{{ $item['kategori'] ?? '-' }}</td>
+                            <td>{{ $item['jumlah'] }}</td>
+                            <td>
+                                @switch($item['status'])
+                                    @case('active')
+                                        Aktif
+                                        @break
+                                    @case('inactive')
+                                        Tidak Aktif
+                                        @break
+                                    @case('maintenance')
+                                        Dalam Perbaikan
+                                        @break
+                                    @case('damaged')
+                                        Rusak
+                                        @break
+                                    @default
+                                        {{ $item['status'] }}
+                                @endswitch
+                            </td>
+                            <td>{{ \Carbon\Carbon::parse($item['tanggal_masuk'])->format('d/m/Y') }}</td>
+                            <td>{{ $item['keterangan'] ?? '-' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <p style="text-align: center; color: #666; font-style: italic;">Tidak ada data inventaris untuk periode ini.</p>
+        @endif
     </div>
 
     <div class="footer">

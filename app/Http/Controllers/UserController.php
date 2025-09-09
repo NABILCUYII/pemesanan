@@ -27,6 +27,16 @@ class UserController extends Controller
         return response()->json(['users' => $usersArr]);
     }
 
+    // API endpoint: count users with role 'penggunaBARU'
+    public function getNewUsersCount()
+    {
+        $count = User::whereHas('role', function($q) {
+            $q->where('role', 'penggunaBARU');
+        })->count();
+        
+        return response()->json(['count' => $count]);
+    }
+
     // Halaman verifikasi user baru (opsional, jika ingin render inertia)
     public function newuser()
     {

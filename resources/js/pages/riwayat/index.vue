@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Package, Calendar, Edit, X, Trash2, ClipboardList, CheckCircle2, Clock, XCircle } from 'lucide-vue-next';
+import { Search, Package, Calendar, Edit, X, Trash2, ClipboardList, CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { useInitials } from '@/composables/useInitials';
 import { usePhotoUrl } from '@/composables/usePhotoUrl';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import Toast from '@/components/Toast.vue';
+import { useToast } from '@/composables/useToast';
 
 interface RiwayatItem {
     id: number;
@@ -34,9 +37,17 @@ const props = defineProps<{
 
 const { getInitials } = useInitials();
 
+// Toast notification system
+const { addToast } = useToast();
+
 const searchQuery = ref('');
 const selectedType = ref('');
 const selectedStatus = ref('');
+
+// Modal states
+const showCancelModal = ref(false);
+const showDeleteAllModal = ref(false);
+const selectedItem = ref<RiwayatItem | null>(null);
 
 const filteredRiwayat = computed(() => {
     return props.riwayat.filter(item => {
@@ -100,19 +111,63 @@ const getTypeColor = (type: string) => {
         : 'bg-gradient-to-br from-green-100 to-green-50 border-green-200 text-green-700';
 };
 
-const cancelItem = (item: RiwayatItem) => {
-    if (confirm('Apakah Anda yakin ingin membatalkan ' + getTypeText(item.type).toLowerCase() + ' ini?')) {
-        router.post(route('riwayat.cancel'), {
-            type: item.type,
-            id: item.id
-        });
-    }
+const openCancelModal = (item: RiwayatItem) => {
+    selectedItem.value = item;
+    showCancelModal.value = true;
 };
 
-const deleteAllHistory = () => {
-    if (confirm('Apakah Anda yakin ingin menghapus semua riwayat? Tindakan ini tidak dapat dibatalkan.')) {
-        router.delete(route('riwayat.delete-all'));
-    }
+const openDeleteAllModal = () => {
+    showDeleteAllModal.value = true;
+};
+
+const confirmCancel = () => {
+    if (!selectedItem.value) return;
+    
+    const itemType = selectedItem.value.type;
+    
+    router.post(route('riwayat.cancel'), {
+        type: selectedItem.value.type,
+        id: selectedItem.value.id
+    }, {
+        onSuccess: () => {
+            showCancelModal.value = false;
+            selectedItem.value = null;
+            addToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: `${getTypeText(itemType)} berhasil dibatalkan`
+            });
+        },
+        onError: (errors: any) => {
+            console.error('Cancel error:', errors);
+            addToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Gagal membatalkan item'
+            });
+        }
+    });
+};
+
+const confirmDeleteAll = () => {
+    router.delete(route('riwayat.delete-all'), {
+        onSuccess: () => {
+            showDeleteAllModal.value = false;
+            addToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: 'Semua riwayat berhasil dihapus'
+            });
+        },
+        onError: (errors: any) => {
+            console.error('Delete all error:', errors);
+            addToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Gagal menghapus semua riwayat'
+            });
+        }
+    });
 };
 
 const { getPhotoUrl } = usePhotoUrl();
@@ -132,7 +187,7 @@ const { getPhotoUrl } = usePhotoUrl();
                     <p class="text-sm text-gray-500 mt-1">Riwayat permintaan dan peminjaman Anda</p>
                 </div>
                 <Button 
-                    @click="deleteAllHistory" 
+                    @click="openDeleteAllModal" 
                     variant="destructive" 
                     class="flex items-center gap-2 shadow hover:scale-105 transition"
                 >
@@ -226,7 +281,7 @@ const { getPhotoUrl } = usePhotoUrl();
                                     <div class="flex gap-2">
                                         <Button 
                                             v-if="item.status === 'pending'"
-                                            @click="cancelItem(item)" 
+                                            @click="openCancelModal(item)" 
                                             variant="outline" 
                                             size="sm"
                                             class="flex items-center gap-1 border-red-200 hover:bg-red-50 text-red-600"
@@ -319,7 +374,7 @@ const { getPhotoUrl } = usePhotoUrl();
 
                     <div v-if="item.status === 'pending'" class="flex gap-4 mt-4 pt-4 border-t border-blue-100">
                         <Button 
-                            @click="cancelItem(item)" 
+                            @click="openCancelModal(item)" 
                             variant="outline" 
                             size="sm"
                             class="flex items-center gap-1 border-red-200 hover:bg-red-50 text-red-600"
@@ -342,5 +397,104 @@ const { getPhotoUrl } = usePhotoUrl();
                 </div>
             </div>
         </div>
+
+        <!-- Cancel Confirmation Modal -->
+        <Dialog v-model:open="showCancelModal">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <AlertTriangle class="w-5 h-5 text-orange-600" />
+                        Konfirmasi Pembatalan
+                    </DialogTitle>
+                    <DialogDescription>
+                        Apakah Anda yakin ingin membatalkan {{ selectedItem ? getTypeText(selectedItem.type).toLowerCase() : '' }} ini?
+                    </DialogDescription>
+                </DialogHeader>
+                <div v-if="selectedItem" class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <AlertTriangle class="w-5 h-5 text-orange-600 mt-0.5" />
+                        <div>
+                            <p class="font-medium text-orange-800">{{ selectedItem.nama_barang }}</p>
+                            <p class="text-sm text-orange-600 mt-1">
+                                Kode: {{ selectedItem.kode_barang }}<br>
+                                Jumlah: {{ selectedItem.jumlah }}<br>
+                                Tipe: {{ getTypeText(selectedItem.type) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="w-full sm:w-auto"
+                            @click="showCancelModal = false"
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            class="w-full sm:w-auto"
+                            @click="confirmCancel"
+                        >
+                            <X class="w-4 h-4 mr-2" />
+                            Ya, Batalkan
+                        </Button>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Delete All Confirmation Modal -->
+        <Dialog v-model:open="showDeleteAllModal">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle class="flex items-center gap-2">
+                        <AlertTriangle class="w-5 h-5 text-red-600" />
+                        Konfirmasi Hapus Semua
+                    </DialogTitle>
+                    <DialogDescription>
+                        Apakah Anda yakin ingin menghapus semua riwayat? Tindakan ini tidak dapat dibatalkan.
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <AlertTriangle class="w-5 h-5 text-red-600 mt-0.5" />
+                        <div>
+                            <p class="font-medium text-red-800">Peringatan!</p>
+                            <p class="text-sm text-red-600 mt-1">
+                                Semua riwayat permintaan dan peminjaman Anda akan dihapus secara permanen. 
+                                Data yang sudah dihapus tidak dapat dikembalikan.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            class="w-full sm:w-auto"
+                            @click="showDeleteAllModal = false"
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            class="w-full sm:w-auto"
+                            @click="confirmDeleteAll"
+                        >
+                            <Trash2 class="w-4 h-4 mr-2" />
+                            Ya, Hapus Semua
+                        </Button>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Toast />
     </AppLayout>
 </template>

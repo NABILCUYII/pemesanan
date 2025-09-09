@@ -51,10 +51,21 @@ onMounted(async () => {
         <div class="relative min-h-screen flex flex-col items-center justify-center p-6 lg:p-8">
             <main class="w-full max-w-4xl">
                 <div class="text-center mb-12">
+                    <!-- Logo di atas font Selamat Datang -->
+                    <div class="flex justify-center mb-6">
+                        <img src="/puskesmas-logo.png" alt="Logo Puskesmas" class="h-28 w-28 md:h-32 md:w-32 object-contain mx-auto" />
+                    </div>
                     <h1 class="text-5xl md:text-6xl font-bold text-[#2F4F4F] mb-6 animate-fade-in">
                         Selamat Datang di
                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#20B2AA] to-[#98FB98]">
-                            Pemesanan
+                            <span class="inline-flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="inline w-8 h-8 text-[#20B2AA] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <rect x="3" y="7" width="18" height="13" rx="2" fill="#98FB98" stroke="#20B2AA" stroke-width="2"/>
+                                    <path d="M3 7l9 6 9-6" stroke="#20B2AA" stroke-width="2" fill="none"/>
+                                    <rect x="7" y="11" width="4" height="6" rx="1" fill="#87CEEB" stroke="#20B2AA" stroke-width="1"/>
+                                </svg>
+                                Pemesanan Barang
+                            </span>
                         </span>
                     </h1>
                     <p class="text-xl text-[#2F4F4F]/80 max-w-2xl mx-auto">

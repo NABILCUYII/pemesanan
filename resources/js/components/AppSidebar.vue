@@ -20,7 +20,8 @@ import {
     FileText,
     TrendingUp,
     AlertTriangle,
-    ChevronDown
+    ChevronDown,
+    QrCode
 } from 'lucide-vue-next';
 import {
     DropdownMenu,
@@ -37,6 +38,7 @@ const user = page.props.auth.user;
 const stokMenipisCount = ref(0);
 const pendingApprovalCount = ref(0);
 const pendingInventarisCount = ref(0);
+const newUsersCount = ref(0);
 let refreshInterval: number | null = null;
 
 const fetchCounts = async () => {
@@ -65,8 +67,18 @@ const fetchCounts = async () => {
         } catch (e) {
             pendingInventarisCount.value = 0;
         }
+
+        // Fetch new users count for admin
+        try {
+            const res = await fetch('/api/users/new-count');
+            const data = await res.json();
+            newUsersCount.value = data.count;
+        } catch (e) {
+            newUsersCount.value = 0;
+        }
     } else {
         pendingInventarisCount.value = 0;
+        newUsersCount.value = 0;
     }
 };
 
@@ -166,6 +178,12 @@ const mainNavItems = computed(() => [
         adminOnly: true,
         badge: stokMenipisCount.value,
     },
+    // {
+    //     title: 'Barcode',
+    //     href: route('barcode.index'),
+    //     icon: QrCode,
+    //     adminOnly: true,
+    // },
     {
         title: 'Riwayat Stok',
         href: route('stok-log.index'),
@@ -177,6 +195,7 @@ const mainNavItems = computed(() => [
         href: route('users.index'),
         icon: Users,
         adminOnly: true,
+        badge: user?.role === 'admin' ? newUsersCount.value : undefined,
     },
     {
         title: 'Laporan',
@@ -204,6 +223,8 @@ const filteredMainNavItems = computed(() => {
             newItem.badge = pendingApprovalCount.value;
         } else if (item.title === 'Inventaris') {
             newItem.badge = user?.role === 'admin' ? pendingInventarisCount.value : undefined;
+        } else if (item.title === 'Pengguna') {
+            newItem.badge = user?.role === 'admin' ? newUsersCount.value : undefined;
         }
         
         return newItem;

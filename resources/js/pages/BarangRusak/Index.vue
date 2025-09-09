@@ -18,7 +18,7 @@
               </h1>
               <p class="mt-2 text-gray-600">Kelola dan pantau status barang yang rusak atau hilang</p>
             </div>
-            <div class="flex gap-3">
+            <div class="flex gap-3 flex-wrap">
               <button
                 @click="tambahBarangRusak"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
@@ -36,6 +36,15 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 Tambah Barang Hilang
+              </button>
+              <button
+                @click="tambahBarangRusakDariInventaris"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                Dari Inventaris
               </button>
             </div>
           </div>
@@ -55,7 +64,7 @@
                 v-model="searchQuery"
                 type="text"
                 class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-base"
-                placeholder="Cari barang berdasarkan kode, nama, kategori, deskripsi, atau status..."
+                placeholder="Cari berdasarkan kode, nama, kategori, deskripsi, status, nomor inventaris, atau peminjam..."
               />
               <div v-if="searchQuery" class="absolute inset-y-0 right-0 pr-3 flex items-center">
                 <button
@@ -130,6 +139,9 @@
                     Status
                   </th>
                   <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Sumber
+                  </th>
+                  <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Aksi
                   </th>
                 </tr>
@@ -165,9 +177,26 @@
                       {{ barang.status }}
                     </span>
                   </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <div class="flex flex-col gap-1">
+                      <span class="inline-flex px-2 py-1 text-xs font-bold rounded-full"
+                        :class="{
+                          'bg-blue-100 text-blue-700': barang.source === 'inventaris',
+                          'bg-gray-100 text-gray-700': barang.source === 'barang'
+                        }">
+                        {{ barang.source === 'inventaris' ? 'Inventaris' : 'Barang' }}
+                      </span>
+                      <div v-if="barang.source === 'inventaris'" class="text-xs text-gray-500">
+                        <div>No: {{ barang.nomor_inventaris }}</div>
+                        <div>Peminjam: {{ barang.nama_peminjam }}</div>
+                      </div>
+                    </div>
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div class="flex gap-2">
+                      <!-- Only show status update for barang source -->
                       <select 
+                        v-if="barang.source === 'barang'"
                         v-model="barang.status" 
                         @change="updateStatus(barang)"
                         class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white shadow"
@@ -176,7 +205,20 @@
                         <option value="rusak">Rusak</option>
                         <option value="hilang">Hilang</option>
                       </select>
+                      <!-- Show view details for inventaris source -->
                       <button
+                        v-if="barang.source === 'inventaris'"
+                        @click="viewInventarisDetails(barang)"
+                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-bold rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition"
+                        title="Lihat detail inventaris"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        v-if="barang.source === 'barang'"
                         @click="deleteBarang(barang)"
                         class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-bold rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-400 transition"
                         title="Hapus barang"
@@ -213,6 +255,107 @@
           </div>
         </div>
       </div>
+
+      <!-- Modal Detail Inventaris -->
+      <div v-if="showInventarisModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+          <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                Detail Inventaris Rusak
+              </h3>
+              <button
+                @click="closeInventarisModal"
+                class="text-gray-400 hover:text-gray-600"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div v-if="selectedInventarisDetail" class="space-y-4">
+              <!-- Informasi Barang -->
+              <div class="bg-blue-50 rounded-lg p-4">
+                <h4 class="font-semibold text-blue-900 mb-3">Informasi Barang</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <p class="text-sm font-medium text-blue-800">Kode Barang:</p>
+                    <p class="text-lg font-bold text-blue-900">{{ selectedInventarisDetail.kode_barang }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-blue-800">Nama Barang:</p>
+                    <p class="text-lg font-bold text-blue-900">{{ selectedInventarisDetail.nama_barang }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-blue-800">Kategori:</p>
+                    <p class="text-lg font-bold text-blue-900">{{ selectedInventarisDetail.kategori }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-blue-800">Stok Saat Ini:</p>
+                    <p class="text-lg font-bold text-blue-900">{{ selectedInventarisDetail.stok }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Informasi Peminjaman -->
+              <div class="bg-green-50 rounded-lg p-4">
+                <h4 class="font-semibold text-green-900 mb-3">Informasi Peminjaman</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Nomor Inventaris:</p>
+                    <p class="text-lg font-bold text-green-900">{{ selectedInventarisDetail.nomor_inventaris }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Peminjam:</p>
+                    <p class="text-lg font-bold text-green-900">{{ selectedInventarisDetail.nama_peminjam }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Jumlah Dipinjam:</p>
+                    <p class="text-lg font-bold text-green-900">{{ selectedInventarisDetail.jumlah_dipinjam }} unit</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Tanggal Peminjaman:</p>
+                    <p class="text-lg font-bold text-green-900">{{ formatDate(selectedInventarisDetail.tanggal_peminjaman) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Tanggal Pengembalian:</p>
+                    <p class="text-lg font-bold text-green-900">{{ formatDate(selectedInventarisDetail.tanggal_pengembalian) }}</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-green-800">Status:</p>
+                    <span class="inline-flex px-3 py-1 text-xs font-bold rounded-full capitalize"
+                      :class="{
+                        'bg-red-100 text-red-700': selectedInventarisDetail.status === 'rusak',
+                        'bg-yellow-100 text-yellow-700': selectedInventarisDetail.status === 'hilang'
+                      }">
+                      {{ selectedInventarisDetail.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Catatan Pengembalian -->
+              <div v-if="selectedInventarisDetail.catatan_pengembalian" class="bg-yellow-50 rounded-lg p-4">
+                <h4 class="font-semibold text-yellow-900 mb-3">Catatan Pengembalian</h4>
+                <p class="text-yellow-900">{{ selectedInventarisDetail.catatan_pengembalian }}</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+              <button
+                @click="closeInventarisModal"
+                class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -223,7 +366,7 @@ import { ref, computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Barang {
-  id: number;
+  id: number | string;
   kode_barang: string;
   nama_barang: string;
   deskripsi: string;
@@ -231,6 +374,14 @@ interface Barang {
   lokasi: string;
   stok: number;
   status: string;
+  source: 'barang' | 'inventaris';
+  nomor_inventaris?: string | null;
+  nama_peminjam?: string | null;
+  jumlah_dipinjam?: number | null;
+  tanggal_peminjaman?: string | null;
+  tanggal_pengembalian?: string | null;
+  catatan_pengembalian?: string | null;
+  returned_at?: string | null;
 }
 
 const props = defineProps<{
@@ -239,12 +390,14 @@ const props = defineProps<{
 
 const activeFilter = ref<'all' | 'rusak' | 'hilang'>('all');
 const searchQuery = ref('');
+const showInventarisModal = ref(false);
+const selectedInventarisDetail = ref<Barang | null>(null);
 
 const getBarangByStatus = (status: string) => {
   return props.barangRusak.filter(barang => barang.status === status);
 };
 
-// Full search: kode_barang, nama_barang, kategori, deskripsi, status, stok
+// Full search: kode_barang, nama_barang, kategori, deskripsi, status, stok, nomor_inventaris, nama_peminjam
 const filteredBarang = computed(() => {
   let filtered = props.barangRusak;
   
@@ -262,7 +415,9 @@ const filteredBarang = computed(() => {
       (barang.kategori && barang.kategori.toLowerCase().includes(query)) ||
       (barang.deskripsi && barang.deskripsi.toLowerCase().includes(query)) ||
       (barang.status && barang.status.toLowerCase().includes(query)) ||
-      (barang.stok !== undefined && barang.stok.toString().toLowerCase().includes(query))
+      (barang.stok !== undefined && barang.stok.toString().toLowerCase().includes(query)) ||
+      (barang.nomor_inventaris && barang.nomor_inventaris.toLowerCase().includes(query)) ||
+      (barang.nama_peminjam && barang.nama_peminjam.toLowerCase().includes(query))
     );
   }
   
@@ -274,23 +429,29 @@ const clearSearch = () => {
 };
 
 const updateStatus = (barang: Barang) => {
-  router.put(`/barang-rusak/${barang.id}/status`, {
-    status: barang.status
-  }, {
-    onSuccess: () => {
-      // Refresh the page to show updated data
-      router.reload()
-    }
-  })
+  // Only allow status update for barang from barang table
+  if (barang.source === 'barang' && typeof barang.id === 'number') {
+    router.put(`/barang-rusak/${barang.id}/status`, {
+      status: barang.status
+    }, {
+      onSuccess: () => {
+        // Refresh the page to show updated data
+        router.reload()
+      }
+    })
+  }
 }
 
 const deleteBarang = (barang: Barang) => {
-  if (confirm(`Apakah Anda yakin ingin menghapus barang "${barang.nama_barang}"?`)) {
-    router.delete(`/barang/${barang.id}`, {
-      onSuccess: () => {
-        router.reload()
-      }
-    });
+  // Only allow deletion for barang from barang table
+  if (barang.source === 'barang' && typeof barang.id === 'number') {
+    if (confirm(`Apakah Anda yakin ingin menghapus barang "${barang.nama_barang}"?`)) {
+      router.delete(`/barang/${barang.id}`, {
+        onSuccess: () => {
+          router.reload()
+        }
+      });
+    }
   }
 }
 
@@ -300,6 +461,31 @@ const tambahBarangRusak = () => {
 
 const tambahBarangHilang = () => {
   router.visit('/barang-hilang/create')
+}
+
+const tambahBarangRusakDariInventaris = () => {
+  router.visit('/barang-rusak/from-inventaris')
+}
+
+const viewInventarisDetails = (barang: Barang) => {
+  if (barang.source === 'inventaris') {
+    selectedInventarisDetail.value = barang;
+    showInventarisModal.value = true;
+  }
+}
+
+const closeInventarisModal = () => {
+  showInventarisModal.value = false;
+  selectedInventarisDetail.value = null;
+}
+
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
 const editBarang = (barang: Barang) => {
