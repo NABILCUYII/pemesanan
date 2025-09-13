@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Search, User, Edit, X, RotateCcw, Play, Check, XCircle, AlertTriangle } from 'lucide-vue-next';
+import { Plus, Search, User, Edit, X, RotateCcw, Play, Check, XCircle, AlertTriangle, RefreshCw } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed, inject, onMounted, onUnmounted } from 'vue';
@@ -89,13 +89,12 @@ const showDeleteModal = ref(false);
 const deletePeminjamanId = ref<number | null>(null);
 const deletePeminjamanItem = ref<PeminjamanItem | null>(null);
 
-// Modal for confirmation before approve/reject/delete
+// Modal for confirmation before approve/reject/delete/start
 const showConfirmModal = ref(false);
-const confirmModalType = ref<'approve' | 'reject' | 'delete' | null>(null);
+const confirmModalType = ref<'approve' | 'reject' | 'delete' | 'start' | null>(null);
 const confirmModalItem = ref<PeminjamanItem | null>(null);
 
 const openDeleteModal = (item: PeminjamanItem) => {
-    // Instead of direct delete, show confirmation modal
     confirmModalType.value = 'delete';
     confirmModalItem.value = item;
     showConfirmModal.value = true;
@@ -129,7 +128,7 @@ const confirmDeletePeminjaman = () => {
 };
 
 const openApprovalModal = (type: 'approve' | 'reject', peminjaman: PeminjamanItem) => {
-    // Instead of direct approval modal, show confirmation modal
+    // Show confirmation modal first
     confirmModalType.value = type;
     confirmModalItem.value = peminjaman;
     showConfirmModal.value = true;
@@ -225,9 +224,6 @@ const getStatusText = (status: string) => {
     }
 };
 
-// Remove old confirm dialog, use modal instead
-// const deletePeminjaman = (id: number) => { ... }
-
 const processReturn = (peminjaman: PeminjamanItem) => {
     selectedPeminjaman.value = peminjaman;
     returnForm.value = {
@@ -240,28 +236,30 @@ const processReturn = (peminjaman: PeminjamanItem) => {
 
 const startPeminjaman = (peminjaman: PeminjamanItem) => {
     // Show confirmation modal for start
-    confirmModalType.value = 'approve'; // treat as approve for modal, but you can customize if needed
+    confirmModalType.value = 'start';
     confirmModalItem.value = peminjaman;
     showConfirmModal.value = true;
-    // If you want to keep the old confirm, comment above and uncomment below
-    // if (confirm('Apakah Anda yakin ingin memulai proses peminjaman ini?')) {
-    //     router.patch(route('peminjaman.start-progress', peminjaman.id), {}, {
-    //         onSuccess: () => {
-    //             addToast({
-    //                 type: 'success',
-    //                 title: 'Berhasil',
-    //                 message: 'Proses peminjaman telah dimulai'
-    //             });
-    //         },
-    //         onError: () => {
-    //             addToast({
-    //                 type: 'error',
-    //                 title: 'Gagal',
-    //                 message: 'Gagal memulai proses peminjaman'
-    //             });
-    //         }
-    //     });
-    // }
+};
+
+const submitStartPeminjaman = () => {
+    if (!confirmModalItem.value) return;
+    router.patch(route('peminjaman.start-progress', confirmModalItem.value.id), {}, {
+        onSuccess: () => {
+            closeConfirmModal();
+            addToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: 'Proses peminjaman telah dimulai'
+            });
+        },
+        onError: () => {
+            addToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Gagal memulai proses peminjaman'
+            });
+        }
+    });
 };
 
 const submitReturn = () => {
@@ -304,18 +302,35 @@ const closeConfirmModal = () => {
 const handleConfirmModal = () => {
     if (!confirmModalType.value || !confirmModalItem.value) return;
 
-    if (confirmModalType.value === 'approve') {
-        // Open approval modal with approve type
-        showApprovalModal.value = true;
-        approvalType.value = 'approve';
-        approvalPeminjaman.value = confirmModalItem.value;
-        approvalForm.value = {
+    if (confirmModalType.value === 'start') {
+        // Start peminjaman
+        submitStartPeminjaman();
+    } else if (confirmModalType.value === 'approve') {
+        // Directly approve peminjaman
+        router.post('/peminjaman/approve', {
+            peminjaman_id: confirmModalItem.value.id,
+            action: 'approve',
             alasan: 'Peminjaman disetujui',
             catatan: ''
-        };
-        closeConfirmModal();
+        }, {
+            onSuccess: () => {
+                closeConfirmModal();
+                addToast({
+                    type: 'success',
+                    title: 'Berhasil',
+                    message: `Peminjaman ${confirmModalItem.value?.nama_barang} berhasil disetujui`
+                });
+            },
+            onError: () => {
+                addToast({
+                    type: 'error',
+                    title: 'Gagal',
+                    message: 'Gagal menyetujui peminjaman'
+                });
+            }
+        });
     } else if (confirmModalType.value === 'reject') {
-        // Open approval modal with reject type
+        // Open approval modal with reject type for more details
         showApprovalModal.value = true;
         approvalType.value = 'reject';
         approvalPeminjaman.value = confirmModalItem.value;
@@ -355,6 +370,18 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('keydown', handleEscapeKey);
 });
+
+// Refresh button logic
+const isRefreshing = ref(false);
+const refreshPeminjaman = () => {
+    isRefreshing.value = true;
+    router.reload({
+        only: ['peminjaman'],
+        onFinish: () => {
+            isRefreshing.value = false;
+        }
+    });
+};
 </script>
 
 <template>
@@ -368,6 +395,19 @@ onUnmounted(() => {
                     <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua peminjaman</p>
                 </div>
                 <div class="flex gap-2">
+                    <Button
+                        variant="outline"
+                        class="w-full sm:w-auto"
+                        :disabled="isRefreshing"
+                        @click="refreshPeminjaman"
+                        title="Refresh"
+                    >
+                        <RefreshCw
+                            class="w-4 h-4 mr-2"
+                            :class="{ 'animate-spin': isRefreshing }"
+                        />
+                        Refresh
+                    </Button>
                     <Link :href="route('peminjaman.returns')">
                         <Button variant="outline" class="w-full sm:w-auto">
                             <RotateCcw class="w-4 h-4 mr-2" />
@@ -478,6 +518,7 @@ onUnmounted(() => {
                                             <XCircle class="w-4 h-4" />
                                         </button>
                                         
+                                        <!-- Tombol start -->
                                         <button
                                             v-if="item.status === 'approved' && isAdmin"
                                             @click.stop="startPeminjaman(item)"
@@ -575,6 +616,7 @@ onUnmounted(() => {
                                             <XCircle class="w-4 h-4" />
                                         </button>
                                         
+                                        <!-- Tombol start -->
                                         <button
                                             v-if="item.status === 'approved' && isAdmin"
                                             @click.stop="startPeminjaman(item)"
@@ -804,7 +846,7 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- Modal Konfirmasi (Tolak, Terima, Hapus) -->
+            <!-- Modal Konfirmasi (Tolak, Setujui, Hapus) -->
             <div v-if="showConfirmModal" class="fixed inset-0 flex items-center justify-center z-[9999] p-4" @click.stop="closeConfirmModal">
                 <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl" @click.stop>
                     <div class="flex items-center gap-2 mb-4">
@@ -812,9 +854,13 @@ onUnmounted(() => {
                             <AlertTriangle class="w-6 h-6 text-red-600" />
                             <h3 class="text-lg font-semibold text-red-700">Konfirmasi Hapus</h3>
                         </template>
+                        <template v-else-if="confirmModalType === 'start'">
+                            <Check class="w-6 h-6 text-green-600" />
+                            <h3 class="text-lg font-semibold text-green-700">Konfirmasi Mulai Peminjaman</h3>
+                        </template>
                         <template v-else-if="confirmModalType === 'approve'">
                             <Check class="w-6 h-6 text-green-600" />
-                            <h3 class="text-lg font-semibold text-green-700">Konfirmasi Setujui</h3>
+                            <h3 class="text-lg font-semibold text-green-700">Konfirmasi Setujui Peminjaman</h3>
                         </template>
                         <template v-else-if="confirmModalType === 'reject'">
                             <XCircle class="w-6 h-6 text-red-600" />
@@ -832,6 +878,9 @@ onUnmounted(() => {
                         <div v-if="confirmModalType === 'delete'" class="mt-2 text-sm text-red-600">
                             Apakah Anda yakin ingin menghapus peminjaman ini? Tindakan ini tidak dapat dibatalkan.
                         </div>
+                        <div v-else-if="confirmModalType === 'start'" class="mt-2 text-sm text-green-600">
+                            Apakah Anda yakin ingin memulai proses peminjaman ini?
+                        </div>
                         <div v-else-if="confirmModalType === 'approve'" class="mt-2 text-sm text-green-600">
                             Apakah Anda yakin ingin menyetujui peminjaman ini?
                         </div>
@@ -848,26 +897,40 @@ onUnmounted(() => {
                             Batal
                         </button>
                         <button
+                            v-if="confirmModalType === 'delete'"
                             type="button"
-                            class="w-full sm:w-auto"
-                            :class="{
-                                'bg-red-600 text-white rounded-md px-4 py-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center': confirmModalType === 'delete' || confirmModalType === 'reject',
-                                'bg-green-600 text-white rounded-md px-4 py-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center': confirmModalType === 'approve'
-                            }"
+                            class="w-full sm:w-auto bg-red-600 text-white rounded-md px-4 py-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
                             @click.stop="handleConfirmModal"
                         >
-                            <template v-if="confirmModalType === 'delete'">
-                                <X class="w-4 h-4 mr-2" />
-                                Hapus
-                            </template>
-                            <template v-else-if="confirmModalType === 'approve'">
-                                <Check class="w-4 h-4 mr-2" />
-                                Setujui
-                            </template>
-                            <template v-else-if="confirmModalType === 'reject'">
-                                <XCircle class="w-4 h-4 mr-2" />
-                                Tolak
-                            </template>
+                            <X class="w-4 h-4 mr-2" />
+                            Hapus
+                        </button>
+                        <button
+                            v-else-if="confirmModalType === 'start'"
+                            type="button"
+                            class="w-full sm:w-auto bg-green-600 text-white rounded-md px-4 py-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center"
+                            @click.stop="handleConfirmModal"
+                        >
+                            <Play class="w-4 h-4 mr-2" />
+                            Mulai
+                        </button>
+                        <button
+                            v-else-if="confirmModalType === 'approve'"
+                            type="button"
+                            class="w-full sm:w-auto bg-green-600 text-white rounded-md px-4 py-2 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center"
+                            @click.stop="handleConfirmModal"
+                        >
+                            <Check class="w-4 h-4 mr-2" />
+                            Setujui
+                        </button>
+                        <button
+                            v-else-if="confirmModalType === 'reject'"
+                            type="button"
+                            class="w-full sm:w-auto bg-red-600 text-white rounded-md px-4 py-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 flex items-center justify-center"
+                            @click.stop="handleConfirmModal"
+                        >
+                            <XCircle class="w-4 h-4 mr-2" />
+                            Tolak
                         </button>
                     </div>
                 </div>

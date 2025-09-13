@@ -35,7 +35,7 @@
           Kembali
         </button>
         
-        <button 
+        <button  
           @click="goHome"
           class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center shadow-md hover:shadow-lg"
         >

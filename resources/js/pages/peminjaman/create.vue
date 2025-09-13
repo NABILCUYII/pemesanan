@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { Head, Link } from '@inertiajs/vue3'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Package, Search, CalendarDays } from 'lucide-vue-next'
+import { ArrowLeft, Package, Search, CalendarDays, X } from 'lucide-vue-next'
 import { type BreadcrumbItem } from '@/types';
 
 interface Barang {
@@ -35,13 +35,12 @@ const form = useForm({
     tanggal_pengembalian: '',
 })
 
-const showDropdown = ref(false)
+const showBarangModal = ref(false)
 const searchQuery = ref('')
 const selectedBarang = ref<Barang | null>(null);
 
 const filteredBarang = computed(() => {
     if (!searchQuery.value) return props.barang.filter(item => item.kategori === 'peminjaman');
-    console.log(props.barang);
     return props.barang.filter(item => 
         item.kategori === 'peminjaman' &&
         (item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
@@ -52,15 +51,18 @@ const filteredBarang = computed(() => {
 const handleBarangSelect = (barang: Barang) => {
     selectedBarang.value = barang
     form.barang_id = barang.id.toString()
-    showDropdown.value = false
+    showBarangModal.value = false
     searchQuery.value = ''
 }
 
-const toggleDropdown = () => {
-    showDropdown.value = !showDropdown.value
-    if (showDropdown.value) {
-        searchQuery.value = ''
-    }
+const openBarangModal = () => {
+    showBarangModal.value = true
+    searchQuery.value = ''
+}
+
+const closeBarangModal = () => {
+    showBarangModal.value = false
+    searchQuery.value = ''
 }
 
 const submitPeminjaman = () => {
@@ -74,22 +76,6 @@ const submitPeminjaman = () => {
         }
     })
 }
-
-const handleClickOutside = (event: Event) => {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.dropdown-container')) {
-        showDropdown.value = false;
-    }
-};
-
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-});
-
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-});
-
 </script>
 
 <template>
@@ -115,55 +101,79 @@ onUnmounted(() => {
                         Formulir Peminjaman
                     </h2>
                     <form @submit.prevent="submitPeminjaman" class="space-y-7">
-                        <!-- PILIH BARANG -->
-                        <div class="dropdown-container">
+                        <!-- PILIH BARANG (MODAL) -->
+                        <div>
                             <Label class="font-semibold text-gray-700 mb-1">Pilih Barang <span class="text-red-500">*</span></Label>
-                            <div class="relative">
+                            <div>
+                                <Button
+                                    type="button"
+                                    class="w-full flex items-center justify-between border border-blue-200 rounded-xl py-3 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold transition"
+                                    @click="openBarangModal"
+                                    :tabindex="0"
+                                    :autofocus="!selectedBarang"
+                                >
+                                    <span v-if="selectedBarang">
+                                        {{ selectedBarang.nama_barang }} <span class="text-xs text-gray-500 ml-2">(Kode: {{ selectedBarang.kode_barang }})</span>
+                                    </span>
+                                    <span v-else class="text-gray-400">Klik untuk memilih barang...</span>
+                                    <Search class="w-5 h-5 ml-2 text-blue-400" />
+                                </Button>
+                                <input type="hidden" v-model="form.barang_id" />
+                                <transition name="fade">
+                                    <p v-if="form.errors.barang_id" class="text-xs text-red-600 mt-1">{{ form.errors.barang_id }}</p>
+                                </transition>
+                                <transition name="fade">
+                                    <div v-if="selectedBarang" class="mt-3 p-4 border border-blue-200 rounded-xl bg-blue-50 flex items-center justify-between shadow-sm">
+                                        <div>
+                                            <span class="font-semibold text-blue-700">{{ selectedBarang.nama_barang }}</span>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Kode: <span class="font-mono">{{ selectedBarang.kode_barang }}</span> &nbsp;|&nbsp; Stok: <span class="font-semibold">{{ selectedBarang.stok }}</span>
+                                            </div>
+                                        </div>
+                                        <Button type="button" variant="ghost" size="icon" class="text-red-500 hover:bg-red-100" @click="selectedBarang = null; form.barang_id = ''">
+                                            <span class="text-lg font-bold">&times;</span>
+                                        </Button>
+                                    </div>
+                                </transition>
+                            </div>
+                        </div>
+
+                        <!-- Modal Pilih Barang -->
+                        <transition name="fade">
+                        <div v-if="showBarangModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative border border-blue-200">
+                                <button @click="closeBarangModal" class="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition">
+                                    <X class="w-6 h-6" />
+                                </button>
+                                <h3 class="text-lg font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                                    <Search class="w-5 h-5" /> Pilih Barang
+                                </h3>
                                 <Input
                                     type="text"
                                     v-model="searchQuery"
-                                    @focus="toggleDropdown"
                                     placeholder="Cari nama/kode barang..."
-                                    class="pr-12 py-3 rounded-xl border-blue-200 focus:ring-2 focus:ring-blue-400 transition"
+                                    class="mb-4 pr-12 py-3 rounded-xl border-blue-200 focus:ring-2 focus:ring-blue-400 transition"
+                                    autofocus
                                 />
-                                <Search class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none" />
-                            </div>
-                            <input type="hidden" v-model="form.barang_id" />
-                            <transition name="fade">
-                                <p v-if="form.errors.barang_id" class="text-xs text-red-600 mt-1">{{ form.errors.barang_id }}</p>
-                            </transition>
-                            <transition name="fade">
-                                <div v-if="selectedBarang" class="mt-3 p-4 border border-blue-200 rounded-xl bg-blue-50 flex items-center justify-between shadow-sm">
-                                    <div>
-                                        <span class="font-semibold text-blue-700">{{ selectedBarang.nama_barang }}</span>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            Kode: <span class="font-mono">{{ selectedBarang.kode_barang }}</span> &nbsp;|&nbsp; Stok: <span class="font-semibold">{{ selectedBarang.stok }}</span>
-                                        </div>
-                                    </div>
-                                    <Button type="button" variant="ghost" size="icon" class="text-red-500 hover:bg-red-100" @click="selectedBarang = null; form.barang_id = ''; searchQuery = ''">
-                                        <span class="text-lg font-bold">&times;</span>
-                                    </Button>
+                                <div class="max-h-64 overflow-y-auto">
+                                    <ul v-if="filteredBarang.length > 0">
+                                        <li
+                                            v-for="item in filteredBarang"
+                                            :key="item.id"
+                                            @click="handleBarangSelect(item)"
+                                            class="px-5 py-3 hover:bg-blue-50 cursor-pointer transition flex flex-col rounded-lg mb-1"
+                                        >
+                                            <span class="font-semibold text-gray-800">{{ item.nama_barang }}</span>
+                                            <span class="text-xs text-gray-500">Kode: {{ item.kode_barang }} | Stok: {{ item.stok }}</span>
+                                        </li>
+                                    </ul>
+                                    <p v-else class="text-xs text-gray-500 bg-gray-50 rounded-xl px-5 py-3 text-center">
+                                        Tidak ada barang tersedia untuk dipinjam.
+                                    </p>
                                 </div>
-                            </transition>
-                            <transition name="fade">
-                                <ul v-if="showDropdown && filteredBarang.length > 0" class="absolute z-20 w-full bg-white border border-blue-200 rounded-xl shadow-lg max-h-60 overflow-y-auto mt-2">
-                                    <li
-                                        v-for="item in filteredBarang"
-                                        :key="item.id"
-                                        @click="handleBarangSelect(item)"
-                                        class="px-5 py-3 hover:bg-blue-50 cursor-pointer transition flex flex-col"
-                                    >
-                                        <span class="font-semibold text-gray-800">{{ item.nama_barang }}</span>
-                                        <span class="text-xs text-gray-500">Kode: {{ item.kode_barang }} | Stok: {{ item.stok }}</span>
-                                    </li>
-                                </ul>
-                            </transition>
-                            <transition name="fade">
-                                <p v-if="showDropdown && filteredBarang.length === 0" class="px-5 py-3 text-xs text-gray-500 bg-gray-50 rounded-xl mt-2">
-                                    Tidak ada barang tersedia untuk dipinjam.
-                                </p>
-                            </transition>
+                            </div>
                         </div>
+                        </transition>
 
                         <!-- JUMLAH -->
                         <div>
@@ -185,9 +195,9 @@ onUnmounted(() => {
                             </p>
                         </div>
 
-                        <!-- TENGGAT WAKTU -->
+                        <!-- WAKTU PEMINJAMAN -->
                         <div>
-                            <Label for="due_date" class="font-semibold text-gray-700 mb-1">Tenggat Waktu <span class="text-red-500">*</span></Label>
+                            <Label for="due_date" class="font-semibold text-gray-700 mb-1"> Waktu Peminjaman <span class="text-red-500">*</span></Label>
                             <div class="relative">
                                 <Input
                                     id="due_date"
@@ -239,6 +249,7 @@ onUnmounted(() => {
                                 type="submit"
                                 :disabled="form.processing"
                                 class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition disabled:opacity-60"
+                                autofocus
                             >
                                 <span v-if="form.processing">Memproses...</span>
                                 <span v-else>Ajukan Peminjaman</span>

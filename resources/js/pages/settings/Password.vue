@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { type BreadcrumbItem } from '@/types';
-
+ 
 const breadcrumbItems: BreadcrumbItem[] = [
     {
         title: 'Password settings',

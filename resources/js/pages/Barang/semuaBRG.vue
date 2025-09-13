@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Search, Eye, Package, Box, QrCode } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Search, Eye, Package, Box, QrCode, X } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
@@ -33,7 +33,15 @@ const props = defineProps<{
         last_page: number;
         per_page: number;
         total: number;
-        // ... properti pagination lain dari Laravel ...
+        links?: Array<{
+            url: string | null;
+            label: string;
+            active: boolean;
+        }>;
+    };
+    filters?: {
+        search?: string;
+        kategori?: string;
     };
     stats: {
         total_barang: number;
@@ -44,17 +52,41 @@ const props = defineProps<{
     };
 }>();
 
-const searchQuery = ref('');
+// Search and filter functionality (same as stok page)
+// Provide default values to prevent crashes when props are not provided
+const searchQuery = ref(props.filters?.search || '');
+const selectedKategori = ref(props.filters?.kategori || '');
 
-const items = ref<BarangItem[]>([...props.barang.data]);
-
-const filteredBarang = computed(() => {
-    return items.value.filter(item => {
-        return (
-            item.nama_barang.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-            item.kode_barang.toLowerCase().includes(searchQuery.value.toLowerCase())
-        );
+const applyFilters = () => {
+    // Use server-side filtering to search entire database
+    router.get(route('barang.semuaBRG'), {
+        search: searchQuery.value,
+        kategori: selectedKategori.value,
+        page: 1 // Always start from first page when searching
+    }, {
+        preserveState: true,
+        preserveScroll: true
     });
+};
+
+const clearFilters = () => {
+    searchQuery.value = '';
+    selectedKategori.value = '';
+    applyFilters();
+};
+
+// Debounced search to avoid too many requests
+let searchTimeout: number;
+const debouncedSearch = () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilters();
+    }, 500); // 500ms delay
+};
+
+// Use server data directly (server handles filtering)
+const filteredBarang = computed(() => {
+    return props.barang?.data || [];
 });
 
 const deleteBarang = (id: number) => {
@@ -69,45 +101,7 @@ function toggleViewMode() {
   viewMode.value = viewMode.value === 'card' ? 'table' : 'card';
 }
 
-// Pagination helper function
-function getVisiblePages() {
-  const current = props.barang.current_page;
-  const last = props.barang.last_page;
-  const pages = [];
-  
-  if (last <= 7) {
-    // If total pages <= 7, show all pages
-    for (let i = 1; i <= last; i++) {
-      pages.push(i);
-    }
-  } else {
-    // Always show first page
-    pages.push(1);
-    
-    if (current > 3) {
-      pages.push('...');
-    }
-    
-    // Show pages around current page
-    const start = Math.max(2, current - 1);
-    const end = Math.min(last - 1, current + 1);
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    
-    if (current < last - 2) {
-      pages.push('...');
-    }
-    
-    // Always show last page
-    if (last > 1) {
-      pages.push(last);
-    }
-  }
-  
-  return pages;
-}
+// Pagination is now handled by the simple navigation component
 </script>
 
 <template>
@@ -184,15 +178,42 @@ function getVisiblePages() {
                 </div>
             </div>
 
-            <!-- Search -->
-            <div class="relative">
-                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Cari nama atau kode barang..."
-                    class="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <!-- Search and Filter -->
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="relative flex-1">
+                    <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        v-model="searchQuery"
+                        @input="debouncedSearch"
+                        @keyup.enter="applyFilters"
+                        type="text"
+                        placeholder="Cari nama atau kode barang..."
+                        class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <select
+                    v-model="selectedKategori"
+                    @change="applyFilters"
+                    class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-60"
+                >
+                    <option value="">Semua Kategori</option>
+                    <option value="peminjaman">Aset</option>
+                    <option value="permintaan">Permintaan</option>
+                </select>
+                <div class="flex gap-2">
+                    <Button @click="applyFilters" variant="outline">
+                        <Search class="w-4 h-4 mr-2" />
+                        Cari
+                    </Button>
+                    <Button 
+                        v-if="searchQuery || selectedKategori"
+                        @click="clearFilters" 
+                        variant="outline"
+                    >
+                        <X class="w-4 h-4 mr-2" />
+                        Hapus Filter
+                    </Button>
+                </div>
             </div>
 
             <!-- Barang List: Card or Table View -->
@@ -310,14 +331,22 @@ function getVisiblePages() {
                       <Package class="w-16 h-16 mx-auto text-gray-300 mb-4" />
                       <p class="text-xl font-medium mb-2">Tidak ada barang ditemukan</p>
                       <p class="text-gray-600 mb-4">
-                          {{ searchQuery ? 'Coba ubah kata kunci pencarian Anda.' : 'Belum ada barang yang ditambahkan.' }}
+                          {{ searchQuery ? 'Tidak ada barang yang sesuai dengan pencarian Anda. Coba kata kunci lain.' : 'Belum ada barang yang ditambahkan.' }}
                       </p>
-                      <Link :href="route('barang.create')">
-                          <Button>
-                              <Plus class="w-4 h-4 mr-2" />
-                              Tambah Barang Pertama
+                      <div v-if="!searchQuery">
+                          <Link :href="route('barang.create')">
+                              <Button>
+                                  <Plus class="w-4 h-4 mr-2" />
+                                  Tambah Barang Pertama
+                              </Button>
+                          </Link>
+                      </div>
+                      <div v-else>
+                          <Button @click="clearFilters" variant="outline">
+                              <Search class="w-4 h-4 mr-2" />
+                              Hapus Pencarian
                           </Button>
-                      </Link>
+                      </div>
                   </div>
                 </div>
                 <div v-else>
@@ -355,7 +384,9 @@ function getVisiblePages() {
                           </td>
                         </tr>
                         <tr v-if="filteredBarang.length === 0">
-                          <td colspan="6" class="text-center py-8 text-gray-500">Belum ada barang yang ditambahkan.</td>
+                          <td colspan="6" class="text-center py-8 text-gray-500">
+                              {{ searchQuery ? 'Tidak ada barang yang sesuai dengan pencarian Anda.' : 'Belum ada barang yang ditambahkan.' }}
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -363,44 +394,61 @@ function getVisiblePages() {
                 </div>
             </div>
             
-            <!-- Pagination -->
-            <div v-if="props.barang.last_page > 1" class="flex justify-center mt-6">
-                <div class="flex items-center space-x-2">
-                    <!-- Previous Page -->
-                    <Link 
-                        v-if="props.barang.current_page > 1"
-                        :href="route('barang.semuaBRG', { page: props.barang.current_page - 1 })"
-                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                        Previous
-                    </Link>
-                    
-                    <!-- Page Numbers -->
-                    <template v-for="page in getVisiblePages()" :key="page">
-                        <Link 
-                            v-if="page !== '...'"
-                            :href="route('barang.semuaBRG', { page: page })"
-                            :class="[
-                                'px-3 py-2 text-sm font-medium rounded-md',
-                                page === props.barang.current_page
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
-                            ]"
-                        >
-                            {{ page }}
-                        </Link>
-                        <span v-else class="px-3 py-2 text-sm text-gray-500">...</span>
-                    </template>
-                    
-                    <!-- Next Page -->
-                    <Link 
-                        v-if="props.barang.current_page < props.barang.last_page"
-                        :href="route('barang.semuaBRG', { page: props.barang.current_page + 1 })"
-                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                    >
-                        Next
-                    </Link>
+            <!-- Search Results Info -->
+            <div v-if="props.filters?.search || props.filters?.kategori" class="text-center py-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 inline-block">
+                    <p class="text-sm text-blue-800">
+                        <Search class="w-4 h-4 inline mr-2" />
+                        Menampilkan {{ filteredBarang.length }} hasil pencarian
+                        <span v-if="props.filters?.search">untuk "{{ props.filters.search }}"</span>
+                        <span v-if="props.filters?.kategori">dari kategori {{ props.filters.kategori === 'peminjaman' ? 'Aset' : 'Permintaan' }}</span>
+                    </p>
                 </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div v-if="barang && barang.last_page > 1 && !props.filters?.search && !props.filters?.kategori" class="flex items-center justify-center mt-6">
+                <nav class="inline-flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        :disabled="barang.current_page === 1"
+                        @click="router.get(route('barang.semuaBRG'), { 
+                            search: props.filters?.search || '', 
+                            kategori: props.filters?.kategori || '', 
+                            page: barang.current_page - 1 
+                        })"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </Button>
+                    
+                    <span class="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded">
+                        {{ barang.current_page }} / {{ barang.last_page }}
+                    </span>
+                    
+                    <span class="px-2 py-1 text-xs text-gray-500">
+                        ({{ barang.data.length }} dari {{ barang.total }})
+                    </span>
+                    
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        class="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        :disabled="barang.current_page === barang.last_page"
+                        @click="router.get(route('barang.semuaBRG'), { 
+                            search: props.filters?.search || '', 
+                            kategori: props.filters?.kategori || '', 
+                            page: barang.current_page + 1 
+                        })"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </Button>
+                </nav>
             </div>
         </div>
     </AppLayout>

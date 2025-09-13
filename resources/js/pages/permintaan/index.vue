@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, Search, User, Edit, X, Check, XCircle } from 'lucide-vue-next';
+import { Plus, Search, User, Edit, X, Check, XCircle, RefreshCw } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
@@ -14,7 +14,7 @@ import { usePhotoUrl } from '@/composables/usePhotoUrl';
 
 // Modal component (simple, inline)
 const showModal = ref(false);
-const modalType = ref<'delete' | 'approve' | 'reject' | null>(null);
+const modalType = ref<'delete' | 'approve' | 'reject' | 'complete' | null>(null);
 const modalItemId = ref<number | null>(null);
 
 const modalTitle = computed(() => {
@@ -22,6 +22,7 @@ const modalTitle = computed(() => {
         case 'delete': return 'Konfirmasi Hapus';
         case 'approve': return 'Konfirmasi Setujui';
         case 'reject': return 'Konfirmasi Tolak';
+        case 'complete': return 'Konfirmasi Selesai';
         default: return '';
     }
 });
@@ -30,11 +31,12 @@ const modalMessage = computed(() => {
         case 'delete': return 'Apakah Anda yakin ingin menghapus permintaan ini?';
         case 'approve': return 'Apakah Anda yakin ingin menyetujui permintaan ini?';
         case 'reject': return 'Apakah Anda yakin ingin menolak permintaan ini?';
+        case 'complete': return 'Apakah Anda yakin ingin menandai permintaan ini sebagai selesai?';
         default: return '';
     }
 });
 
-function openModal(type: 'delete' | 'approve' | 'reject', id: number) {
+function openModal(type: 'delete' | 'approve' | 'reject' | 'complete', id: number) {
     modalType.value = type;
     modalItemId.value = id;
     showModal.value = true;
@@ -63,9 +65,16 @@ function handleModalConfirm() {
                 alasan: 'Permintaan ditolak',
                 catatan: ''
             });
+        } else if (modalType.value === 'complete') {
+            router.patch(route('permintaan.complete', modalItemId.value));
         }
     }
     closeModal();
+}
+
+// Tombol refresh
+function refreshPermintaan() {
+    router.reload();
 }
 
 // Declare route function globally for TypeScript
@@ -174,11 +183,7 @@ const getStatusText = (status: string) => {
     }
 };
 
-const completePermintaan = (id: number) => {
-    if (confirm('Apakah Anda yakin ingin menandai permintaan ini sebagai selesai?')) {
-        router.patch(route('permintaan.complete', id));
-    }
-};
+// Removed completePermintaan function as it's now handled by modal
 </script>
 
 <template>
@@ -192,6 +197,15 @@ const completePermintaan = (id: number) => {
                     <p v-else class="text-sm text-gray-500 mt-1">Menampilkan semua permintaan pengguna</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2">
+                    <Button
+                        variant="outline"
+                        class="w-full sm:w-auto"
+                        @click="refreshPermintaan"
+                        title="Refresh"
+                    >
+                        <RefreshCw class="w-4 h-4 mr-2" />
+                        Refresh
+                    </Button>
                     <Link v-if="isAdmin" :href="route('permintaan.approval')">
                         <Button variant="outline" class="w-full sm:w-auto">
                             <Check class="w-4 h-4 mr-2" />
@@ -239,7 +253,7 @@ const completePermintaan = (id: number) => {
                         <div class="flex justify-end gap-2">
                             <Button variant="outline" @click="closeModal">Batal</Button>
                             <Button
-                                :variant="modalType === 'delete' ? 'destructive' : (modalType === 'approve' ? 'default' : 'destructive')"
+                                :variant="modalType === 'delete' ? 'destructive' : (modalType === 'approve' || modalType === 'complete' ? 'default' : 'destructive')"
                                 @click="handleModalConfirm"
                             >
                                 {{
@@ -249,7 +263,9 @@ const completePermintaan = (id: number) => {
                                             ? 'Setujui'
                                             : modalType === 'reject'
                                                 ? 'Tolak'
-                                                : ''
+                                                : modalType === 'complete'
+                                                    ? 'Selesai'
+                                                    : ''
                                 }}
                             </Button>
                         </div>
@@ -333,7 +349,7 @@ const completePermintaan = (id: number) => {
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'approved'"
-                                            @click="completePermintaan(item.id)"
+                                            @click="openModal('complete', item.id)"
                                             class="text-blue-600 hover:text-blue-800"
                                             title="Tandai Selesai"
                                         >
@@ -418,7 +434,7 @@ const completePermintaan = (id: number) => {
                                         </button>
                                         <button
                                             v-if="isAdmin && item.status === 'approved'"
-                                            @click="completePermintaan(item.id)"
+                                            @click="openModal('complete', item.id)"
                                             class="text-blue-600 hover:text-blue-800"
                                             title="Tandai Selesai"
                                         >

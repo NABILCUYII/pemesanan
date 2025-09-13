@@ -291,10 +291,27 @@ class BarangController extends Controller
     public function semua(Request $request)
     {
         $query = Barang::latest();
-        if ($request->has('q')) {
+        
+        // Search functionality - search in nama_barang and kode_barang
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('nama_barang', 'like', "%$search%")
+                  ->orWhere('kode_barang', 'like', "%$search%");
+            });
+        }
+        
+        // Category filter
+        if ($request->has('kategori') && !empty($request->input('kategori'))) {
+            $query->where('kategori', $request->input('kategori'));
+        }
+        
+        // Legacy support for 'q' parameter
+        if ($request->has('q') && !empty($request->input('q'))) {
             $q = $request->input('q');
             $query->where('nama_barang', 'like', "%$q%");
         }
+        
         $barang = $query->paginate(12);
         
         // Get total counts for statistics
@@ -307,8 +324,13 @@ class BarangController extends Controller
         if ($request->wantsJson()) {
             return response()->json($barang);
         }
+        
         return Inertia::render('Barang/semuaBRG', [
             'barang' => $barang,
+            'filters' => [
+                'search' => $request->input('search', ''),
+                'kategori' => $request->input('kategori', '')
+            ],
             'stats' => [
                 'total_barang' => $totalBarang,
                 'total_aset' => $totalAset,
