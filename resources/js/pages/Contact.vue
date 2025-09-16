@@ -99,7 +99,7 @@
                   id="message"
                   v-model="form.message"
                   placeholder="Tulis pesan Anda di sini..."
-                  rows="5"
+                  ;rows="5"
                   required
                 />
               </div>
@@ -169,21 +169,21 @@
                   <Mail class="h-5 w-5 text-[#20B2AA]" />
                   <div>
                     <h3 class="font-semibold text-[#2F4F4F]">Email</h3>
-                    <p class="text-sm text-[#708090]">info@peminjaman.com</p>
+                    <p class="text-sm text-[#708090]">puskesmasbontangutara1@gmail.com</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-3">
                   <Phone class="h-5 w-5 text-[#20B2AA]" />
                   <div>
                     <h3 class="font-semibold text-[#2F4F4F]">Telepon</h3>
-                    <p class="text-sm text-[#708090]">+62 21 1234 5678</p>
+                    <p class="text-sm text-[#708090]">+62 821-5417-5007</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-3">
                   <MessageCircle class="h-5 w-5 text-[#20B2AA]" />
                   <div>
                     <h3 class="font-semibold text-[#2F4F4F]">WhatsApp</h3>
-                    <p class="text-sm text-[#708090]">+62 812-3456-7890</p>
+                    <p class="text-sm text-[#708090]">+62 821-5417-5007</p>
                   </div>
                 </div>
               </div>

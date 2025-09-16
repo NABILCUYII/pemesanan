@@ -106,7 +106,7 @@ const search = () => {
 // Fungsi untuk menghubungi support via email
 const contactSupport = () => {
   // Arahkan ke halaman kontak atau buka email client
-  window.open('mailto:support@puskesmas-anda.com?subject=Bantuan Halaman Tidak Ditemukan', '_blank')
+  window.open('mailto:puskesmasbontangutara1@gmail.com?subject=Bantuan Halaman Tidak Ditemukan Atau Terjadi Kendala', '_blank')
 }
 </script>
 

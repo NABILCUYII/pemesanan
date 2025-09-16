@@ -143,11 +143,11 @@
               <div class="space-y-3">
                 <div class="flex items-center gap-3">
                   <Mail class="h-4 w-4 text-[#20B2AA]" />
-                  <span class="text-sm text-[#708090]">support@peminjaman.com</span>
+                  <span class="text-sm text-[#708090]">puskesmasbontangutara1@gmail.com</span>
                 </div>
                 <div class="flex items-center gap-3">
                   <Phone class="h-4 w-4 text-[#20B2AA]" />
-                  <span class="text-sm text-[#708090]">+62 21 1234 5678</span>
+                  <span class="text-sm text-[#708090]">+62 821-5417-5007</span>
                 </div>
                 <div class="flex items-center gap-3">
                   <Clock class="h-4 w-4 text-[#20B2AA]" />
@@ -160,7 +160,7 @@
               <form class="space-y-3">
                 <Input placeholder="Nama Anda" />
                 <Input placeholder="Email" type="email" />
-                <Textarea placeholder="Pesan Anda" rows="3" />
+                <Textarea placeholder="Pesan Anda" ;rows="3" />
                 <Button class="w-full bg-gradient-to-r from-[#FF6B6B] to-[#4ECDC4] hover:from-[#FF5252] hover:to-[#26A69A]">
                   Kirim Pesan
                 </Button>

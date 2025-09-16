@@ -268,8 +268,9 @@ Selamat datang di Sistem Pemesanan dan Peminjaman Barang! Sistem ini dirancang u
 
 Jika mengalami masalah atau butuh bantuan:
 
-- **Email**: support@perusahaan.com
-- **Telepon**: (021) 1234-5678
+- **Email**: vvvlll224@gmail.com
+- **Telepon**: +62 857-5342-3258
+               +62 812-5067-8630
 - **Jam Kerja**: Senin-Jumat, 08:00-17:00 WIB
 - **Menu Bantuan**: Klik menu "Bantuan" di sidebar untuk panduan lengkap
 
@@ -283,5 +284,5 @@ Sistem Pemesanan dan Peminjaman Barang dirancang untuk memudahkan pengelolaan in
 
 ---
 
-*Dokumen ini terakhir diperbarui: [Tanggal]*
+*Dokumen ini terakhir diperbarui: 16 09 2025
 *Versi: 1.0* 
